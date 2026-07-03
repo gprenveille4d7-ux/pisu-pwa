@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=132">
+  <link rel="stylesheet" href="style.css?v=133">
 </head>
 <body>
   <header class="app-header">
@@ -100,7 +100,7 @@
           Arrêt Cardiaque Enfant
         </button>
 
-        <button data-action="Sélection protocole PISU : Douleur thoracique" class="action protocol-chest">
+        <button id="openChestPainBtn" data-action="Sélection protocole PISU : Douleur thoracique" class="action protocol-chest">
           Douleur Thoracique
         </button>
 
@@ -335,6 +335,133 @@
       </button>
     </section>
 
+    <section id="chestPainProtocol" class="panel dt-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — Douleur thoracique</h2>
+        </div>
+        <button id="closeChestPainBtn" class="ghost">Retour</button>
+      </div>
+
+      <div class="dt-sticky-tools">
+        <a id="dtCall15Btn" class="dt-call15 dt-call15-idle" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="dtCall15Status">15 si gravité, puis bilan complet</small>
+        </a>
+
+        <div class="dt-summary-grid">
+          <div class="dt-summary-card">
+            <span>Gravité</span>
+            <strong id="dtGravityStatus">À évaluer</strong>
+          </div>
+
+          <div class="dt-summary-card">
+            <span>ECG</span>
+            <strong id="dtEcgStatus">À faire</strong>
+          </div>
+
+          <div class="dt-summary-card">
+            <span>Bilan</span>
+            <strong id="dtAssessmentStatus">En cours</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="dt-section danger">
+        <h3>1 — Évaluation de la gravité</h3>
+
+        <p><strong>Constantes :</strong> pose du scope, FC, SpO2, FR, glycémie capillaire, température, GCS.</p>
+
+        <button id="dtConstantsBtn" data-dt-action="Constantes / scope réalisés : FC, SpO2, FR, glycémie capillaire, température, GCS" class="action">
+          Constantes / scope faits
+        </button>
+
+        <p><strong>Recherche de signes de gravité :</strong> sueurs profuses, malaise, pâleur prononcée, vomissements, présentation inquiétante du patient, etc.</p>
+
+        <div class="dt-button-grid">
+          <button id="dtSeverityBtn" data-dt-action="Signes de gravité ou anomalie significative sur les constantes" class="action danger">
+            Signes de gravité / anomalie significative
+          </button>
+
+          <button id="dtNoSeverityBtn" data-dt-action="Absence de signes de gravité" class="action good">
+            Absence de signes de gravité
+          </button>
+        </div>
+
+        <div class="dt-callout danger-callout">
+          Si signes de gravité ou anomalie significative sur les constantes : poser les patchs de défibrillation et appel au 15.
+        </div>
+
+        <button id="dtPatchesBtn" data-dt-action="Patchs de défibrillation posés" class="action">
+          Patchs de défibrillation posés
+        </button>
+      </div>
+
+      <div class="dt-section info">
+        <h3>2 — Établir un bilan complet</h3>
+
+        <p><strong>À réaliser :</strong> ECG 18 dérivations, D2 long, PA aux deux bras.</p>
+
+        <div class="dt-button-grid">
+          <button id="dtEcgBtn" data-dt-action="ECG 18 dérivations réalisé" class="action">
+            ECG 18 dérivations
+          </button>
+
+          <button id="dtD2Btn" data-dt-action="D2 long réalisé" class="action">
+            D2 long
+          </button>
+
+          <button id="dtPaBothArmsBtn" data-dt-action="PA réalisée aux deux bras" class="action">
+            PA aux deux bras
+          </button>
+        </div>
+
+        <h4>Compléter l'interrogatoire</h4>
+
+        <div class="dt-button-grid">
+          <button data-dt-action="Antécédents recherchés" class="action">
+            Antécédents
+          </button>
+
+          <button data-dt-action="Traitements et allergies recherchés" class="action">
+            Traitements / allergies
+          </button>
+
+          <button data-dt-action="Facteurs de risque cardio-vasculaires personnels recherchés" class="action">
+            FDR personnels
+          </button>
+
+          <button data-dt-action="Facteurs de risque cardio-vasculaires familiaux recherchés" class="action">
+            FDR familiaux
+          </button>
+
+          <button data-dt-action="Caractérisation de la douleur : début, persistance, type, localisation, irradiation, facteurs déclenchants ou soulageants" class="action">
+            Caractériser la douleur
+          </button>
+
+          <button data-dt-action="Causes alternatives recherchées : infection, risque de MTEV, etc." class="action">
+            Causes alternatives
+          </button>
+        </div>
+      </div>
+
+      <div class="dt-section call15">
+        <h3>3 — Puis bilan : appel au 15</h3>
+
+        <p>Après bilan complet, appel au 15.</p>
+
+        <button id="dtReport15Btn" data-dt-action="Bilan douleur thoracique prêt pour appel au 15" class="action good">
+          Bilan prêt / appel 15
+        </button>
+      </div>
+
+      <button data-dt-action="Fin protocole douleur thoracique" class="action">
+        Fin protocole douleur thoracique
+      </button>
+    </section>
+
     <section class="panel">
       <div class="panel-title">
         <h2>Journal mission</h2>
@@ -356,5 +483,6 @@
 
   <script src="app.js"></script>
   <script src="acr-adulte.js"></script>
+  <script src="douleur-thoracique.js"></script>
 </body>
 </html>
