@@ -184,3 +184,124 @@ footer {
   padding: 20px;
   font-size: .85rem;
 }
+
+.identity-block {
+  border-color: #475569;
+}
+
+.identity-grid {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.identity-grid label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.identity-grid input,
+.identity-grid select,
+.identity-grid textarea {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #020617;
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.identity-grid textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.protocols-block {
+  border-color: #475569;
+}
+
+.protocols-block .panel-title {
+  justify-content: center;
+  text-align: center;
+}
+
+.protocols-block .grid {
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.protocols-block .action {
+  min-height: 62px;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.protocol-chest {
+  background: #581c87;
+  border-color: #c084fc;
+}
+
+.protocol-smoke {
+  background: #164e63;
+  border-color: #22d3ee;
+}
+
+.protocol-burn {
+  background: #7c2d12;
+  border-color: #fb923c;
+}
+
+.protocol-neuro {
+  background: #312e81;
+  border-color: #818cf8;
+}
+
+.protocol-allergy {
+  background: #713f12;
+  border-color: #facc15;
+}
+
+.protocol-bleed {
+  background: #881337;
+  border-color: #fb7185;
+}
+
+.protocol-glucose {
+  background: #14532d;
+  border-color: #4ade80;
+}
+
+.protocol-respiratory {
+  background: #0f766e;
+  border-color: #5eead4;
+}
+
+.protocol-pain {
+  background: #4a044e;
+  border-color: #e879f9;
+}
+
+.protocol-footer {
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 700;
+  margin-top: 12px;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .identity-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

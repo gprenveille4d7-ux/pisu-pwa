@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v1";
+﻿const CACHE_NAME = "pisu-acr-cache-v1";
 let timerInterval = null;
 let remaining = 120;
 let deferredPrompt = null;
@@ -7,6 +7,13 @@ const timerEl = document.getElementById("timer");
 const logEl = document.getElementById("log");
 const offlineStatus = document.getElementById("offlineStatus");
 const installBtn = document.getElementById("installBtn");
+const patientNameInput = document.getElementById("patientName");
+const patientAgeInput = document.getElementById("patientAge");
+const patientSexInput = document.getElementById("patientSex");
+const patientWeightInput = document.getElementById("patientWeight");
+const patientNoteInput = document.getElementById("patientNote");
+const saveIdentityBtn = document.getElementById("saveIdentityBtn");
+const unknownIdentityBtn = document.getElementById("unknownIdentityBtn");
 
 function formatTime(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -78,6 +85,37 @@ function resetTimer() {
   addLog("Chrono RCP réinitialisé");
 }
 
+function valueOrDefault(value, fallback = "non renseigné") {
+  const cleaned = value.trim();
+  return cleaned || fallback;
+}
+
+function savePatientIdentity() {
+  const name = valueOrDefault(patientNameInput.value, "identité non renseignée");
+  const age = valueOrDefault(patientAgeInput.value);
+  const sex = valueOrDefault(patientSexInput.value);
+  const weight = valueOrDefault(patientWeightInput.value);
+  const note = patientNoteInput.value.trim();
+
+  let logLine = `Identité patient : ${name} — âge/naissance : ${age} — sexe : ${sex} — poids estimé : ${weight}`;
+
+  if (note) {
+    logLine += ` — remarque : ${note}`;
+  }
+
+  addLog(logLine);
+}
+
+function setUnknownIdentity() {
+  patientNameInput.value = "Inconnu";
+  patientAgeInput.value = "";
+  patientSexInput.value = "";
+  patientWeightInput.value = "";
+  patientNoteInput.value = "Identité inconnue au moment de la prise en charge";
+
+  addLog("Identité patient : inconnue au moment de la prise en charge");
+}
+
 function exportText() {
   const items = getLog();
   const header = [
@@ -89,20 +127,107 @@ function exportText() {
   const lines = items.map(item => `${item.time} — ${item.text}`);
   return [...header, ...lines].join("\n");
 }
+function formatAddress(properties) {
+  if (!properties) return "";
+
+  const street = properties.name || properties.street || "";
+  const postcode = properties.postcode || "";
+  const city = properties.city || "";
+  const cityLine = [postcode, city].filter(Boolean).join(" ");
+
+  return [street, cityLine].filter(Boolean).join(", ");
+}
+
+async function reverseGeocode(latitude, longitude) {
+  const url = new URL("https://api-adresse.data.gouv.fr/reverse/");
+  url.searchParams.set("lat", latitude);
+  url.searchParams.set("lon", longitude);
+  url.searchParams.set("limit", "1");
+
+  const response = await fetch(url.toString());
+  if (!response.ok) return "";
+
+  const data = await response.json();
+  const feature = data.features && data.features[0];
+
+  return feature ? formatAddress(feature.properties) : "";
+}
+
+function addGpsPoint(actionLabel) {
+  if (!("geolocation" in navigator)) {
+    addLog(`GPS ${actionLabel} impossible : geolocalisation non disponible`);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async position => {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const accuracy = Math.round(position.coords.accuracy);
+      const mapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
+      const gpsText =
+        `${latitude.toFixed(6)}, ${longitude.toFixed(6)} - precision +/-${accuracy} m - ${mapsLink}`;
+
+      try {
+        const address = await reverseGeocode(latitude, longitude);
+        const addressText = address ? `Adresse : ${address} - ` : "";
+
+        addLog(`GPS ${actionLabel} : ${addressText}${gpsText}`);
+      } catch {
+        addLog(`GPS ${actionLabel} : adresse indisponible - ${gpsText}`);
+      }
+    },
+    error => {
+      let message = `GPS ${actionLabel} impossible`;
+
+      if (error.code === error.PERMISSION_DENIED) {
+        message = `GPS ${actionLabel} refuse : autorisation non accordee`;
+      }
+
+      if (error.code === error.POSITION_UNAVAILABLE) {
+        message = `GPS ${actionLabel} impossible : position indisponible`;
+      }
+
+      if (error.code === error.TIMEOUT) {
+        message = `GPS ${actionLabel} impossible : delai depasse`;
+      }
+
+      addLog(message);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+}
 
 document.querySelectorAll("[data-action]").forEach(button => {
-  button.addEventListener("click", () => addLog(button.dataset.action));
+  button.addEventListener("click", () => {
+    const action = button.dataset.action;
+    addLog(action);
+
+    if (button.dataset.gps === "true") {
+      addGpsPoint(action);
+    }
+  });
 });
 
-document.getElementById("startTimer").addEventListener("click", startTimer);
-document.getElementById("resetTimer").addEventListener("click", resetTimer);
+saveIdentityBtn.addEventListener("click", savePatientIdentity);
+unknownIdentityBtn.addEventListener("click", setUnknownIdentity);
+
+const startTimerBtn = document.getElementById("startTimer");
+const resetTimerBtn = document.getElementById("resetTimer");
+
+if (startTimerBtn) startTimerBtn.addEventListener("click", startTimer);
+if (resetTimerBtn) resetTimerBtn.addEventListener("click", resetTimer);
 
 document.getElementById("clearLog").addEventListener("click", () => {
   if (confirm("Effacer le journal de cette mission ?")) {
     localStorage.removeItem("pisuLog");
     logEl.innerHTML = "";
     remaining = 120;
-    timerEl.textContent = "02:00";
+    if (timerEl) timerEl.textContent = "02:00";
   }
 });
 

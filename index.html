@@ -23,32 +23,123 @@
 
   <main>
     <section class="panel warning">
-      <strong>Version test — à valider.</strong>
+      <strong>Version test - à valider.</strong>
       <span>Ne pas utiliser comme protocole officiel sans validation médicale / institutionnelle.</span>
     </section>
 
-    <section class="timer-card">
-      <div class="timer-label">Cycle RCP</div>
-      <div id="timer" class="timer">02:00</div>
+    <section class="panel start-block">
+  <div class="panel-title">
+    <h2>Départ intervention</h2>
+  </div>
+
+  <div class="grid">
+    <button data-action="Départ intervention" data-gps="true" class="action">
+      Départ intervention
+    </button>
+
+    <button data-action="Arrivée sur les lieux" data-gps="true" class="action good">
+      Arrivée sur les lieux
+    </button>
+  </div>
+</section>
+
+    <section class="panel identity-block">
+      <div class="panel-title">
+        <h2>Identité patient</h2>
+      </div>
+
+      <div class="identity-grid">
+        <label>
+          Nom / Prénom
+          <input id="patientName" type="text" placeholder="Ex : Dupont Jean / Inconnu">
+        </label>
+
+        <label>
+          Âge ou date de naissance
+          <input id="patientAge" type="text" placeholder="Ex : 68 ans / 12-04-1958">
+        </label>
+
+        <label>
+          Sexe
+          <select id="patientSex">
+            <option value="">Non renseigné</option>
+            <option value="Homme">Homme</option>
+            <option value="Femme">Femme</option>
+            <option value="Indéterminé">Indéterminé</option>
+          </select>
+        </label>
+
+        <label>
+          Poids estimé
+          <input id="patientWeight" type="text" inputmode="numeric" placeholder="Ex : 80 kg">
+        </label>
+
+        <label class="full-width">
+          Remarque
+          <textarea id="patientNote" rows="2" placeholder="Ex : identité confirmée par famille, papiers absents, bracelet patient..."></textarea>
+        </label>
+      </div>
+
       <div class="timer-actions">
-        <button id="startTimer" class="primary">Démarrer 2 min</button>
-        <button id="resetTimer" class="secondary">Réinitialiser</button>
+        <button id="saveIdentityBtn" class="primary">Enregistrer identité</button>
+        <button id="unknownIdentityBtn" class="secondary">Identité inconnue</button>
       </div>
     </section>
 
-    <section class="grid">
-      <button data-action="Début de prise en charge ACR" class="action">Début ACR</button>
-      <button data-action="RCP en cours" class="action">RCP</button>
-      <button data-action="Analyse du rythme" class="action">Analyse rythme</button>
-      <button data-action="Choc indiqué" class="action danger">Choc indiqué</button>
-      <button data-action="Choc non indiqué" class="action">Choc non indiqué</button>
-      <button data-action="CEE réalisé" class="action danger">CEE réalisé</button>
-      <button data-action="Adrénaline — vérifier protocole local" class="action drug">Adrénaline</button>
-      <button data-action="Cordarone / Amiodarone — vérifier protocole local" class="action drug">Cordarone</button>
-      <button data-action="Relais compressions" class="action">Relais RCP</button>
-      <button data-action="Ventilation / VAS évaluées" class="action">Ventilation</button>
-      <button data-action="ROSC / reprise activité circulatoire" class="action good">ROSC</button>
-      <button data-action="Fin de prise en charge" class="action">Fin</button>
+    <section class="panel protocols-block">
+      <div class="panel-title">
+        <h2>Protocole PISU</h2>
+      </div>
+
+      <div class="grid">
+        <button data-action="Sélection protocole PISU : Arrêt cardiaque adulte" class="action danger">
+          Arrêt cardiaque Adulte
+        </button>
+
+        <button data-action="Sélection protocole PISU : Arrêt cardiaque enfant" class="action danger">
+          Arrêt Cardiaque Enfant
+        </button>
+
+        <button data-action="Sélection protocole PISU : Douleur thoracique" class="action protocol-chest">
+          Douleur Thoracique
+        </button>
+
+        <button data-action="Sélection protocole PISU : Exposition aux fumées adulte et enfant" class="action protocol-smoke">
+          Exposition aux fumées Adulte & Enfant
+        </button>
+
+        <button data-action="Sélection protocole PISU : Brûlure adulte et enfant" class="action protocol-burn">
+          Brûlure Adulte & Enfant
+        </button>
+
+        <button data-action="Sélection protocole PISU : Convulsion adulte et enfant" class="action protocol-neuro">
+          Convulsion Adulte & Enfant
+        </button>
+
+        <button data-action="Sélection protocole PISU : Anaphylaxie adulte et enfant" class="action protocol-allergy">
+          Anaphylaxie Adulte & Enfant
+        </button>
+
+        <button data-action="Sélection protocole PISU : Hémorragie adulte et enfant" class="action protocol-bleed">
+          Hémorragie Adulte & Enfant
+        </button>
+
+        <button data-action="Sélection protocole PISU : Hypoglycémie adulte et enfant" class="action protocol-glucose">
+          Hypoglycémie Adulte & Enfant
+        </button>
+
+        <button data-action="Sélection protocole PISU : Exacerbation d’asthme ou BPCO adulte et enfant" class="action protocol-respiratory">
+          Exacerbation d’asthme | BPCO Adulte & Enfant
+        </button>
+
+        <button data-action="Sélection protocole PISU : Antalgie adulte et enfant" class="action protocol-pain">
+          Antalgie Adulte & Enfant
+        </button>
+      </div>
+
+      <div class="protocol-footer">
+        SAMU | SMUR Calvados.
+      </div>
     </section>
 
     <section class="panel">
@@ -66,7 +157,7 @@
   </main>
 
   <footer>
-    <span id="offlineStatus">Vérification hors ligne…</span>
+    <span id="offlineStatus">Vérification hors ligne...</span>
   </footer>
 
   <script src="app.js"></script>
