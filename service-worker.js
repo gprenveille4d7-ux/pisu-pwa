@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v1";
+const CACHE_NAME = "pisu-acr-cache-v3";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
