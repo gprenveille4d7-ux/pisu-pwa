@@ -533,56 +533,112 @@ footer {
 
 .acr-counters {
   display: grid;
-  grid-template-columns: 1fr 0.7fr 1.2fr 1.2fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+  align-items: stretch;
 }
 
 .acr-counter-card {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   align-content: center;
-  min-height: 62px;
+  min-height: 74px;
+  min-width: 0;
   padding: 8px 10px;
   border-radius: 14px;
-  background: rgba(2, 6, 23, 0.94);
-  border: 1px solid var(--line);
-  box-shadow: 0 14px 35px rgba(0,0,0,0.28);
+  background: #0b1220;
+  border: 1px solid #334155;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+  overflow: hidden;
 }
 
 .acr-counter-card span {
-  color: var(--muted);
-  font-size: .72rem;
+  color: #cbd5e1;
+  font-size: .68rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: .05em;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .acr-counter-card strong {
-  color: var(--text);
-  font-size: 1.35rem;
+  color: #ffffff;
+  font-size: 1.2rem;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .acr-counter-card small {
-  color: var(--muted);
-  font-size: .68rem;
+  color: #f8fafc;
+  font-size: .64rem;
   font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* ADRÉNALINE */
 .acr-counter-card.adrenaline.idle {
-  border-color: var(--line);
+  background: #0b1220;
+  border-color: #334155;
 }
 
 .acr-counter-card.adrenaline.running {
+  background: #7c3e06;
   border-color: #f59e0b;
-  background: rgba(120, 53, 15, 0.75);
+}
+
+.acr-counter-card.adrenaline.running span,
+.acr-counter-card.adrenaline.running strong,
+.acr-counter-card.adrenaline.running small {
+  color: #fff7ed;
 }
 
 .acr-counter-card.adrenaline.expired {
+  background: #991b1b;
   border-color: #ef4444;
-  background: rgba(127, 29, 29, 0.9);
   animation: adrenalinePulse 1s infinite;
+}
+
+.acr-counter-card.adrenaline.expired span,
+.acr-counter-card.adrenaline.expired strong,
+.acr-counter-card.adrenaline.expired small {
+  color: #ffffff;
+}
+
+/* CORDARONE */
+.acr-counter-card.cordarone.idle {
+  background: #0b1220;
+  border-color: #334155;
+}
+
+.acr-counter-card.cordarone.due {
+  background: #9a3412;
+  border-color: #fb923c;
+}
+
+.acr-counter-card.cordarone.due span,
+.acr-counter-card.cordarone.due strong,
+.acr-counter-card.cordarone.due small {
+  color: #fff7ed;
+}
+
+.acr-counter-card.cordarone.done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.acr-counter-card.cordarone.done span,
+.acr-counter-card.cordarone.done strong,
+.acr-counter-card.cordarone.done small {
+  color: #f0fdf4;
 }
 
 @keyframes adrenalinePulse {
@@ -591,29 +647,49 @@ footer {
   100% { transform: scale(1); }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 700px) {
   .acr-counters {
-    grid-template-columns: 1fr 0.7fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
   }
 
-  .acr-counter-card.adrenaline,
-  .acr-counter-card.cordarone {
-    grid-column: 1 / -1;
+  .acr-counter-card {
+    min-height: 66px;
+    padding: 6px 7px;
+    border-radius: 12px;
+  }
+
+  .acr-counter-card span {
+    font-size: .56rem;
+    letter-spacing: .03em;
+  }
+
+  .acr-counter-card strong {
+    font-size: 0.95rem;
+  }
+
+  .acr-counter-card small {
+    font-size: .52rem;
   }
 }
 
-.acr-counter-card.cordarone.idle {
-  border-color: var(--line);
-}
+@media (max-width: 420px) {
+  .acr-counter-card {
+    min-height: 60px;
+    padding: 5px 6px;
+  }
 
-.acr-counter-card.cordarone.due {
-  border-color: #f59e0b;
-  background: rgba(120, 53, 15, 0.75);
-}
+  .acr-counter-card span {
+    font-size: .5rem;
+  }
 
-.acr-counter-card.cordarone.done {
-  border-color: #10b981;
-  background: rgba(6, 78, 59, 0.75);
+  .acr-counter-card strong {
+    font-size: 0.88rem;
+  }
+
+  .acr-counter-card small {
+    font-size: .48rem;
+  }
 }
 
 .attention-flash {
