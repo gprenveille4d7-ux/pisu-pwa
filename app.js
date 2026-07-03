@@ -116,16 +116,244 @@ function setUnknownIdentity() {
   addLog("Identité patient : inconnue au moment de la prise en charge");
 }
 
+function getInputValue(elementId, fallback = "À compléter") {
+  const element = document.getElementById(elementId);
+
+  if (!element) {
+    return fallback;
+  }
+
+  const value = element.value?.trim();
+
+  return value || fallback;
+}
+
+function findFirstLogContaining(items, searchText) {
+  return items.find(item => item.text.toLowerCase().includes(searchText.toLowerCase()));
+}
+
+function findAllLogsContaining(items, searchTexts) {
+  return items.filter(item => {
+    const text = item.text.toLowerCase();
+    return searchTexts.some(searchText => text.includes(searchText.toLowerCase()));
+  });
+}
+
+function formatLogLine(item) {
+  return `${item.time} — ${item.text}`;
+}
+
+function formatLogList(items, fallback = "À compléter") {
+  if (!items.length) {
+    return fallback;
+  }
+
+  return items.map(formatLogLine).join("\n");
+}
+
 function exportText() {
   const items = getLog();
-  const header = [
-    "PISU ACR adulte — journal mission",
-    `Export : ${new Date().toLocaleString("fr-FR")}`,
-    "Version prototype — à valider",
-    ""
+
+  const exportDate = new Date().toLocaleString("fr-FR");
+
+  const patientName = getInputValue("patientName", "Identité non renseignée");
+  const patientAge = getInputValue("patientAge");
+  const patientSex = getInputValue("patientSex");
+  const patientWeight = getInputValue("patientWeight");
+  const patientNote = getInputValue("patientNote", "Aucune remarque renseignée");
+
+  const departure = findFirstLogContaining(items, "Départ intervention");
+  const arrival = findFirstLogContaining(items, "Arrivée sur les lieux");
+
+  const gpsLines = findAllLogsContaining(items, [
+    "GPS Départ intervention",
+    "GPS Arrivée sur les lieux",
+    "Point GPS"
+  ]);
+
+  const selectedProtocols = findAllLogsContaining(items, [
+    "Sélection protocole PISU"
+  ]);
+
+  const call15Lines = findAllLogsContaining(items, [
+    "appel au 15",
+    "bilan 15",
+    "médecin régulateur"
+  ]);
+
+  const acrLines = findAllLogsContaining(items, [
+    "ACR adulte"
+  ]);
+
+  const ceeLines = findAllLogsContaining(items, [
+    "CEE"
+  ]);
+
+  const adrenalineLines = findAllLogsContaining(items, [
+    "Adrénaline"
+  ]);
+
+  const cordaroneLines = findAllLogsContaining(items, [
+    "Cordarone"
+  ]);
+
+  const racsLines = findAllLogsContaining(items, [
+    "RACS",
+    "ROSC",
+    "reprise activité"
+  ]);
+
+  const ventilationLines = findAllLogsContaining(items, [
+    "ventilation",
+    "BAVU",
+    "MHC"
+  ]);
+
+  const vascularLines = findAllLogsContaining(items, [
+    "abord vasculaire",
+    "VVP",
+    "intra-osseux",
+    "NaCl"
+  ]);
+
+  const rhythmLines = findAllLogsContaining(items, [
+    "Analyse de rythme",
+    "Choc indiqué",
+    "Choc non indiqué",
+    "FV",
+    "TV sans pouls",
+    "Asystolie",
+    "AESP"
+  ]);
+
+  const lines = [
+    "========================================",
+    "FEUILLE SAED — INTERVENTION PISU",
+    "========================================",
+    "",
+    `Export généré le : ${exportDate}`,
+    "Version : prototype à valider",
+    "",
+    "----------------------------------------",
+    "IDENTITÉ PATIENT",
+    "----------------------------------------",
+    `Nom / Prénom : ${patientName}`,
+    `Âge ou date de naissance : ${patientAge}`,
+    `Sexe : ${patientSex}`,
+    `Poids estimé : ${patientWeight}`,
+    `Remarque identité : ${patientNote}`,
+    "",
+    "----------------------------------------",
+    "REPÈRES INTERVENTION",
+    "----------------------------------------",
+    `Départ intervention : ${departure ? formatLogLine(departure) : "À compléter"}`,
+    `Arrivée sur les lieux : ${arrival ? formatLogLine(arrival) : "À compléter"}`,
+    "",
+    "GPS :",
+    formatLogList(gpsLines),
+    "",
+    "Protocole(s) sélectionné(s) :",
+    formatLogList(selectedProtocols),
+    "",
+    "========================================",
+    "S — SITUATION ACTUELLE",
+    "========================================",
+    "",
+    "Je suis :",
+    "À compléter : prénom, nom, fonction, service/unité.",
+    "",
+    "Je vous appelle au sujet de :",
+    `${patientName} — ${patientAge} — ${patientSex}`,
+    "",
+    "Car actuellement il/elle présente :",
+    formatLogList(selectedProtocols, "À compléter : motif de l'appel / situation actuelle."),
+    "",
+    "Constantes vitales / signes cliniques :",
+    "À compléter : FC, FR, TA, SpO2, température, douleur, conscience, signes cliniques utiles.",
+    "",
+    "Éléments ACR / rythme :",
+    formatLogList(rhythmLines),
+    "",
+    "========================================",
+    "A — ANTÉCÉDENTS UTILES",
+    "========================================",
+    "",
+    "Antécédents médicaux utiles :",
+    "À compléter.",
+    "",
+    "Allergies :",
+    "À compléter.",
+    "",
+    "Traitements en cours :",
+    "À compléter.",
+    "",
+    "Événement / évolution récente :",
+    "À compléter : minutes, heures, jours.",
+    "",
+    "Contexte / remarque :",
+    patientNote,
+    "",
+    "========================================",
+    "E — ÉVALUATION",
+    "========================================",
+    "",
+    "Je pense que le problème est :",
+    formatLogList(selectedProtocols, "À compléter."),
+    "",
+    "Actions réalisées :",
+    "",
+    "Appel / régulation :",
+    formatLogList(call15Lines),
+    "",
+    "RCP / protocole ACR :",
+    formatLogList(acrLines),
+    "",
+    "CEE :",
+    formatLogList(ceeLines),
+    "",
+    "Adrénaline :",
+    formatLogList(adrenalineLines),
+    "",
+    "Cordarone :",
+    formatLogList(cordaroneLines),
+    "",
+    "Abord vasculaire :",
+    formatLogList(vascularLines),
+    "",
+    "Ventilation :",
+    formatLogList(ventilationLines),
+    "",
+    "RACS / ROSC :",
+    formatLogList(racsLines),
+    "",
+    "Je suis inquiet / aggravation / incertitude :",
+    "À compléter si nécessaire.",
+    "",
+    "========================================",
+    "D — DEMANDE / DÉCISION ATTENDUE",
+    "========================================",
+    "",
+    "Je souhaiterais :",
+    "À compléter : avis médical, décision, renfort, destination, conduite à tenir.",
+    "",
+    "Pouvez-vous m'indiquer ce que je dois faire, quoi et quand ?",
+    "À compléter selon échange avec le médecin régulateur.",
+    "",
+    "Décision / consignes reçues :",
+    "À compléter.",
+    "",
+    "========================================",
+    "CHRONOLOGIE COMPLÈTE HORODATÉE",
+    "========================================",
+    "",
+    formatLogList(items, "Aucun événement enregistré."),
+    "",
+    "========================================",
+    "FIN FEUILLE SAED",
+    "========================================"
   ];
-  const lines = items.map(item => `${item.time} — ${item.text}`);
-  return [...header, ...lines].join("\n");
+
+  return lines.join("\n");
 }
 function formatAddress(properties) {
   if (!properties) return "";
@@ -246,7 +474,7 @@ document.getElementById("downloadLog").addEventListener("click", () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `journal-pisu-${new Date().toISOString().slice(0,10)}.txt`;
+  a.download = `saed-pisu-${new Date().toISOString().slice(0,10)}.txt`;
   a.click();
   URL.revokeObjectURL(url);
 });

@@ -92,7 +92,7 @@
       </div>
 
       <div class="grid">
-        <button data-action="Sélection protocole PISU : Arrêt cardiaque adulte" class="action danger">
+        <button id="openAcrAdultBtn" data-action="Sélection protocole PISU : Arrêt cardiaque adulte" class="action danger">
           Arrêt cardiaque Adulte
         </button>
 
@@ -142,6 +142,199 @@
       </div>
     </section>
 
+    <section id="acrAdultProtocol" class="panel acr-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — ACR adulte</h2>
+        </div>
+        <button id="closeAcrAdultBtn" class="ghost">Retour</button>
+      </div>
+
+      <div class="acr-sticky-tools">
+        <a id="call15Btn" class="samu15 samu15-alert" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="call15Status">Appel 15 à faire</small>
+        </a>
+
+        <div class="acr-counters">
+          <div class="acr-counter-card">
+            <span>Cycle RCP</span>
+            <strong id="stickyAcrTimer">02:00</strong>
+          </div>
+
+          <div class="acr-counter-card">
+            <span>CEE</span>
+            <strong id="stickyCeeCounter">0</strong>
+          </div>
+
+          <div id="stickyAdrenalineCard" class="acr-counter-card adrenaline idle">
+            <span>Adrénaline</span>
+            <strong id="adrenalineTimer">--:--</strong>
+            <small id="adrenalineStatus">Non administrée</small>
+          </div>
+
+          <div id="stickyCordaroneCard" class="acr-counter-card cordarone idle">
+            <span>Cordarone</span>
+            <strong id="cordaroneMainStatus">--</strong>
+            <small id="cordaroneStatus">Non indiquée</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="acr-alert">
+        <strong>RIEN NE DOIT RETARDER LA DÉFIBRILLATION OU LE MCE</strong>
+      </div>
+
+      <section class="acr-timer-card">
+        <div class="timer-label">Analyse de rythme toutes les 2 minutes</div>
+        <div id="acrTimer" class="timer">02:00</div>
+
+        <div class="timer-actions">
+          <button id="acrStartTimer" class="primary">Démarrer 2 min</button>
+          <button id="acrResetTimer" class="secondary">Réinitialiser</button>
+        </div>
+      </section>
+
+      <div class="acr-section yellow">
+        <h3>1 — Pose du défibrillateur</h3>
+        <p>Contrôle du rythme, choc au besoin. Si DEA en cours d'analyse à l'arrivée, le laisser finir et choquer au besoin.</p>
+        <button data-acr-action="Pose du défibrillateur / contrôle du rythme" class="action">
+          Valider pose du défibrillateur
+        </button>
+      </div>
+
+      <div class="acr-section blue">
+        <h3>2 — Contrôle de la qualité de la réanimation</h3>
+
+        <p><strong>Massage cardiaque externe :</strong> fréquence 100-120/min, relais toutes les 2 min, profondeur 4-6 cm, décompression complète entre les compressions.</p>
+
+        <p><strong>Ventilation au BAVU :</strong> O2 15 L/min, vérifier absence de corps étranger, aspiration si besoin, canule de Guedel, contrôle de l'efficacité, ratio 30/2.</p>
+
+        <button data-acr-action="Contrôle qualité RCP : MCE 100-120/min, relais 2 min, ventilation BAVU O2 15 L/min, ratio 30/2" class="action">
+          Valider qualité RCP / ventilation
+        </button>
+      </div>
+
+      <div class="acr-section yellow">
+        <h3>3 — Abord vasculaire</h3>
+        <p>VVP en première intention. Si échec ou difficile : cathéter intra-osseux. Soluté : NaCl 0,9%.</p>
+
+        <button data-acr-action="Abord vasculaire : VVP en 1er, IO si échec/difficile, NaCl 0,9%" class="action">
+          Valider abord vasculaire
+        </button>
+      </div>
+
+      <div class="acr-section analysis">
+        <h3>Analyse de rythme</h3>
+        <p>Analyse de rythme toutes les 2 minutes.</p>
+
+        <button id="analysisBtn" data-acr-action="Analyse de rythme" data-start-cycle="true" class="action">
+          Analyse rythme
+        </button>
+      </div>
+
+      <div class="acr-choice-grid">
+        <button id="showShockBranchBtn" data-acr-action="Choc indiqué : FV / TV sans pouls" class="action shock-choice">
+          Choc indiqué<br>
+          <small>FV / TV sans pouls</small>
+        </button>
+
+        <button id="showNoShockBranchBtn" data-acr-action="Choc non indiqué : asystolie / AESP" class="action no-shock-choice">
+          Choc non indiqué<br>
+          <small>Asystolie / AESP</small>
+        </button>
+
+        <button id="showRacsBranchBtn" data-acr-action="RACS : reprise d'une activité cardiaque spontanée" data-samu-state="rosc" class="action racs-choice">
+          RACS<br>
+          <small>Reprise activité cardiaque spontanée</small>
+        </button>
+      </div>
+
+      <div id="shockBranch" class="acr-branch shock hidden">
+        <div class="branch-header">
+          <h3>Choc indiqué</h3>
+          <span id="ceeCounter" class="counter-pill">CEE : 0</span>
+        </div>
+
+        <p>FV / TV sans pouls.</p>
+
+        <button id="ceeBtn" data-acr-action="CEE 150-200 J puis reprise immédiate RCP pour 2 minutes" data-start-cycle="true" data-cee="true" class="action danger">
+          CEE 150-200 J + RCP 2 min
+        </button>
+
+        <div id="shockMedsReminder" class="acr-reminder hidden">
+          <strong>Rappels à partir du 3e CEE</strong>
+          <span>Adrénaline 1 mg toutes les 4 min.</span>
+          <span>Au 3e CEE : Cordarone 300 mg.</span>
+          <span>Au 5e CEE : Cordarone 150 mg.</span>
+        </div>
+
+        <button id="shockAdrenalineBtn" data-acr-action="À partir du 3e CEE : Adrénaline 1 mg toutes les 4 minutes selon protocole" data-adrenaline="true" class="action drug">
+          Adrénaline 1 mg
+        </button>
+
+        <button id="cordarone300Btn" data-acr-action="Au 3e CEE : Cordarone 300 mg selon protocole" data-cordarone="300" class="action drug">
+          Cordarone 300 mg
+        </button>
+
+        <button id="cordarone150Btn" data-acr-action="Au 5e CEE : Cordarone 150 mg selon protocole" data-cordarone="150" class="action drug">
+          Cordarone 150 mg
+        </button>
+      </div>
+
+      <div id="noShockBranch" class="acr-branch no-shock hidden">
+        <h3>Choc non indiqué</h3>
+        <p>Asystolie / AESP.</p>
+
+        <button data-acr-action="Choc non indiqué : reprise RCP 2 minutes" data-start-cycle="true" class="action">
+          Reprise RCP 2 min
+        </button>
+
+        <button id="noShockAdrenalineBtn" data-acr-action="Dès que possible : Adrénaline 1 mg toutes les 4 minutes selon protocole" data-adrenaline="true" class="action drug">
+          Adrénaline 1 mg dès que possible
+        </button>
+      </div>
+
+      <div id="racsBranch" class="acr-branch racs hidden">
+        <h3>Si RACS</h3>
+        <p>Reprise d'une activité cardiaque spontanée.</p>
+
+        <button id="racsCall15Btn" data-acr-action="Si RACS : appel au 15 / bilan au médecin régulateur" data-samu-state="rosc" class="action good">
+          Appel / bilan 15
+        </button>
+
+        <button data-acr-action="RACS : couverture de survie" class="action">
+          Couverture de survie
+        </button>
+
+        <button data-acr-action="RACS : glycémie capillaire, prise en charge hypoglycémie si besoin" class="action">
+          Glycémie capillaire
+        </button>
+
+        <button data-acr-action="RACS : ECG 18 dérivations + D2 long dès que possible et envoi au médecin régulateur" class="action">
+          ECG 18 dérivations + D2 long
+        </button>
+
+        <div class="acr-section blue">
+          <h3>Ventilation après RACS</h3>
+
+          <button data-acr-action="Ventilation efficace : MHC O2 15 L/min, débit QSP SpO2 94-98%, PLS" class="action">
+            Ventilation efficace
+          </button>
+
+          <button data-acr-action="Ventilation inefficace : poursuite ventilation BAVU O2 15 L/min, débit QSP SpO2 94-98%" class="action">
+            Ventilation inefficace
+          </button>
+        </div>
+      </div>
+
+      <button data-acr-action="Fin protocole ACR adulte" class="action">
+        Fin protocole ACR adulte
+      </button>
+    </section>
+
     <section class="panel">
       <div class="panel-title">
         <h2>Journal mission</h2>
@@ -158,8 +351,10 @@
 
   <footer>
     <span id="offlineStatus">Vérification hors ligne...</span>
+    <span class="creator-credit">Créée par Guillaume Prenveille — Infirmier des urgences de Falaise</span>
   </footer>
 
   <script src="app.js"></script>
+  <script src="acr-adulte.js"></script>
 </body>
 </html>
