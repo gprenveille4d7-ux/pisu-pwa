@@ -718,3 +718,97 @@ footer {
     outline: 0 solid rgba(250, 204, 21, 0);
   }
 }
+
+/* FIX MOBILE — compteurs ACR toujours lisibles */
+.acr-counters {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  align-items: stretch !important;
+}
+
+.acr-counter-card {
+  grid-column: auto !important;
+  min-width: 0 !important;
+  min-height: 64px !important;
+  padding: 6px 7px !important;
+  border-radius: 12px !important;
+  background: #0b1220 !important;
+  opacity: 1 !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35) !important;
+  overflow: hidden !important;
+}
+
+.acr-counter-card span {
+  color: #e2e8f0 !important;
+  font-size: .52rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .03em !important;
+  line-height: 1.05 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.acr-counter-card strong {
+  color: #ffffff !important;
+  font-size: .9rem !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.acr-counter-card small {
+  color: #f8fafc !important;
+  font-size: .48rem !important;
+  font-weight: 800 !important;
+  line-height: 1.05 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.acr-counter-card.adrenaline.idle {
+  background: #0b1220 !important;
+  border-color: #334155 !important;
+}
+
+.acr-counter-card.adrenaline.running {
+  background: #7c2d12 !important;
+  border-color: #fb923c !important;
+}
+
+.acr-counter-card.adrenaline.expired {
+  background: #991b1b !important;
+  border-color: #ef4444 !important;
+}
+
+.acr-counter-card.cordarone.idle {
+  background: #0b1220 !important;
+  border-color: #334155 !important;
+}
+
+.acr-counter-card.cordarone.due {
+  background: #9a3412 !important;
+  border-color: #fb923c !important;
+}
+
+.acr-counter-card.cordarone.done {
+  background: #166534 !important;
+  border-color: #22c55e !important;
+}
+
+@media (max-width: 520px) {
+  .acr-counters {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .acr-counter-card.adrenaline,
+  .acr-counter-card.cordarone {
+    grid-column: auto !important;
+  }
+}
