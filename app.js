@@ -12,8 +12,31 @@ const patientAgeInput = document.getElementById("patientAge");
 const patientSexInput = document.getElementById("patientSex");
 const patientWeightInput = document.getElementById("patientWeight");
 const patientNoteInput = document.getElementById("patientNote");
+const patientCategoryInput = document.getElementById("patientCategory");
 const saveIdentityBtn = document.getElementById("saveIdentityBtn");
 const unknownIdentityBtn = document.getElementById("unknownIdentityBtn");
+const responderNameInput = document.getElementById("responderName");
+const responderRoleInput = document.getElementById("responderRole");
+const responderServiceInput = document.getElementById("responderService");
+const saveResponderBtn = document.getElementById("saveResponderBtn");
+const responderPanel = document.querySelector(".responder-block");
+const toggleResponderBtn = document.getElementById("toggleResponderBtn");
+const responderContent = document.getElementById("responderContent");
+const responderSummary = document.getElementById("responderSummary");
+const patientIdentityPanel = document.querySelector(".identity-block");
+const togglePatientIdentityBtn = document.getElementById("togglePatientIdentityBtn");
+const patientIdentityContent = document.getElementById("patientIdentityContent");
+const patientIdentitySummary = document.getElementById("patientIdentitySummary");
+const createHandoffBtn = document.getElementById("createHandoffBtn");
+const showImportHandoffBtn = document.getElementById("showImportHandoffBtn");
+const handoffBox = document.getElementById("handoffBox");
+const handoffQrImage = document.getElementById("handoffQrImage");
+const handoffCode = document.getElementById("handoffCode");
+const copyHandoffCodeBtn = document.getElementById("copyHandoffCodeBtn");
+const handoffWarning = document.getElementById("handoffWarning");
+const importHandoffBox = document.getElementById("importHandoffBox");
+const importHandoffCode = document.getElementById("importHandoffCode");
+const confirmImportHandoffBtn = document.getElementById("confirmImportHandoffBtn");
 
 function formatTime(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -95,25 +118,29 @@ function savePatientIdentity() {
   const age = valueOrDefault(patientAgeInput.value);
   const sex = valueOrDefault(patientSexInput.value);
   const weight = valueOrDefault(patientWeightInput.value);
+  const category = valueOrDefault(patientCategoryInput.value);
   const note = patientNoteInput.value.trim();
 
-  let logLine = `Identité patient : ${name} — âge/naissance : ${age} — sexe : ${sex} — poids estimé : ${weight}`;
+  let logLine = `Identité patient : ${name} — âge/naissance : ${age} — sexe : ${sex} — catégorie : ${category} — poids estimé : ${weight}`;
 
   if (note) {
     logLine += ` — remarque : ${note}`;
   }
 
   addLog(logLine);
+  updatePatientIdentitySummary();
 }
 
 function setUnknownIdentity() {
   patientNameInput.value = "Inconnu";
   patientAgeInput.value = "";
   patientSexInput.value = "";
+  patientCategoryInput.value = "";
   patientWeightInput.value = "";
   patientNoteInput.value = "Identité inconnue au moment de la prise en charge";
 
   addLog("Identité patient : inconnue au moment de la prise en charge");
+  updatePatientIdentitySummary();
 }
 
 function getInputValue(elementId, fallback = "À compléter") {
@@ -151,14 +178,149 @@ function formatLogList(items, fallback = "À compléter") {
   return items.map(formatLogLine).join("\n");
 }
 
+function getPatientWeightKg() {
+  const rawValue = patientWeightInput?.value || "";
+
+  const normalizedValue = rawValue
+    .toLowerCase()
+    .replace(",", ".")
+    .replace("kg", "")
+    .trim();
+
+  const weight = Number.parseFloat(normalizedValue);
+
+  if (!Number.isFinite(weight) || weight <= 0) {
+    return null;
+  }
+
+  return weight;
+}
+
+function getPatientAgeYears() {
+  const rawValue = patientAgeInput?.value || "";
+  const normalizedValue = rawValue
+    .toLowerCase()
+    .replace(",", ".")
+    .trim();
+
+  // Cas simple : "11", "11 ans", "11a"
+  const yearMatch = normalizedValue.match(/(\d+(\.\d+)?)\s*(ans|an|a)?/);
+
+  if (!yearMatch) {
+    return null;
+  }
+
+  const age = Number.parseFloat(yearMatch[1]);
+
+  if (!Number.isFinite(age) || age < 0) {
+    return null;
+  }
+
+  return age;
+}
+
+function getPatientCategory() {
+  const manualCategory = patientCategoryInput?.value || "";
+
+  // Si tu as choisi une catégorie dans le menu, elle reste prioritaire.
+  if (manualCategory) {
+    return manualCategory;
+  }
+
+  const ageYears = getPatientAgeYears();
+
+  if (ageYears === null) {
+    return "";
+  }
+
+  if (ageYears > 10) {
+    return "adulte";
+  }
+
+  if (ageYears >= 5 && ageYears <= 10) {
+    return "enfant-5-10";
+  }
+
+  if (ageYears >= 1 && ageYears < 5) {
+    return "enfant-1-5";
+  }
+
+  if (ageYears >= 0.25 && ageYears < 1) {
+    return "nourrisson-3-12";
+  }
+
+  return "";
+}
+
+function getPatientCategoryLabel(category) {
+  switch (category) {
+    case "adulte":
+      return "Adulte / > 10 ans";
+    case "enfant-5-10":
+      return "Enfant 5 à 10 ans";
+    case "enfant-1-5":
+      return "Enfant 1 à 5 ans";
+    case "nourrisson-3-12":
+      return "Nourrisson 3 à 12 mois";
+    default:
+      return "Non renseignée";
+  }
+}
+
+function formatDoseMg(value) {
+  if (!Number.isFinite(value)) {
+    return "Non calculable";
+  }
+
+  const rounded = Math.round(value * 100) / 100;
+
+  return `${rounded.toString().replace(".", ",")} mg`;
+}
+
+function calculateClonazepamDoseMg(weightKg) {
+  if (!weightKg) {
+    return null;
+  }
+
+  return Math.min(weightKg * 0.015, 1.5);
+}
+
+function getMidazolamBuccolamDoseFromCategory(category) {
+  switch (category) {
+    case "adulte":
+      return "10 mg";
+    case "enfant-5-10":
+      return "7,5 mg";
+    case "enfant-1-5":
+      return "5 mg";
+    case "nourrisson-3-12":
+      return "2,5 mg";
+    default:
+      return "Catégorie d’âge à renseigner";
+  }
+}
+
+window.pisuPatient = {
+  getWeightKg: getPatientWeightKg,
+  getAgeYears: getPatientAgeYears,
+  getCategory: getPatientCategory,
+  getCategoryLabel: getPatientCategoryLabel,
+  formatDoseMg,
+  calculateClonazepamDoseMg,
+  getMidazolamBuccolamDoseFromCategory
+};
+
 function exportText() {
   const items = getLog();
+  const responder = getResponderIdentity();
+  const responderLine = formatResponderIdentity(responder);
 
   const exportDate = new Date().toLocaleString("fr-FR");
 
   const patientName = getInputValue("patientName", "Identité non renseignée");
   const patientAge = getInputValue("patientAge");
   const patientSex = getInputValue("patientSex");
+  const patientCategory = getInputValue("patientCategory");
   const patientWeight = getInputValue("patientWeight");
   const patientNote = getInputValue("patientNote", "Aucune remarque renseignée");
 
@@ -235,11 +397,17 @@ function exportText() {
     "Version : prototype à valider",
     "",
     "----------------------------------------",
+    "INTERVENANT",
+    "----------------------------------------",
+    responderLine,
+    "",
+    "----------------------------------------",
     "IDENTITÉ PATIENT",
     "----------------------------------------",
     `Nom / Prénom : ${patientName}`,
     `Âge ou date de naissance : ${patientAge}`,
     `Sexe : ${patientSex}`,
+    `Catégorie patient : ${patientCategory}`,
     `Poids estimé : ${patientWeight}`,
     `Remarque identité : ${patientNote}`,
     "",
@@ -260,7 +428,7 @@ function exportText() {
     "========================================",
     "",
     "Je suis :",
-    "À compléter : prénom, nom, fonction, service/unité.",
+    responderLine,
     "",
     "Je vous appelle au sujet de :",
     `${patientName} — ${patientAge} — ${patientSex}`,
@@ -453,6 +621,28 @@ if (resetTimerBtn) resetTimerBtn.addEventListener("click", resetTimer);
 document.getElementById("clearLog").addEventListener("click", () => {
   if (confirm("Effacer le journal de cette mission ?")) {
     localStorage.removeItem("pisuLog");
+
+    localStorage.removeItem("pisu-counter-cee");
+    localStorage.removeItem("pisu-counter-adrenaline");
+    localStorage.removeItem("pisu-counter-cordarone");
+    localStorage.removeItem("pisu-counter-seizure-treatment");
+    localStorage.removeItem("pisu-counter-anaphylaxis-adrenaline");
+    localStorage.removeItem("pisu-counter-hemorrhage-txa");
+    localStorage.removeItem("pisu-counter-hypoglycemia-glucagon");
+    localStorage.removeItem("pisu-counter-hypoglycemia-g10");
+    localStorage.removeItem("pisu-counter-hypoglycemia-g30");
+    localStorage.removeItem("pisu-counter-asthma-terbutaline");
+    localStorage.removeItem("pisu-counter-asthma-ipratropium");
+    localStorage.removeItem("pisu-counter-asthma-methylpred");
+    localStorage.removeItem("pisu-counter-analgesia-paracetamol");
+    localStorage.removeItem("pisu-counter-analgesia-morphine");
+    localStorage.removeItem("pisu-counter-analgesia-meopa");
+
+    document.querySelectorAll(".action-done").forEach(button => {
+      button.classList.remove("action-done");
+      delete button.dataset.clickCount;
+    });
+
     logEl.innerHTML = "";
     remaining = 120;
     if (timerEl) timerEl.textContent = "02:00";
@@ -511,6 +701,492 @@ if ("serviceWorker" in navigator) {
       offlineStatus.textContent = "Service worker non actif en local. Tester via GitHub Pages ou localhost.";
     });
 }
+
+function getGlobalCounterKey(button) {
+  const counterType = button.dataset.countBadge;
+
+  if (!counterType) {
+    return null;
+  }
+
+  return `pisu-counter-${counterType}`;
+}
+
+function incrementButtonCounter(button) {
+  const counterKey = getGlobalCounterKey(button);
+
+  if (!counterKey) {
+    return;
+  }
+
+  const currentValue = Number(localStorage.getItem(counterKey) || "0");
+  const nextValue = currentValue + 1;
+
+  localStorage.setItem(counterKey, String(nextValue));
+  button.dataset.clickCount = String(nextValue);
+}
+
+function markButtonAsClicked(button) {
+  if (!button) return;
+
+  button.classList.remove("click-feedback");
+
+  void button.offsetWidth;
+
+  if (button.dataset.countBadge) {
+    incrementButtonCounter(button);
+  }
+
+  button.classList.add("click-feedback");
+  button.classList.add("action-done");
+
+  window.setTimeout(() => {
+    button.classList.remove("click-feedback");
+  }, 500);
+}
+
+document.addEventListener("click", event => {
+  const clickedElement = event.target.closest(
+    "[data-action], [data-acr-action], [data-dt-action], [data-smoke-action], [data-burn-action], [data-seizure-action], [data-anaphylaxis-action], [data-hemo-action], [data-hypo-action], [data-asthma-action], [data-analgesia-action], #call15Btn, #dtCall15Btn, #smokeCall15Btn, #burnCall15Btn, #seizureCall15Btn, #anaphylaxisCall15Btn, #hemorrhageCall15Btn, #hypoglycemiaCall15Btn, #asthmaCall15Btn, #analgesiaCall15Btn"
+  );
+
+  if (!clickedElement) return;
+
+  // Le menu principal "Protocole PISU" sert à naviguer :
+  // on ne met pas de coche de validation dessus.
+  if (clickedElement.closest(".protocols-block")) {
+    clickedElement.classList.remove("action-done", "click-feedback");
+    delete clickedElement.dataset.clickCount;
+    return;
+  }
+
+  markButtonAsClicked(clickedElement);
+});
+
+function getProtocolPages() {
+  return Array.from(document.querySelectorAll(
+    "#acrAdultProtocol, #chestPainProtocol, #smokeExposureProtocol, #burnsProtocol, #seizureProtocol, #anaphylaxisProtocol, #hemorrhageProtocol, #hypoglycemiaProtocol, #asthmaBpcoProtocol, #analgesiaProtocol"
+  ));
+}
+
+function getMainPageSections() {
+  const protocolPages = getProtocolPages();
+
+  return Array.from(document.querySelectorAll("main > section"))
+    .filter(section => !protocolPages.includes(section));
+}
+
+function showMainMenu() {
+  getProtocolPages().forEach(section => {
+    section.classList.add("hidden");
+  });
+
+  getMainPageSections().forEach(section => {
+    section.classList.remove("hidden");
+  });
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+function showProtocolPage(protocolId) {
+  const targetProtocol = document.getElementById(protocolId);
+
+  if (!targetProtocol) return;
+
+  getMainPageSections().forEach(section => {
+    section.classList.add("hidden");
+  });
+
+  getProtocolPages().forEach(section => {
+    section.classList.add("hidden");
+  });
+
+  targetProtocol.classList.remove("hidden");
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+window.showMainMenu = showMainMenu;
+window.showProtocolPage = showProtocolPage;
+
+function getResponderIdentity() {
+  return {
+    name: responderNameInput?.value?.trim() || "",
+    role: responderRoleInput?.value || "",
+    service: responderServiceInput?.value?.trim() || ""
+  };
+}
+
+function formatResponderIdentity(responder = getResponderIdentity()) {
+  const role = responder.role || "Fonction non renseignée";
+  const name = responder.name || "Nom non renseigné";
+  const service = responder.service || "Service non renseigné";
+
+  return `${role} — ${name} — ${service}`;
+}
+
+function saveResponderIdentity() {
+  const responder = getResponderIdentity();
+
+  localStorage.setItem("pisuResponder", JSON.stringify(responder));
+
+  if (typeof addLog === "function") {
+    addLog(`Intervenant identifié : ${formatResponderIdentity(responder)}`);
+  }
+
+  updateResponderSummary();
+}
+
+function loadResponderIdentity() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("pisuResponder") || "{}");
+
+    if (responderNameInput) responderNameInput.value = saved.name || "";
+    if (responderRoleInput) responderRoleInput.value = saved.role || "";
+    if (responderServiceInput) responderServiceInput.value = saved.service || "";
+  } catch {
+    localStorage.removeItem("pisuResponder");
+  }
+}
+
+function getPatientSnapshot() {
+  return {
+    name: patientNameInput?.value || "",
+    age: patientAgeInput?.value || "",
+    sex: patientSexInput?.value || "",
+    category: patientCategoryInput?.value || "",
+    weight: patientWeightInput?.value || "",
+    note: patientNoteInput?.value || ""
+  };
+}
+
+function applyPatientSnapshot(patient = {}) {
+  if (patientNameInput) patientNameInput.value = patient.name || "";
+  if (patientAgeInput) patientAgeInput.value = patient.age || "";
+  if (patientSexInput) patientSexInput.value = patient.sex || "";
+  if (patientCategoryInput) patientCategoryInput.value = patient.category || "";
+  if (patientWeightInput) patientWeightInput.value = patient.weight || "";
+  if (patientNoteInput) patientNoteInput.value = patient.note || "";
+
+  updatePatientIdentitySummary();
+}
+
+function encodeMissionPayload(payload) {
+  const json = JSON.stringify(payload);
+  const bytes = new TextEncoder().encode(json);
+
+  let binary = "";
+  bytes.forEach(byte => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+function decodeMissionPayload(codeOrUrl) {
+  let code = codeOrUrl.trim();
+
+  if (code.includes("#mission=")) {
+    code = code.split("#mission=")[1];
+  }
+
+  if (code.includes("mission=")) {
+    code = code.split("mission=")[1];
+  }
+
+  code = decodeURIComponent(code.trim());
+
+  const base64 = code
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(code.length / 4) * 4, "=");
+
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  const json = new TextDecoder().decode(bytes);
+
+  return JSON.parse(json);
+}
+
+function buildMissionPayload() {
+  return {
+    type: "pisu-mission-transfer",
+    version: 1,
+    createdAt: new Date().toISOString(),
+    responder: getResponderIdentity(),
+    patient: getPatientSnapshot(),
+    log: getLog()
+  };
+}
+
+function buildTransferUrl(code) {
+  return `${window.location.origin}${window.location.pathname}#mission=${encodeURIComponent(code)}`;
+}
+
+function createMissionHandoff() {
+  const payload = buildMissionPayload();
+  const code = encodeMissionPayload(payload);
+  const transferUrl = buildTransferUrl(code);
+
+  handoffBox?.classList.remove("hidden");
+
+  if (handoffCode) {
+    handoffCode.value = transferUrl;
+  }
+
+  if (handoffWarning) {
+    handoffWarning.textContent = "";
+  }
+
+  if (handoffQrImage) {
+    if (transferUrl.length > 2400) {
+      handoffQrImage.classList.add("hidden");
+
+      if (handoffWarning) {
+        handoffWarning.textContent =
+          "Journal trop long pour un QR fiable : utilise plutôt le bouton Copier le code.";
+      }
+    } else {
+      handoffQrImage.src =
+        `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(transferUrl)}`;
+      handoffQrImage.classList.remove("hidden");
+
+      if (handoffWarning) {
+        handoffWarning.textContent =
+          "QR disponible si internet est actif. Le code texte reste la solution de secours.";
+      }
+    }
+  }
+
+  addLog("Code de transfert mission généré");
+}
+
+async function copyMissionHandoffCode() {
+  if (!handoffCode?.value) return;
+
+  try {
+    await navigator.clipboard.writeText(handoffCode.value);
+    addLog("Code de transfert mission copié");
+  } catch {
+    handoffCode.select();
+    document.execCommand("copy");
+    addLog("Code de transfert mission copié");
+  }
+}
+
+function importMissionPayloadFromText(text) {
+  let payload;
+
+  try {
+    payload = decodeMissionPayload(text);
+  } catch {
+    alert("Code de transfert illisible.");
+    return;
+  }
+
+  if (payload.type !== "pisu-mission-transfer") {
+    alert("Ce code ne correspond pas à une mission PISU.");
+    return;
+  }
+
+  const confirmation = window.confirm(
+    "Importer cette mission ?\n\nLe journal actuel sera remplacé par le journal transféré."
+  );
+
+  if (!confirmation) {
+    return;
+  }
+
+  applyPatientSnapshot(payload.patient);
+
+  localStorage.setItem("pisuLog", JSON.stringify(payload.log || []));
+  loadLog();
+
+  const originResponder = formatResponderIdentity(payload.responder || {});
+  const currentResponder = formatResponderIdentity(getResponderIdentity());
+
+  addLog(`Mission reprise depuis transfert. Origine : ${originResponder}. Reprise par : ${currentResponder}`);
+
+  window.location.hash = "";
+}
+
+function checkMissionHashImport() {
+  if (!window.location.hash.includes("mission=")) {
+    return;
+  }
+
+  const code = window.location.hash.split("mission=")[1];
+
+  if (importHandoffBox) {
+    importHandoffBox.classList.remove("hidden");
+  }
+
+  if (importHandoffCode) {
+    importHandoffCode.value = code;
+  }
+
+  const confirmation = window.confirm(
+    "Un transfert de mission a été détecté.\n\nImporter le journal maintenant ?"
+  );
+
+  if (confirmation) {
+    importMissionPayloadFromText(code);
+  }
+}
+
+saveResponderBtn?.addEventListener("click", saveResponderIdentity);
+
+createHandoffBtn?.addEventListener("click", createMissionHandoff);
+
+copyHandoffCodeBtn?.addEventListener("click", copyMissionHandoffCode);
+
+showImportHandoffBtn?.addEventListener("click", () => {
+  importHandoffBox?.classList.toggle("hidden");
+});
+
+confirmImportHandoffBtn?.addEventListener("click", () => {
+  importMissionPayloadFromText(importHandoffCode?.value || "");
+});
+
+function setCollapsibleState(panel, toggleButton, content, storageKey, collapsed) {
+  if (!panel || !toggleButton || !content) return;
+
+  panel.classList.toggle("collapsed", collapsed);
+  content.hidden = collapsed;
+  toggleButton.setAttribute("aria-expanded", String(!collapsed));
+
+  localStorage.setItem(storageKey, collapsed ? "collapsed" : "open");
+}
+
+function setupCollapsiblePanel(panel, toggleButton, content, storageKey) {
+  if (!panel || !toggleButton || !content) return;
+
+  const savedState = localStorage.getItem(storageKey);
+  const shouldStartCollapsed = savedState === "collapsed";
+
+  setCollapsibleState(panel, toggleButton, content, storageKey, shouldStartCollapsed);
+
+  toggleButton.addEventListener("click", () => {
+    const isCollapsed = panel.classList.contains("collapsed");
+    setCollapsibleState(panel, toggleButton, content, storageKey, !isCollapsed);
+  });
+}
+
+function updateResponderSummary() {
+  if (!responderSummary) return;
+
+  const responder = getResponderIdentity?.() || {};
+  const hasResponder =
+    Boolean(responder.name) ||
+    Boolean(responder.role) ||
+    Boolean(responder.service);
+
+  responderSummary.textContent = hasResponder
+    ? formatResponderIdentity(responder)
+    : "Intervenant non renseigné";
+}
+
+function updatePatientIdentitySummary() {
+  if (!patientIdentitySummary) return;
+
+  const name = patientNameInput?.value?.trim();
+  const age = patientAgeInput?.value?.trim();
+  const sex = patientSexInput?.value?.trim();
+  const weight = patientWeightInput?.value?.trim();
+
+  const parts = [];
+
+  parts.push(name || "Identité non renseignée");
+
+  if (age) {
+    parts.push(`Âge/naissance : ${age}`);
+  }
+
+  if (sex) {
+    parts.push(`Sexe : ${sex}`);
+  }
+
+  if (weight) {
+    parts.push(`Poids : ${weight}`);
+  }
+
+  patientIdentitySummary.textContent = parts.join(" — ");
+}
+
+function setupIdentitySummaries() {
+  [
+    responderNameInput,
+    responderRoleInput,
+    responderServiceInput
+  ].forEach(input => {
+    input?.addEventListener("input", updateResponderSummary);
+    input?.addEventListener("change", updateResponderSummary);
+  });
+
+  [
+    patientNameInput,
+    patientAgeInput,
+    patientSexInput,
+    patientCategoryInput,
+    patientWeightInput,
+    patientNoteInput
+  ].forEach(input => {
+    input?.addEventListener("input", updatePatientIdentitySummary);
+    input?.addEventListener("change", updatePatientIdentitySummary);
+  });
+}
+
+function setupCollapsiblePanels() {
+  setupCollapsiblePanel(
+    responderPanel,
+    toggleResponderBtn,
+    responderContent,
+    "pisu-collapse-responder"
+  );
+
+  setupCollapsiblePanel(
+    patientIdentityPanel,
+    togglePatientIdentityBtn,
+    patientIdentityContent,
+    "pisu-collapse-patient-identity"
+  );
+
+  setupIdentitySummaries();
+  updateResponderSummary();
+  updatePatientIdentitySummary();
+}
+
+function restoreCounterBadges() {
+  document.querySelectorAll("[data-count-badge]").forEach(button => {
+    const counterKey = getGlobalCounterKey(button);
+    const value = Number(localStorage.getItem(counterKey) || "0");
+
+    if (value > 0) {
+      button.dataset.clickCount = String(value);
+      button.classList.add("action-done");
+    }
+  });
+}
+
+restoreCounterBadges();
+
+loadResponderIdentity();
+setupCollapsiblePanels();
+checkMissionHashImport();
 
 loadLog();
 updateOnlineStatus();

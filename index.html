@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=133">
+  <link rel="stylesheet" href="style.css?v=151">
 </head>
 <body>
   <header class="app-header">
@@ -25,6 +25,46 @@
     <section class="panel warning">
       <strong>Version test - à valider.</strong>
       <span>Ne pas utiliser comme protocole officiel sans validation médicale / institutionnelle.</span>
+    </section>
+
+    <section class="panel responder-block collapsible-panel">
+      <div class="panel-title collapsible-title">
+        <button id="toggleResponderBtn" class="collapse-toggle" type="button" aria-expanded="true" aria-controls="responderContent">
+          <span>Intervenant</span>
+          <span class="collapse-chevron">▾</span>
+        </button>
+
+        <button id="saveResponderBtn" class="ghost">Enregistrer</button>
+      </div>
+
+      <small id="responderSummary" class="collapse-summary">Intervenant non renseigné</small>
+
+      <div id="responderContent" class="collapsible-content">
+        <div class="identity-grid">
+          <label>
+            Nom / Prénom
+            <input id="responderName" type="text" placeholder="Ex : Guillaume Prenveille">
+          </label>
+
+          <label>
+            Fonction / rang
+            <select id="responderRole">
+              <option value="">Non renseigné</option>
+              <option value="IDE">IDE</option>
+              <option value="Ambulancier">Ambulancier</option>
+              <option value="Médecin">Médecin</option>
+              <option value="Aide-soignant">Aide-soignant</option>
+              <option value="Secouriste">Secouriste</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </label>
+
+          <label>
+            Service / unité
+            <input id="responderService" type="text" placeholder="Ex : Urgences / SMUR Falaise">
+          </label>
+        </div>
+      </div>
     </section>
 
     <section class="panel start-block">
@@ -43,46 +83,64 @@
   </div>
 </section>
 
-    <section class="panel identity-block">
-      <div class="panel-title">
-        <h2>Identité patient</h2>
+    <section class="panel identity-block collapsible-panel">
+      <div class="panel-title collapsible-title">
+        <button id="togglePatientIdentityBtn" class="collapse-toggle" type="button" aria-expanded="true" aria-controls="patientIdentityContent">
+          <span>Identité patient</span>
+          <span class="collapse-chevron">▾</span>
+        </button>
       </div>
 
-      <div class="identity-grid">
-        <label>
-          Nom / Prénom
-          <input id="patientName" type="text" placeholder="Ex : Dupont Jean / Inconnu">
-        </label>
+      <small id="patientIdentitySummary" class="collapse-summary">Identité non renseignée</small>
 
-        <label>
-          Âge ou date de naissance
-          <input id="patientAge" type="text" placeholder="Ex : 68 ans / 12-04-1958">
-        </label>
+      <div id="patientIdentityContent" class="collapsible-content">
+        <div class="identity-grid">
+          <label>
+            Nom / Prénom
+            <input id="patientName" type="text" placeholder="Ex : Dupont Jean / Inconnu">
+          </label>
 
-        <label>
-          Sexe
-          <select id="patientSex">
-            <option value="">Non renseigné</option>
-            <option value="Homme">Homme</option>
-            <option value="Femme">Femme</option>
-            <option value="Indéterminé">Indéterminé</option>
-          </select>
-        </label>
+          <label>
+            Âge ou date de naissance
+            <input id="patientAge" type="text" placeholder="Ex : 68 ans / 12-04-1958">
+          </label>
 
-        <label>
-          Poids estimé
-          <input id="patientWeight" type="text" inputmode="numeric" placeholder="Ex : 80 kg">
-        </label>
+          <label>
+            Sexe
+            <select id="patientSex">
+              <option value="">Non renseigné</option>
+              <option value="Homme">Homme</option>
+              <option value="Femme">Femme</option>
+              <option value="Indéterminé">Indéterminé</option>
+            </select>
+          </label>
 
-        <label class="full-width">
-          Remarque
-          <textarea id="patientNote" rows="2" placeholder="Ex : identité confirmée par famille, papiers absents, bracelet patient..."></textarea>
-        </label>
-      </div>
+          <label>
+            Catégorie patient
+            <select id="patientCategory">
+              <option value="">Non renseignée</option>
+              <option value="adulte">Adulte / &gt; 10 ans</option>
+              <option value="enfant-5-10">Enfant 5 à 10 ans</option>
+              <option value="enfant-1-5">Enfant 1 à 5 ans</option>
+              <option value="nourrisson-3-12">Nourrisson 3 à 12 mois</option>
+            </select>
+          </label>
 
-      <div class="timer-actions">
-        <button id="saveIdentityBtn" class="primary">Enregistrer identité</button>
-        <button id="unknownIdentityBtn" class="secondary">Identité inconnue</button>
+          <label>
+            Poids estimé
+            <input id="patientWeight" type="text" inputmode="numeric" placeholder="Ex : 80 kg">
+          </label>
+
+          <label class="full-width">
+            Remarque
+            <textarea id="patientNote" rows="2" placeholder="Ex : identité confirmée par famille, papiers absents, bracelet patient..."></textarea>
+          </label>
+        </div>
+
+        <div class="timer-actions">
+          <button id="saveIdentityBtn" class="primary">Enregistrer identité</button>
+          <button id="unknownIdentityBtn" class="secondary">Identité inconnue</button>
+        </div>
       </div>
     </section>
 
@@ -104,35 +162,35 @@
           Douleur Thoracique
         </button>
 
-        <button data-action="Sélection protocole PISU : Exposition aux fumées adulte et enfant" class="action protocol-smoke">
+        <button id="openSmokeExposureBtn" data-action="Sélection protocole PISU : Exposition aux fumées adulte et enfant" class="action protocol-smoke">
           Exposition aux fumées Adulte & Enfant
         </button>
 
-        <button data-action="Sélection protocole PISU : Brûlure adulte et enfant" class="action protocol-burn">
+        <button id="openBurnsBtn" data-action="Sélection protocole PISU : Brûlure adulte et enfant" class="action protocol-burn">
           Brûlure Adulte & Enfant
         </button>
 
-        <button data-action="Sélection protocole PISU : Convulsion adulte et enfant" class="action protocol-neuro">
+        <button id="openSeizureBtn" data-action="Sélection protocole PISU : Convulsion adulte et enfant" class="action protocol-neuro">
           Convulsion Adulte & Enfant
         </button>
 
-        <button data-action="Sélection protocole PISU : Anaphylaxie adulte et enfant" class="action protocol-allergy">
+        <button id="openAnaphylaxisBtn" data-action="Sélection protocole PISU : Anaphylaxie adulte et enfant" class="action protocol-allergy">
           Anaphylaxie Adulte & Enfant
         </button>
 
-        <button data-action="Sélection protocole PISU : Hémorragie adulte et enfant" class="action protocol-bleed">
-          Hémorragie Adulte & Enfant
+        <button id="openHemorrhageBtn" data-action="Sélection protocole PISU : Hémorragie sévère adulte et enfant" class="action protocol-bleed">
+          Hémorragie sévère Adulte & Enfant
         </button>
 
-        <button data-action="Sélection protocole PISU : Hypoglycémie adulte et enfant" class="action protocol-glucose">
+        <button id="openHypoglycemiaBtn" data-action="Sélection protocole PISU : Hypoglycémie adulte et enfant" class="action protocol-glucose">
           Hypoglycémie Adulte & Enfant
         </button>
 
-        <button data-action="Sélection protocole PISU : Exacerbation d’asthme ou BPCO adulte et enfant" class="action protocol-respiratory">
+        <button id="openAsthmaBpcoBtn" data-action="Sélection protocole PISU : Exacerbation d’asthme ou BPCO adulte et enfant" class="action protocol-respiratory">
           Exacerbation d’asthme | BPCO Adulte & Enfant
         </button>
 
-        <button data-action="Sélection protocole PISU : Antalgie adulte et enfant" class="action protocol-pain">
+        <button id="openAnalgesiaBtn" data-action="Sélection protocole PISU : Antalgie adulte et enfant" class="action protocol-pain">
           Antalgie Adulte & Enfant
         </button>
       </div>
@@ -148,7 +206,7 @@
           <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
           <h2>Protocole infirmier « PISU » — ACR adulte</h2>
         </div>
-        <button id="closeAcrAdultBtn" class="ghost">Retour</button>
+        <button id="closeAcrAdultBtn" class="ghost">← Menu principal</button>
       </div>
 
       <div class="acr-sticky-tools">
@@ -260,7 +318,7 @@
 
         <p>FV / TV sans pouls.</p>
 
-        <button id="ceeBtn" data-acr-action="CEE 150-200 J puis reprise immédiate RCP pour 2 minutes" data-start-cycle="true" data-cee="true" class="action danger">
+        <button id="ceeBtn" data-acr-action="CEE 150-200 J puis reprise immédiate RCP pour 2 minutes" data-start-cycle="true" data-cee="true" data-count-badge="cee" class="action danger count-action">
           CEE 150-200 J + RCP 2 min
         </button>
 
@@ -271,15 +329,15 @@
           <span>Au 5e CEE : Cordarone 150 mg.</span>
         </div>
 
-        <button id="shockAdrenalineBtn" data-acr-action="À partir du 3e CEE : Adrénaline 1 mg toutes les 4 minutes selon protocole" data-adrenaline="true" class="action drug">
+        <button id="shockAdrenalineBtn" data-acr-action="À partir du 3e CEE : Adrénaline 1 mg toutes les 4 minutes selon protocole" data-adrenaline="true" data-count-badge="adrenaline" class="action drug count-action">
           Adrénaline 1 mg
         </button>
 
-        <button id="cordarone300Btn" data-acr-action="Au 3e CEE : Cordarone 300 mg selon protocole" data-cordarone="300" class="action drug">
+        <button id="cordarone300Btn" data-acr-action="Au 3e CEE : Cordarone 300 mg selon protocole" data-cordarone="300" data-count-badge="cordarone" class="action drug count-action">
           Cordarone 300 mg
         </button>
 
-        <button id="cordarone150Btn" data-acr-action="Au 5e CEE : Cordarone 150 mg selon protocole" data-cordarone="150" class="action drug">
+        <button id="cordarone150Btn" data-acr-action="Au 5e CEE : Cordarone 150 mg selon protocole" data-cordarone="150" data-count-badge="cordarone" class="action drug count-action">
           Cordarone 150 mg
         </button>
       </div>
@@ -292,7 +350,7 @@
           Reprise RCP 2 min
         </button>
 
-        <button id="noShockAdrenalineBtn" data-acr-action="Dès que possible : Adrénaline 1 mg toutes les 4 minutes selon protocole" data-adrenaline="true" class="action drug">
+        <button id="noShockAdrenalineBtn" data-acr-action="Dès que possible : Adrénaline 1 mg toutes les 4 minutes selon protocole" data-adrenaline="true" data-count-badge="adrenaline" class="action drug count-action">
           Adrénaline 1 mg dès que possible
         </button>
       </div>
@@ -333,6 +391,10 @@
       <button data-acr-action="Fin protocole ACR adulte" class="action">
         Fin protocole ACR adulte
       </button>
+
+      <button id="resetAcrProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole ACR adulte
+      </button>
     </section>
 
     <section id="chestPainProtocol" class="panel dt-protocol hidden">
@@ -341,7 +403,7 @@
           <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
           <h2>Protocole infirmier « PISU » — Douleur thoracique</h2>
         </div>
-        <button id="closeChestPainBtn" class="ghost">Retour</button>
+        <button id="closeChestPainBtn" class="ghost">← Menu principal</button>
       </div>
 
       <div class="dt-sticky-tools">
@@ -460,6 +522,1550 @@
       <button data-dt-action="Fin protocole douleur thoracique" class="action">
         Fin protocole douleur thoracique
       </button>
+
+      <button id="resetChestPainProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole douleur thoracique
+      </button>
+    </section>
+
+    <section id="smokeExposureProtocol" class="panel smoke-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — Exposition aux fumées A&E</h2>
+        </div>
+        <button id="closeSmokeExposureBtn" class="ghost">← Menu principal</button>
+      </div>
+
+      <div class="smoke-sticky-tools">
+        <a id="smokeCall15Btn" class="smoke-call15 smoke-call15-idle" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="smokeCall15Status">15 si gravité / ACR / bilan</small>
+        </a>
+
+        <div class="protocol-status-row smoke-status-row" style="--status-count: 4;">
+          <div class="protocol-status-card">
+            <span>ACR</span>
+            <strong id="smokeAcrStatus">À vérifier</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Gravité</span>
+            <strong id="smokeGravityStatus">À évaluer</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>O2</span>
+            <strong id="smokeOxygenStatus">À faire</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>CO / CN</span>
+            <strong id="smokeToxicStatus">À évaluer</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="smoke-section acr-context">
+        <h3>1 — ACR en contexte d'exposition aux fumées</h3>
+
+        <p><strong>Appel au 15</strong> puis se référer au protocole PISU ACR adulte ou enfant.</p>
+
+        <p><strong>Particularités :</strong> ventilation BAVU 15 L/min + Hydroxocobalamine.</p>
+
+        <p><strong>Adulte :</strong> Hydroxocobalamine / Cyanokit® 10 g IVD.</p>
+
+        <p><strong>Pédiatrique :</strong> Hydroxocobalamine / Cyanokit® 70 mg/kg, max 5 g.</p>
+
+        <button id="smokeAcrBtn" data-smoke-action="ACR en contexte d'exposition aux fumées : appel 15 puis PISU ACR adulte ou enfant ; ventilation BAVU 15 L/min ; Hydroxocobalamine selon protocole" class="action danger">
+          Patient en ACR
+        </button>
+      </div>
+
+      <div class="smoke-section">
+        <h3>2 — Patient non en ACR</h3>
+
+        <button id="smokeNoAcrBtn" data-smoke-action="Patient non en ACR" class="action good">
+          Patient non en ACR
+        </button>
+      </div>
+
+      <div class="smoke-section yellow">
+        <h3>3 — Évaluation de la gravité</h3>
+
+        <p><strong>Constantes :</strong> pose du scope, FC, SpO2, FR, glycémie capillaire, température, GCS.</p>
+
+        <p><strong>Attention :</strong> ne pas tenir compte de la SpO2 faussement rassurante.</p>
+
+        <button id="smokeConstantsBtn" data-smoke-action="Constantes réalisées : scope, FC, SpO2, FR, glycémie capillaire, température, GCS. Attention SpO2 faussement rassurante." class="action">
+          Constantes / scope faits
+        </button>
+
+        <p><strong>Signes de gravité :</strong> brûlures associées, coma, convulsions, troubles neurologiques non spécifiques, céphalées, vertiges, douleur thoracique, détresse respiratoire, lésions associées.</p>
+
+        <div class="smoke-button-grid">
+          <button id="smokeSeverityBtn" data-smoke-action="Signes de gravité ou anomalie significative sur les constantes" class="action danger">
+            Signes de gravité / anomalie constantes
+          </button>
+
+          <button id="smokeNoSeverityBtn" data-smoke-action="Absence de signes de gravité" class="action good">
+            Absence de signes de gravité
+          </button>
+        </div>
+
+        <div class="smoke-callout danger-callout">
+          Si signes de gravité ou anomalie significative sur les constantes : appel au 15 pour la suite de la prise en charge.
+        </div>
+      </div>
+
+      <div class="smoke-section blue">
+        <h3>4 — Mise en condition</h3>
+
+        <button data-smoke-action="Lutte contre l'hypothermie : couverture de survie" class="action">
+          Couverture de survie
+        </button>
+
+        <button data-smoke-action="Position demi-assise ou assise en l'absence d'autres lésions" class="action">
+          Position demi-assise / assise
+        </button>
+
+        <button id="smokeOxygenBtn" data-smoke-action="Oxygénothérapie 15 L/min, risque d'intoxication au CO associée" class="action">
+          Oxygénothérapie 15 L/min
+        </button>
+
+        <button data-smoke-action="ECG 12 dérivations réalisé" class="action">
+          ECG 12 dérivations
+        </button>
+
+        <button data-smoke-action="Dépistage atmosphérique du CO en ppm réalisé" class="action">
+          Dépistage CO atmosphérique
+        </button>
+      </div>
+
+      <div class="smoke-section yellow">
+        <h3>5 — Pose d'une voie d'abord</h3>
+
+        <p><strong>Adulte :</strong> VVP, soluté NaCl 0,9%.</p>
+        <p><strong>Pédiatrique :</strong> Ringer Lactate.</p>
+
+        <button data-smoke-action="Voie d'abord posée : adulte NaCl 0,9% ; pédiatrique Ringer Lactate" class="action">
+          Voie d'abord posée
+        </button>
+      </div>
+
+      <div class="smoke-section co">
+        <h3>6 — Intoxication au monoxyde de carbone</h3>
+
+        <p>Oxygénothérapie à maintenir à 15 L/min quelle que soit la SpO2.</p>
+
+        <button id="smokeCoSuspectedBtn" data-smoke-action="Suspicion intoxication CO : O2 15 L/min à maintenir quelle que soit la SpO2" class="action">
+          Suspicion intoxication CO
+        </button>
+
+        <button data-smoke-action="Recherche des critères d'indication au caisson hyperbare" class="action">
+          Critères caisson hyperbare recherchés
+        </button>
+      </div>
+
+      <div class="smoke-section cn">
+        <h3>7 — Intoxication aux cyanures</h3>
+
+        <p>À suspecter en contexte d'exposition aux fumées si : suie au niveau des voies aériennes supérieures ± dysphonie ± hyperhémie conjonctivale.</p>
+
+        <button id="smokeCnSuspectedBtn" data-smoke-action="Suspicion intoxication cyanures : suie VAS +/- dysphonie +/- hyperhémie conjonctivale" class="action">
+          Suspicion intoxication cyanures
+        </button>
+
+        <p><strong>Rechercher signes de gravité :</strong> neurologiques, instabilité hémodynamique ou détresse respiratoire.</p>
+
+        <button id="smokeCnSeverityBtn" data-smoke-action="Signes de gravité cyanures présents : neurologiques ou instabilité hémodynamique ou détresse respiratoire" class="action danger">
+          Signes gravité cyanures présents
+        </button>
+
+        <div class="smoke-callout danger-callout">
+          Si présents : appel au 15 pour discuter l'injection d'Hydroxocobalamine / Cyanokit®. Adulte 5 g ; pédiatrique 70 mg/kg max 5 g en IVL 15 min ; pas de contre-indication.
+        </div>
+      </div>
+
+      <div class="smoke-section call15">
+        <h3>8 — Puis bilan : appel au 15</h3>
+
+        <button id="smokeReport15Btn" data-smoke-action="Bilan exposition aux fumées prêt pour appel au 15" class="action good">
+          Bilan prêt / appel 15
+        </button>
+      </div>
+
+      <button data-smoke-action="Fin protocole exposition aux fumées A&E" class="action">
+        Fin protocole exposition aux fumées A&E
+      </button>
+
+      <button id="resetSmokeExposureProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole exposition aux fumées
+      </button>
+    </section>
+
+    <section id="burnsProtocol" class="panel burns-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — Brûlures A&E</h2>
+        </div>
+        <button id="closeBurnsBtn" class="ghost">← Menu principal</button>
+      </div>
+
+      <div class="burns-sticky-tools">
+        <a id="burnCall15Btn" class="burn-call15 burn-call15-idle" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="burnCall15Status">15 si gravité / ACR / bilan</small>
+        </a>
+
+        <div class="protocol-status-row burns-status-row" style="--status-count: 4;">
+          <div class="protocol-status-card">
+            <span>ACR</span>
+            <strong id="burnAcrStatus">À vérifier</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Gravité</span>
+            <strong id="burnGravityStatus">À évaluer</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Surface</span>
+            <strong id="burnSurfaceStatus">SCB ?</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Bilan</span>
+            <strong id="burnReportStatus">En cours</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="burn-section acr-context">
+        <h3>1 — ACR en contexte d'exposition aux fumées</h3>
+
+        <p><strong>Appel au 15</strong>, puis se référer au PISU ACR adulte ou enfant.</p>
+        <p><strong>Particularités :</strong> ventilation BAVU 15 L/min + Hydroxocobalamine.</p>
+        <p><strong>Adulte :</strong> Hydroxocobalamine / Cyanokit® 10 g IVD.</p>
+        <p><strong>Pédiatrique :</strong> Hydroxocobalamine / Cyanokit® 70 mg/kg max 5 g.</p>
+
+        <button id="burnAcrBtn" data-burn-action="ACR en contexte d'exposition aux fumées : appel 15 puis PISU ACR adulte ou enfant ; ventilation BAVU 15 L/min ; Hydroxocobalamine selon protocole" class="action danger">
+          Patient en ACR
+        </button>
+      </div>
+
+      <div class="burn-section">
+        <h3>2 — Patient non en ACR</h3>
+
+        <button id="burnNoAcrBtn" data-burn-action="Patient non en ACR" class="action good">
+          Patient non en ACR
+        </button>
+      </div>
+
+      <div class="burn-section yellow">
+        <h3>3 — Évaluation de la gravité</h3>
+
+        <p><strong>Constantes :</strong> pose du scope, FC, SpO2, FR, glycémie capillaire, température, GCS.</p>
+
+        <button id="burnConstantsBtn" data-burn-action="Constantes réalisées : scope, FC, SpO2, FR, glycémie capillaire, température, GCS" class="action">
+          Constantes / scope faits
+        </button>
+
+        <p><strong>Signes de gravité :</strong> brûlures 2e / 3e degré &gt; 10% SCT ou &gt; 5% aux âges extrêmes, lésion circulaire, atteinte cervico-faciale ou périnée, inhalation associée, brûlures chimiques ou radiologiques, détresse respiratoire ou circulatoire, présentation inquiétante, lésions associées : AVP, explosion, etc.</p>
+
+        <div class="burn-button-grid">
+          <button id="burnSeverityBtn" data-burn-action="Signes de gravité ou anomalie significative sur les constantes" class="action danger">
+            Signes de gravité / anomalie constantes
+          </button>
+
+          <button id="burnNoSeverityBtn" data-burn-action="Absence de signes de gravité" class="action good">
+            Absence de signes de gravité
+          </button>
+        </div>
+
+        <div class="burn-callout danger-callout">
+          Si signes de gravité ou anomalie significative sur les constantes : appel au 15 pour la suite de la prise en charge.
+        </div>
+      </div>
+
+      <div class="burn-section blue">
+        <h3>4 — Prise en charge : mise en condition</h3>
+
+        <button data-burn-action="Attention au risque d'hypothermie : couverture de survie" class="action">
+          Couverture de survie
+        </button>
+
+        <button data-burn-action="Si dyspnée : position demi-assise ou assise ; sinon position allongée" class="action">
+          Position adaptée
+        </button>
+
+        <button data-burn-action="Si exposition aux fumées : O2 15 L/min, risque d'intoxication au CO associée" class="action">
+          O2 15 L/min si fumées
+        </button>
+      </div>
+
+      <div class="burn-section yellow">
+        <h3>5 — Pose d'une voie d'abord</h3>
+
+        <p><strong>Adulte :</strong> VVP, soluté NaCl 0,9%.</p>
+        <p><strong>Pédiatrique :</strong> Ringer Lactate.</p>
+
+        <button data-burn-action="Voie d'abord posée : adulte NaCl 0,9% ; pédiatrique Ringer Lactate" class="action">
+          Voie d'abord posée
+        </button>
+      </div>
+
+      <div class="burn-section pain">
+        <h3>6 — Prise en charge de la douleur</h3>
+
+        <p>Cf. PISU Antalgie.</p>
+
+        <button data-burn-action="Douleur évaluée / prise en charge antalgie selon PISU Antalgie" class="action">
+          PEC douleur / antalgie
+        </button>
+      </div>
+
+      <div class="burn-section burns-care">
+        <h3>7 — Prise en charge des brûlures</h3>
+
+        <button data-burn-action="Retrait des vêtements si et seulement si non adhérents aux lésions ; sinon laisser en place" class="action">
+          Retrait vêtements si non adhérents
+        </button>
+
+        <button id="burnSurfaceLowBtn" data-burn-action="SCB adulte < 15% ou enfant < 10% : refroidissement 15 minutes avec eau à 15 degrés" class="action">
+          SCB adulte &lt;15% / enfant &lt;10%
+        </button>
+
+        <button id="burnSurfaceHighBtn" data-burn-action="SCB adulte > 15% ou enfant > 10% : refroidissement 5 minutes maximum" class="action danger">
+          SCB adulte &gt;15% / enfant &gt;10%
+        </button>
+
+        <div class="burn-callout">
+          Eau potable en grande quantité, robinet. Pas de sur-risque infectieux. Si non disponible : Burnstop®.
+        </div>
+
+        <button data-burn-action="Emballage des lésions avec dispositif stérile non adhérent type champs stériles" class="action">
+          Emballage stérile non adhérent
+        </button>
+      </div>
+
+      <div class="burn-section e-burn">
+        <h3>8 — Évaluation des brûlures / E-BURN</h3>
+
+        <p>Utiliser l'application E-BURN® sinon cf. lien PEC du grand brûlé.</p>
+
+        <button id="burnEburnBtn" data-burn-action="Évaluation des brûlures avec E-BURN ou lien PEC du grand brûlé" class="action">
+          Évaluation E-BURN / grand brûlé
+        </button>
+
+        <button id="burnPhotoReportBtn" data-burn-action="Envoi du bilan E-BURN avec photographies au médecin régulateur / appel au 15" class="action good">
+          Envoi bilan E-BURN + photos / 15
+        </button>
+      </div>
+
+      <div class="burn-section filling">
+        <h3>9 — Remplissage vasculaire</h3>
+
+        <p>Si nécessaire, guidé par le médecin régulateur. Au Ringer Lactate uniquement.</p>
+
+        <button data-burn-action="Remplissage vasculaire si nécessaire, guidé par médecin régulateur, Ringer Lactate uniquement" class="action">
+          Remplissage guidé régulation
+        </button>
+      </div>
+
+      <div class="burn-section smoke-link">
+        <h3>10 — Exposition aux fumées ?</h3>
+
+        <p>Cf. PISU Exposition aux fumées.</p>
+
+        <button data-burn-action="Exposition aux fumées associée : se référer au PISU Exposition aux fumées" class="action">
+          Exposition aux fumées associée
+        </button>
+      </div>
+
+      <div class="burn-section call15">
+        <h3>11 — Puis bilan : appel au 15</h3>
+
+        <button id="burnReport15Btn" data-burn-action="Bilan brûlures prêt pour appel au 15" class="action good">
+          Bilan prêt / appel 15
+        </button>
+      </div>
+
+      <button data-burn-action="Fin protocole brûlures A&E" class="action">
+        Fin protocole brûlures A&E
+      </button>
+
+      <button id="resetBurnsProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole brûlures
+      </button>
+    </section>
+
+    <section id="seizureProtocol" class="panel seizure-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — Crise convulsive A&E</h2>
+        </div>
+        <button id="closeSeizureBtn" class="ghost">← Menu principal</button>
+      </div>
+
+      <div class="seizure-sticky-tools">
+        <a id="seizureCall15Btn" class="seizure-call15 seizure-call15-idle" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="seizureCall15Status">15 si gravité / persistance / bilan</small>
+        </a>
+
+        <div class="protocol-status-row seizure-status-row" style="--status-count: 4;">
+          <div class="protocol-status-card">
+            <span>Gravité</span>
+            <strong id="seizureGravityStatus">À évaluer</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Convulsions</span>
+            <strong id="seizurePersistenceStatus">À vérifier</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>ACR</span>
+            <strong id="seizureAcrStatus">À vérifier</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Traitement</span>
+            <strong id="seizureTreatmentStatus">En attente</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="seizure-section yellow">
+        <h3>1 — Évaluation de la gravité</h3>
+
+        <p><strong>Constantes :</strong> pose du scope, FC, SpO2, FR, glycémie capillaire, température, GCS.</p>
+
+        <button id="seizureConstantsBtn" data-seizure-action="Constantes réalisées : scope, FC, SpO2, FR, glycémie capillaire, température, GCS" class="action">
+          Constantes / scope faits
+        </button>
+
+        <p><strong>Recherche de signes de gravité :</strong> détresse respiratoire aiguë, signes de choc, trouble du rythme, etc.</p>
+
+        <div class="seizure-button-grid">
+          <button id="seizureSeverityBtn" data-seizure-action="Signes de gravité ou anomalie significative sur les constantes" class="action danger">
+            Signes de gravité / anomalie constantes
+          </button>
+
+          <button id="seizureNoSeverityBtn" data-seizure-action="Absence de signes de gravité" class="action good">
+            Absence de signes de gravité
+          </button>
+        </div>
+
+        <div class="seizure-callout danger-callout">
+          Si signes de gravité ou anomalie significative sur les constantes : poser les patchs de défibrillation et appel au 15.
+        </div>
+
+        <button id="seizurePatchesBtn" data-seizure-action="Patchs de défibrillation posés" class="action">
+          Patchs de défibrillation posés
+        </button>
+      </div>
+
+      <div class="seizure-section decision">
+        <h3>2 — Convulsions persistantes ?</h3>
+
+        <div class="seizure-button-grid">
+          <button id="seizurePersistentYesBtn" data-seizure-action="Convulsions persistantes : oui" class="action danger">
+            Oui — convulsions persistantes
+          </button>
+
+          <button id="seizurePersistentNoBtn" data-seizure-action="Convulsions persistantes : non" class="action good">
+            Non — convulsions arrêtées
+          </button>
+        </div>
+      </div>
+
+      <div id="seizurePersistentBranch" class="seizure-branch hidden">
+        <h3>Convulsions persistantes — prise en charge</h3>
+
+        <button data-seizure-action="Positionnement : patient en position allongée, ne rien placer dans la bouche" class="action">
+          Position allongée / rien dans la bouche
+        </button>
+
+        <button data-seizure-action="Oxygénothérapie QSP SpO2 94-98%" class="action">
+          Oxygénothérapie SpO2 94-98%
+        </button>
+
+        <button data-seizure-action="Voie d'abord : VVP ; si échec, appel 15 pour discuter KTIO ; soluté NaCl 0,9%, pédiatrie Ringer Lactate" class="action">
+          Voie d'abord
+        </button>
+
+        <button data-seizure-action="Correction d'une éventuelle hypoglycémie selon PISU Hypoglycémie" class="action">
+          Correction hypoglycémie
+        </button>
+
+        <div class="seizure-section medication">
+          <h3>Traitement médicamenteux : benzodiazépine</h3>
+
+          <div class="dose-card">
+            <h4>Doses calculées / rappel</h4>
+            <p><strong>Poids utilisé :</strong> <span id="seizureWeightUsed">Non renseigné</span></p>
+            <p><strong>Catégorie utilisée :</strong> <span id="seizureCategoryUsed">Non renseignée</span></p>
+            <p><strong>Midazolam Buccolam :</strong> <span id="seizureMidazolamDose">Catégorie d’âge à renseigner</span></p>
+            <p><strong>Clonazepam Rivotril :</strong> <span id="seizureClonazepamDose">Poids à renseigner</span></p>
+            <button id="refreshSeizureDosesBtn" class="secondary">Recalculer les doses</button>
+          </div>
+
+          <p><strong>Contre-indications benzodiazépines :</strong> allergie, insuffisance respiratoire sévère, SAOS, insuffisance hépatique sévère, myasthénie.</p>
+
+          <button id="seizureMidazolamBtn" data-seizure-action="Midazolam Buccolam intra-buccal : adulte ou >10 ans 10 mg ; pédiatrie 3-12 mois 2,5 mg, 1-5 ans 5 mg, 5-10 ans 7,5 mg" data-count-badge="seizure-treatment" class="action drug count-action">
+            Midazolam intra-buccal
+          </button>
+
+          <button id="seizureClonazepamBtn" data-seizure-action="Clonazepam Rivotril IV / KTIO : adulte et pédiatrie 0,015 mg/kg, maximum 1,5 mg" data-count-badge="seizure-treatment" class="action drug count-action">
+            Clonazepam IV / KTIO
+          </button>
+
+          <div class="seizure-callout">
+            Diazepam Valium intra-rectal : contre-indiqué.
+          </div>
+        </div>
+
+        <div class="seizure-section decision">
+          <h3>3 — Persistance des convulsions ?</h3>
+
+          <div class="seizure-button-grid">
+            <button id="seizureStillPersistentBtn" data-seizure-action="Persistance des convulsions après traitement : oui" class="action danger">
+              Oui — persistance
+            </button>
+
+            <button id="seizureStoppedAfterTreatmentBtn" data-seizure-action="Fin des convulsions après traitement" class="action good">
+              Non — arrêt des convulsions
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="seizureNoPersistentBranch" class="seizure-branch hidden">
+        <h3>Convulsions non persistantes — vérifier ACR</h3>
+
+        <div class="seizure-button-grid">
+          <button id="seizureAcrYesBtn" data-seizure-action="Patient en ACR : se référer au PISU ACR adulte ou enfant, initier la RCP, appel 15" class="action danger">
+            Patient en ACR
+          </button>
+
+          <button id="seizureAcrNoBtn" data-seizure-action="Patient non en ACR" class="action good">
+            Patient non en ACR
+          </button>
+        </div>
+      </div>
+
+      <div id="seizurePostCrisisBranch" class="seizure-branch hidden">
+        <h3>Après crise / patient non ACR</h3>
+
+        <button data-seizure-action="Mise en PLS" class="action">
+          Mise en PLS
+        </button>
+
+        <button data-seizure-action="Oxygénothérapie QSP SpO2 94-98%, canule de Guedel si nécessaire" class="action">
+          Oxygénothérapie / Guedel si besoin
+        </button>
+
+        <button data-seizure-action="Pose d'une VVP : NaCl 0,9%, pédiatrie Ringer Lactate" class="action">
+          Pose VVP
+        </button>
+
+        <button data-seizure-action="Recherche d'une hypoglycémie selon PISU Hypoglycémie" class="action">
+          Recherche hypoglycémie
+        </button>
+
+        <button data-seizure-action="Préparation d'une dose de Clonazepam Rivotril si récidive" class="action drug">
+          Préparer Clonazepam si récidive
+        </button>
+
+        <button data-seizure-action="ECG 12 dérivations réalisé" class="action">
+          ECG 12 dérivations
+        </button>
+      </div>
+
+      <div class="seizure-section call15">
+        <h3>4 — Appel au 15 et bilan</h3>
+
+        <button id="seizureReport15Btn" data-seizure-action="Bilan crise convulsive prêt pour appel au 15" class="action good">
+          Bilan prêt / appel 15
+        </button>
+      </div>
+
+      <button data-seizure-action="Fin protocole crise convulsive A&E" class="action">
+        Fin protocole crise convulsive A&E
+      </button>
+
+      <button id="resetSeizureProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole crise convulsive
+      </button>
+    </section>
+
+    <section id="anaphylaxisProtocol" class="panel anaphylaxis-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — Anaphylaxie A&E</h2>
+        </div>
+        <button id="closeAnaphylaxisBtn" class="ghost">← Menu principal</button>
+      </div>
+
+      <div class="anaphylaxis-sticky-tools">
+        <a id="anaphylaxisCall15Btn" class="anaphylaxis-call15 anaphylaxis-call15-idle" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="anaphylaxisCall15Status">15 si gravité / bilan</small>
+        </a>
+
+        <div class="protocol-status-row anaphylaxis-status-row" style="--status-count: 4;">
+          <div class="protocol-status-card">
+            <span>Gravité</span>
+            <strong id="anaphylaxisGravityStatus">À évaluer</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Anaphylaxie</span>
+            <strong id="anaphylaxisConfirmStatus">À confirmer</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Adrénaline</span>
+            <strong id="anaphylaxisAdrenalineStatus">En attente</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Bilan</span>
+            <strong id="anaphylaxisReportStatus">En cours</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="anaphylaxis-section yellow">
+        <h3>1 — Évaluation de la gravité</h3>
+
+        <p><strong>Constantes :</strong> pose du scope, FC, SpO2, FR, glycémie capillaire, température, GCS.</p>
+
+        <button id="anaphylaxisConstantsBtn" data-anaphylaxis-action="Constantes réalisées : scope, FC, SpO2, FR, glycémie capillaire, température, GCS" class="action">
+          Constantes / scope faits
+        </button>
+
+        <p><strong>Signes de gravité :</strong> troubles de conscience, obstruction des VAS, détresse respiratoire aiguë, etc.</p>
+
+        <div class="anaphylaxis-button-grid">
+          <button id="anaphylaxisSeverityBtn" data-anaphylaxis-action="Signes de gravité ou anomalie significative sur les constantes" class="action danger">
+            Signes de gravité / anomalie constantes
+          </button>
+
+          <button id="anaphylaxisNoSeverityBtn" data-anaphylaxis-action="Absence de signes de gravité" class="action good">
+            Absence de signes de gravité
+          </button>
+        </div>
+
+        <div class="anaphylaxis-callout danger-callout">
+          Si signes de gravité ou anomalie significative sur les constantes : appel au 15 pour la suite de la prise en charge.
+        </div>
+      </div>
+
+      <div class="anaphylaxis-section">
+        <h3>2 — Première action : éviction de l’allergène</h3>
+
+        <button id="anaphylaxisEvictionBtn" data-anaphylaxis-action="Éviction de l’allergène réalisée si possible" class="action">
+          Éviction de l’allergène
+        </button>
+      </div>
+
+      <div class="anaphylaxis-section criteria">
+        <h3>3 — Confirmer l’anaphylaxie : critères de Sampson</h3>
+
+        <p>Une des 3 situations ci-dessous après exposition à un allergène = anaphylaxie.</p>
+
+        <div class="anaphylaxis-button-grid">
+          <button id="anaphylaxisCriteriaUrticariaBtn" data-anaphylaxis-action="Critère Sampson : atteinte urticarienne + respiratoire ou hypotension / mauvaise perfusion d’organes" class="action danger">
+            Urticaire + respiratoire / hypotension
+          </button>
+
+          <button id="anaphylaxisCriteriaTwoSystemsBtn" data-anaphylaxis-action="Critère Sampson : deux atteintes parmi cutanéomuqueuse, respiratoire, hypotension / mauvaise perfusion d’organes, gastro-intestinale persistante" class="action danger">
+            Deux atteintes associées
+          </button>
+
+          <button id="anaphylaxisCriteriaHypotensionBtn" data-anaphylaxis-action="Critère Sampson : hypotension selon âge ou baisse >30% par rapport aux valeurs habituelles" class="action danger">
+            Hypotension
+          </button>
+
+          <button id="anaphylaxisNotConfirmedBtn" data-anaphylaxis-action="Anaphylaxie non confirmée : surveillance" class="action good">
+            Anaphylaxie non confirmée
+          </button>
+        </div>
+
+        <div class="anaphylaxis-callout">
+          Atteinte respiratoire : glottique, sous-glottique, bronchospasme, dyspnée. Mauvaise perfusion d’organe : syncope, collapsus, hypotonie, coma. Cutanéomuqueuse : lèvres, langue, luette.
+        </div>
+      </div>
+
+      <div id="anaphylaxisConfirmedBranch" class="anaphylaxis-branch hidden">
+        <h3>Anaphylaxie confirmée</h3>
+
+        <div class="dose-card">
+          <h4>Doses calculées / rappel</h4>
+          <p><strong>Poids utilisé :</strong> <span id="anaphylaxisWeightUsed">Non renseigné</span></p>
+          <p><strong>Adrénaline IM :</strong> <span id="anaphylaxisAdrenalineDose">Poids à renseigner</span></p>
+          <p><strong>Stylo auto-injecteur :</strong> <span id="anaphylaxisPenDose">Poids à renseigner</span></p>
+          <p><strong>Méthylprednisolone :</strong> <span id="anaphylaxisMethylpredDose">Poids à renseigner</span></p>
+          <button id="refreshAnaphylaxisDosesBtn" class="secondary">Recalculer les doses</button>
+        </div>
+
+        <div class="anaphylaxis-section medication">
+          <h3>1 — Adrénaline IM</h3>
+
+          <p><strong>Pédiatrique / adulte :</strong> 0,01 mg/kg, maximum 0,5 mg.</p>
+          <p><strong>Stylos :</strong> 7,5-25 kg : 0,15 mg ; &gt;25 kg : 0,3 mg.</p>
+
+          <button id="anaphylaxisAdrenalineBtn" data-anaphylaxis-action="Adrénaline IM administrée selon protocole" data-count-badge="anaphylaxis-adrenaline" class="action drug count-action">
+            Adrénaline IM
+          </button>
+        </div>
+
+        <div class="anaphylaxis-section blue">
+          <h3>2 — Position d’attente</h3>
+
+          <button data-anaphylaxis-action="Position d’attente : si signes hémodynamiques au premier plan, allongé en Trendelenburg" class="action">
+            Signes HD : allongé Trendelenburg
+          </button>
+
+          <button data-anaphylaxis-action="Position d’attente : si signes respiratoires au premier plan, assis ou demi-assis" class="action">
+            Signes respiratoires : assis / demi-assis
+          </button>
+        </div>
+
+        <div class="anaphylaxis-section yellow">
+          <h3>3 — Pose d’une VVP</h3>
+
+          <p>Soluté : sérum physiologique. Pédiatrique : Ringer Lactate.</p>
+          <p>Si hémodynamique précaire : 1er remplissage 500 ml en 15 min. Pédiatrique : 10 ml/kg.</p>
+
+          <button data-anaphylaxis-action="VVP posée : sérum physiologique ; pédiatrie Ringer Lactate" class="action">
+            VVP posée
+          </button>
+
+          <button data-anaphylaxis-action="Remplissage si hémodynamique précaire : adulte 500 ml en 15 min ; pédiatrie 10 ml/kg" class="action">
+            Remplissage si HD précaire
+          </button>
+        </div>
+
+        <div class="anaphylaxis-section blue">
+          <h3>4 — Oxygénothérapie</h3>
+
+          <p>Si besoin, QSP SpO2 94-98% sauf BPCO / IRC : 88-92%.</p>
+
+          <button data-anaphylaxis-action="Oxygénothérapie si besoin : QSP SpO2 94-98%, sauf BPCO/IRC 88-92%" class="action">
+            Oxygénothérapie
+          </button>
+        </div>
+
+        <div class="anaphylaxis-section medication">
+          <h3>5 — Corticothérapie</h3>
+
+          <p>Méthylprednisolone / Solumedrol® IV : 1 mg/kg.</p>
+
+          <button id="anaphylaxisMethylpredBtn" data-anaphylaxis-action="Méthylprednisolone Solumedrol IV 1 mg/kg selon protocole" class="action drug">
+            Méthylprednisolone IV
+          </button>
+        </div>
+
+        <div class="anaphylaxis-section medication">
+          <h3>6 — Si urticaire important</h3>
+
+          <p>Dexchlorphéniramine / Polaramine® : 5 mg / 1 ml IV.</p>
+          <p>Contre-indications : &lt; 30 mois, glaucome, allergie, risque de rétention d’urine.</p>
+
+          <button data-anaphylaxis-action="Si urticaire important : Dexchlorphéniramine Polaramine 5 mg/1 ml IV selon protocole" class="action drug">
+            Dexchlorphéniramine IV
+          </button>
+        </div>
+      </div>
+
+      <div id="anaphylaxisNotConfirmedBranch" class="anaphylaxis-branch hidden">
+        <h3>Anaphylaxie non confirmée</h3>
+
+        <button data-anaphylaxis-action="Surveillance clinique et constantes" class="action good">
+          Surveillance
+        </button>
+      </div>
+
+      <div class="anaphylaxis-section call15">
+        <h3>4 — Puis bilan : appel au 15</h3>
+
+        <button id="anaphylaxisReport15Btn" data-anaphylaxis-action="Bilan anaphylaxie prêt pour appel au 15" class="action good">
+          Bilan prêt / appel 15
+        </button>
+      </div>
+
+      <button data-anaphylaxis-action="Fin protocole anaphylaxie A&E" class="action">
+        Fin protocole anaphylaxie A&E
+      </button>
+
+      <button id="resetAnaphylaxisProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole anaphylaxie
+      </button>
+    </section>
+
+    <section id="hemorrhageProtocol" class="panel hemorrhage-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — Hémorragie sévère A&E</h2>
+        </div>
+        <button id="closeHemorrhageBtn" class="ghost">← Menu principal</button>
+      </div>
+
+      <div class="hemorrhage-sticky-tools">
+        <a id="hemorrhageCall15Btn" class="hemorrhage-call15 hemorrhage-call15-idle" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="hemorrhageCall15Status">15 si échec / aggravation / bilan</small>
+        </a>
+
+        <div class="protocol-status-row hemorrhage-status-row" style="--status-count: 5;">
+          <div class="protocol-status-card">
+            <span>M</span>
+            <strong id="hemorrhageMStatus">Saignement</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>A</span>
+            <strong id="hemorrhageAStatus">VAS</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>R</span>
+            <strong id="hemorrhageRStatus">Resp.</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>C</span>
+            <strong id="hemorrhageCStatus">Circul.</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>H</span>
+            <strong id="hemorrhageHStatus">Hypo.</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="hemorrhage-section intro">
+        <h3>Algorithme « M.A.R.C.H.E. »</h3>
+        <p>Prise en charge structurée de l’hémorragie sévère : contrôler le saignement, sécuriser les VAS, ventiler/oxygéner, stabiliser l’hémodynamique, prévenir l’hypothermie et rechercher les lésions cérébrales.</p>
+      </div>
+
+      <div class="hemorrhage-section massive">
+        <h3>1 — M : Massive bleeding control</h3>
+        <p><strong>Contrôler les saignements.</strong></p>
+
+        <button id="hemorrhageManualCompressionBtn" data-hemo-action="Compression manuelle réalisée le temps de contrôler le saignement" class="action danger">
+          Compression manuelle
+        </button>
+
+        <h4>Utilisation du matériel adapté</h4>
+
+        <button data-hemo-action="Saignement de membre : pansement israélien et/ou garrot tourniquet" class="action">
+          Membre : pansement israélien / garrot
+        </button>
+
+        <button data-hemo-action="Plaie de cavité abdominale : pansement hémostatique" class="action">
+          Cavité abdominale : pansement hémostatique
+        </button>
+
+        <button data-hemo-action="Plaie de scalp : pansement compressif" class="action">
+          Scalp : pansement compressif
+        </button>
+
+        <button data-hemo-action="Fracas de bassin : ceinture pelvienne" class="action">
+          Fracas bassin : ceinture pelvienne
+        </button>
+      </div>
+
+      <div class="hemorrhage-section airway">
+        <h3>2 — A : Airway</h3>
+        <p><strong>Perméabiliser les voies aériennes supérieures.</strong></p>
+
+        <button data-hemo-action="Corps étrangers dans les VAS retirés +/- aspiration si besoin" class="action">
+          Retrait corps étrangers / aspiration
+        </button>
+
+        <button data-hemo-action="Sécurisation des VAS si nécessaire : canule de Guedel" class="action">
+          Sécurisation VAS / Guedel
+        </button>
+      </div>
+
+      <div class="hemorrhage-section respiration">
+        <h3>3 — R : Respiration</h3>
+        <p><strong>Ventiler et oxygéner.</strong></p>
+
+        <button data-hemo-action="Plaie thoracique soufflante : pansement 3 côtés" class="action danger">
+          Plaie thoracique soufflante
+        </button>
+
+        <button data-hemo-action="Ventilation inefficace : ventilation BAVU O2 15 L/min +/- canule de Guedel" class="action danger">
+          Ventilation inefficace : BAVU O2 15 L/min
+        </button>
+
+        <button data-hemo-action="Ventilation efficace : oxygénothérapie si besoin QSP SpO2 94-98%, sauf BPCO/IRC 90-92%" class="action">
+          Ventilation efficace : O2 si besoin
+        </button>
+      </div>
+
+      <div class="hemorrhage-section circulation">
+        <h3>4 — C : Circulation</h3>
+        <p><strong>Stabiliser l’hémodynamique.</strong></p>
+
+        <button data-hemo-action="Voie d’abord : VVP posée" class="action">
+          VVP posée
+        </button>
+
+        <button id="hemorrhageKtioBtn" data-hemo-action="Échec VVP : appel au 15 pour discuter KTIO" class="action danger">
+          Échec VVP / discuter KTIO
+        </button>
+
+        <div class="dose-card">
+          <h4>Doses / volumes calculés</h4>
+          <p><strong>Poids utilisé :</strong> <span id="hemorrhageWeightUsed">Non renseigné</span></p>
+          <p><strong>Ringer pédiatrique :</strong> <span id="hemorrhagePediatricFluidDose">Poids à renseigner</span></p>
+          <p><strong>Acide tranexamique pédiatrique :</strong> <span id="hemorrhageTxaDose">Poids / âge à renseigner</span></p>
+          <button id="refreshHemorrhageDosesBtn" class="secondary">Recalculer doses / volumes</button>
+        </div>
+
+        <h4>Objectifs</h4>
+        <p>Présence d’un pouls radial et état de conscience normal. Si scope disponible : PAM 60-65 mmHg sauf pour le TCG : PAM 80 mmHg et PAS &gt; 110 mmHg.</p>
+
+        <button data-hemo-action="Objectifs hémodynamiques évalués : pouls radial / conscience ; PAM 60-65 sauf TCG PAM 80 et PAS >110" class="action">
+          Objectifs HD évalués
+        </button>
+
+        <h4>Remplissage</h4>
+        <p>HemoCue® avant tout remplissage. Le strict minimum. Ringer Lactate sauf pour TCG : NaCl 0,9%, max 1500 ml. Pédiatrie : Ringer Lactate 10 ml/kg, max 3 remplissages.</p>
+
+        <button data-hemo-action="HemoCue réalisé avant remplissage" class="action">
+          HemoCue avant remplissage
+        </button>
+
+        <button data-hemo-action="Remplissage adulte : strict minimum, Ringer Lactate sauf TCG NaCl 0,9%, max 1500 ml" class="action">
+          Remplissage adulte
+        </button>
+
+        <button data-hemo-action="Remplissage pédiatrique : Ringer Lactate 10 ml/kg, max 3 remplissages" class="action">
+          Remplissage pédiatrique
+        </button>
+
+        <button id="hemorrhageGoalsNotReachedBtn" data-hemo-action="Objectifs non atteints malgré les remplissages : appel au 15" class="action danger">
+          Objectifs non atteints
+        </button>
+
+        <h4>Acide tranexamique / Exacyl®</h4>
+        <p>Adulte : 1 g IVL. Pédiatrie : &lt; 8 ans 10 mg/kg max 1 g ; &gt; 8 ans 1 g.</p>
+        <p>Contre-indications : allergie, thrombose veineuse ou artérielle aiguë, insuffisance rénale sévère, antécédent de convulsion, allergie au blé.</p>
+
+        <button id="hemorrhageTxaBtn" data-hemo-action="Acide tranexamique Exacyl administré selon protocole" data-count-badge="hemorrhage-txa" class="action drug count-action">
+          Acide tranexamique / Exacyl®
+        </button>
+      </div>
+
+      <div class="hemorrhage-section head">
+        <h3>5 — H : Head & Hypothermia</h3>
+        <p><strong>Prise en charge des lésions cérébrales et de l’hypothermie.</strong></p>
+
+        <button data-hemo-action="Hypothermie : couverture de survie, isolement du sol, pluie, etc." class="action">
+          Hypothermie : couverture / isolement
+        </button>
+
+        <button data-hemo-action="Immobilisation : rachis cervical, etc." class="action">
+          Immobilisation rachis cervical
+        </button>
+
+        <button data-hemo-action="Hypoglycémie recherchée / PISU hypoglycémie si besoin" class="action">
+          Recherche hypoglycémie
+        </button>
+
+        <button data-hemo-action="Examen : recherche de signes d’engagement intracérébral" class="action">
+          Recherche signes engagement
+        </button>
+
+        <button id="hemorrhageEngagementBtn" data-hemo-action="Signes d’engagement intracérébral présents : appel au 15" class="action danger">
+          Signes engagement présents
+        </button>
+      </div>
+
+      <div class="hemorrhage-section evacuation">
+        <h3>Évacuation</h3>
+
+        <button id="hemorrhageEvacuationBtn" data-hemo-action="Évacuation : appel au 15 pour bilan" class="action good">
+          Évacuation / appel 15 pour bilan
+        </button>
+      </div>
+
+      <div class="hemorrhage-section ryan">
+        <h3>Puis algorithme « R.Y.A.N. » en attendant le relais SMUR</h3>
+
+        <button data-hemo-action="R — Réévaluer : si dégradation, reprendre le M.A.R.C.H.E. ; si patient stabilisé, passer au Y.A.N." class="action">
+          R — Réévaluer
+        </button>
+
+        <button data-hemo-action="Y — Yeux : soins oculaires si lésion, pansement sec non compressif ; soins des oreilles si besoin" class="action">
+          Y — Yeux / oreilles
+        </button>
+
+        <button data-hemo-action="A — Analgésier : se référer au PISU antalgie" class="action">
+          A — Analgésier
+        </button>
+
+        <button data-hemo-action="N — Nettoyer : rincer les plaies souillées, pansements propres" class="action">
+          N — Nettoyer
+        </button>
+      </div>
+
+      <button data-hemo-action="Fin protocole hémorragie sévère A&E" class="action">
+        Fin protocole hémorragie sévère A&E
+      </button>
+
+      <button id="resetHemorrhageProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole hémorragie sévère
+      </button>
+    </section>
+
+    <section id="hypoglycemiaProtocol" class="panel hypoglycemia-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — Hypoglycémie A&E</h2>
+        </div>
+        <button id="closeHypoglycemiaBtn" class="ghost">← Menu principal</button>
+      </div>
+
+      <div class="hypoglycemia-sticky-tools">
+        <a id="hypoglycemiaCall15Btn" class="hypoglycemia-call15 hypoglycemia-call15-idle" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="hypoglycemiaCall15Status">15 si gravité / échec / bilan</small>
+        </a>
+
+        <div class="protocol-status-row hypoglycemia-status-row" style="--status-count: 4;">
+          <div class="protocol-status-card">
+            <span>Glycémie</span>
+            <strong id="hypoglycemiaGlycemiaStatus">À vérifier</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Gravité</span>
+            <strong id="hypoglycemiaGravityStatus">À évaluer</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Voie</span>
+            <strong id="hypoglycemiaRouteStatus">À choisir</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Bilan</span>
+            <strong id="hypoglycemiaReportStatus">En cours</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="hypoglycemia-section yellow">
+        <h3>1 — Évaluation de la gravité</h3>
+
+        <p><strong>Constantes :</strong> pose du scope, FC, SpO2, FR, glycémie capillaire, température, GCS.</p>
+        <p><strong>Hypoglycémie :</strong> glycémie capillaire &lt; 0,6 g/L ou &lt; 3,3 mmol/L.</p>
+
+        <button id="hypoglycemiaConstantsBtn" data-hypo-action="Constantes réalisées : scope, FC, SpO2, FR, glycémie capillaire, température, GCS" class="action">
+          Constantes / scope / glycémie faits
+        </button>
+
+        <div class="hypoglycemia-button-grid">
+          <button id="hypoglycemiaConfirmedBtn" data-hypo-action="Hypoglycémie confirmée : glycémie capillaire < 0,6 g/L ou < 3,3 mmol/L" class="action danger">
+            Hypoglycémie confirmée
+          </button>
+
+          <button id="hypoglycemiaCorrectedBtn" data-hypo-action="Objectif atteint : glycémie > 0,6 g/L ou > 3,3 mmol/L" class="action good">
+            Glycémie corrigée
+          </button>
+        </div>
+
+        <p><strong>Recherche de signes de gravité :</strong> présentation différente de l’ordre de départ, présentation inquiétante du patient, etc.</p>
+
+        <div class="hypoglycemia-button-grid">
+          <button id="hypoglycemiaSeverityBtn" data-hypo-action="Signes de gravité ou anomalie significative sur les constantes" class="action danger">
+            Signes de gravité / anomalie constantes
+          </button>
+
+          <button id="hypoglycemiaNoSeverityBtn" data-hypo-action="Absence de signes de gravité" class="action good">
+            Absence de signes de gravité
+          </button>
+        </div>
+
+        <div class="hypoglycemia-callout danger-callout">
+          Si signes de gravité ou anomalie significative sur les constantes : appel au 15 pour la suite de la prise en charge.
+        </div>
+      </div>
+
+      <div class="hypoglycemia-section objective">
+        <h3>2 — Objectif de prise en charge</h3>
+
+        <p>Poursuivre la prise en charge jusqu’à glycémie &gt; 0,6 g/L ou &gt; 3,3 mmol/L.</p>
+
+        <button data-hypo-action="Objectif rappelé : poursuivre jusqu’à glycémie > 0,6 g/L ou > 3,3 mmol/L" class="action">
+          Objectif noté
+        </button>
+
+        <button id="hypoglycemiaPumpBtn" data-hypo-action="Pompe à insuline présente : pompe éteinte" class="action danger">
+          Pompe à insuline : éteindre
+        </button>
+      </div>
+
+      <div class="hypoglycemia-section conscious">
+        <h3>3 — Patient conscient et capable de déglutir</h3>
+
+        <p><strong>Resucrage per os :</strong> débuter par sucres rapides : G30% PO, jus de fruits, confiture, etc. Puis poursuivre par sucres lents : pâtes, pain, etc.</p>
+
+        <button id="hypoglycemiaOralRouteBtn" data-hypo-action="Patient conscient et capable de déglutir : resucrage per os débuté par sucres rapides puis sucres lents" class="action good">
+          Resucrage per os
+        </button>
+
+        <button data-hypo-action="Sucres rapides donnés : G30% PO / jus de fruits / confiture" class="action">
+          Sucres rapides
+        </button>
+
+        <button data-hypo-action="Sucres lents poursuivis : pâtes / pain / équivalent" class="action">
+          Sucres lents
+        </button>
+      </div>
+
+      <div class="hypoglycemia-section unconscious">
+        <h3>4 — Patient inconscient ou incapable de déglutir</h3>
+
+        <button id="hypoglycemiaParenteralRouteBtn" data-hypo-action="Patient inconscient ou incapable de déglutir : voie parentérale / glucagon selon protocole" class="action danger">
+          Inconscient / ne déglutit pas
+        </button>
+
+        <h4>Mise en condition</h4>
+
+        <button data-hypo-action="Si GCS < 8/15 : mise en PLS sinon décubitus dorsal" class="action">
+          PLS si GCS &lt; 8 / décubitus dorsal
+        </button>
+
+        <button data-hypo-action="Oxygénothérapie QSP SpO2 94-98%, si IRC/obèse/BPCO QSP 88-92%" class="action">
+          Oxygénothérapie
+        </button>
+
+        <div class="dose-card">
+          <h4>Doses calculées / rappel</h4>
+          <p><strong>Poids utilisé :</strong> <span id="hypoglycemiaWeightUsed">Non renseigné</span></p>
+          <p><strong>Glucagon :</strong> <span id="hypoglycemiaGlucagonDose">Poids à renseigner</span></p>
+          <p><strong>G10 pédiatrique :</strong> <span id="hypoglycemiaG10Dose">Poids à renseigner</span></p>
+          <p><strong>G30 pédiatrique :</strong> <span id="hypoglycemiaG30Dose">Poids à renseigner</span></p>
+          <button id="refreshHypoglycemiaDosesBtn" class="secondary">Recalculer les doses</button>
+        </div>
+
+        <h4>Glucagen® / Glucagon</h4>
+
+        <p><strong>Contre-indications :</strong> allergie, phéochromocytome.</p>
+        <p><strong>Posologie :</strong> 1 mg SC ou IM, sauf contre-indication. Pédiatrique : &lt; 25 kg : 0,5 mg ; &gt; 25 kg : 1 mg.</p>
+
+        <button id="hypoglycemiaGlucagonBtn" data-hypo-action="Glucagon administré selon protocole" data-count-badge="hypoglycemia-glucagon" class="action drug count-action">
+          Glucagon SC / IM
+        </button>
+
+        <h4>Resucrage par voie parentérale</h4>
+
+        <button id="hypoglycemiaVvpBtn" data-hypo-action="VVP posée ; si échecs répétés, appel au 15 pour discuter pose KTIO" class="action">
+          VVP / discuter KTIO si échecs
+        </button>
+
+        <button id="hypoglycemiaG10Btn" data-hypo-action="G10% en débit libre sauf signes de surcharge ; pédiatrie G10% 5 ml/kg IVL" data-count-badge="hypoglycemia-g10" class="action drug count-action">
+          G10%
+        </button>
+
+        <button id="hypoglycemiaG30Btn" data-hypo-action="G30% si persistance des troubles de conscience et glycémie < 0,6 g/L ou < 3,3 mmol/L ; adulte 20 ml IVL à répéter 4 fois si besoin ; pédiatrie 1 ml/kg max 30 ml" data-count-badge="hypoglycemia-g30" class="action drug count-action">
+          G30%
+        </button>
+
+        <button data-hypo-action="Dès que possible, poursuivre le resucrage per os" class="action good">
+          Reprendre resucrage per os dès que possible
+        </button>
+      </div>
+
+      <div class="hypoglycemia-section call15">
+        <h3>5 — Puis bilan : appel au 15</h3>
+
+        <button id="hypoglycemiaReport15Btn" data-hypo-action="Bilan hypoglycémie prêt pour appel au 15" class="action good">
+          Bilan prêt / appel 15
+        </button>
+      </div>
+
+      <button data-hypo-action="Fin protocole hypoglycémie A&E" class="action">
+        Fin protocole hypoglycémie A&E
+      </button>
+
+      <button id="resetHypoglycemiaProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole hypoglycémie
+      </button>
+    </section>
+
+    <section id="asthmaBpcoProtocol" class="panel asthma-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — Exacerbation d’asthme A&E / BPCO</h2>
+        </div>
+        <button id="closeAsthmaBpcoBtn" class="ghost">← Menu principal</button>
+      </div>
+
+      <div class="asthma-sticky-tools">
+        <a id="asthmaCall15Btn" class="asthma-call15 asthma-call15-idle" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="asthmaCall15Status">15 si gravité / O2 > 8 L/min / bilan</small>
+        </a>
+
+        <div class="protocol-status-row asthma-status-row" style="--status-count: 4;">
+          <div class="protocol-status-card">
+            <span>Gravité</span>
+            <strong id="asthmaGravityStatus">À évaluer</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Type</span>
+            <strong id="asthmaTypeStatus">À choisir</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>O2</span>
+            <strong id="asthmaOxygenStatus">À faire</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Aérosol</span>
+            <strong id="asthmaAerosolStatus">En attente</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="asthma-section yellow">
+        <h3>1 — Évaluation de la gravité</h3>
+
+        <p><strong>Constantes :</strong> pose du scope, FC, SpO2, FR, glycémie capillaire, température, GCS. Asthme : DEP si disponible.</p>
+
+        <button id="asthmaConstantsBtn" data-asthma-action="Constantes réalisées : scope, FC, SpO2, FR, glycémie capillaire, température, GCS ; DEP si asthme disponible" class="action">
+          Constantes / scope / DEP si dispo
+        </button>
+
+        <div class="asthma-button-grid">
+          <button id="asthmaTypeAsthmaBtn" data-asthma-action="Type sélectionné : exacerbation d’asthme" class="action">
+            Asthme
+          </button>
+
+          <button id="asthmaTypeBpcoBtn" data-asthma-action="Type sélectionné : exacerbation de BPCO" class="action">
+            BPCO
+          </button>
+        </div>
+
+        <p><strong>Signes de gravité respiratoires :</strong> bradypnée, pauses respiratoires, détresse respiratoire marquée, cyanose, SpO2 &lt; 90% pour asthme ou &lt; 85% chez BPCO, DEP &lt; 30% de la théorique.</p>
+        <p><strong>Signes hémodynamiques :</strong> bradycardie, hypotension, signes de choc.</p>
+        <p><strong>Signes neurologiques :</strong> somnolence, confusion, coma.</p>
+
+        <div class="asthma-button-grid">
+          <button id="asthmaSeverityBtn" data-asthma-action="Signes de gravité ou anomalie significative sur les constantes" class="action danger">
+            Signes de gravité / anomalie constantes
+          </button>
+
+          <button id="asthmaNoSeverityBtn" data-asthma-action="Absence de signes de gravité" class="action good">
+            Absence de signes de gravité
+          </button>
+        </div>
+
+        <div class="asthma-callout danger-callout">
+          Si signes de gravité ou anomalie significative sur les constantes : appel au 15.
+        </div>
+      </div>
+
+      <div class="asthma-section blue">
+        <h3>2 — Position et oxygénothérapie</h3>
+
+        <button data-asthma-action="Mise en position assise ou demi-assise" class="action">
+          Position assise / demi-assise
+        </button>
+
+        <p><strong>Asthme :</strong> O2 QSP SpO2 94-98%.</p>
+        <p><strong>BPCO :</strong> O2 QSP SpO2 88-92%.</p>
+        <p>Lunettes : 1-4 L/min. MMC : 5-8 L/min. MHC : 9-15 L/min.</p>
+
+        <button id="asthmaOxygenBtn" data-asthma-action="Oxygénothérapie mise en place : asthme cible SpO2 94-98%, BPCO cible 88-92%" class="action">
+          Oxygénothérapie cible SpO2
+        </button>
+
+        <button id="asthmaHighFlowBtn" data-asthma-action="Débit nécessaire > 8 L/min pour atteindre la cible de SpO2 : appel au 15" class="action danger">
+          Débit nécessaire &gt; 8 L/min
+        </button>
+      </div>
+
+      <div class="asthma-section aerosol">
+        <h3>3 — Aérosolothérapie continue la première heure</h3>
+
+        <p>Nébulisation débit 6-8 L/min QSP objectif SpO2. Si SpO2 insuffisante : ajouter lunettes à oxygène sous le masque et appel au 15.</p>
+
+        <button id="asthmaAerosolBtn" data-asthma-action="Aérosolothérapie continue première heure débutée ; nébulisation 6-8 L/min QSP objectif SpO2" class="action">
+          Aérosolothérapie débutée
+        </button>
+
+        <button id="asthmaSpo2InsufficientBtn" data-asthma-action="SpO2 insuffisante malgré aérosol : lunettes à oxygène sous masque et appel au 15" class="action danger">
+          SpO2 insuffisante malgré aérosol
+        </button>
+
+        <div class="dose-card">
+          <h4>Doses calculées / rappel</h4>
+          <p><strong>Poids utilisé :</strong> <span id="asthmaWeightUsed">Non renseigné</span></p>
+          <p><strong>Âge utilisé :</strong> <span id="asthmaAgeUsed">Non renseigné</span></p>
+          <p><strong>Terbutaline / Bricanyl® :</strong> <span id="asthmaTerbutalineDose">Poids à renseigner</span></p>
+          <p><strong>Ipratropium / Atrovent® :</strong> <span id="asthmaIpratropiumDose">Âge à renseigner</span></p>
+          <p><strong>Méthylprednisolone :</strong> <span id="asthmaMethylpredDose">Poids à renseigner</span></p>
+          <button id="refreshAsthmaDosesBtn" class="secondary">Recalculer les doses</button>
+        </div>
+
+        <h4>Terbutaline / Bricanyl®</h4>
+        <p>5 mg sur 20 minutes. Pédiatrique : &lt; 20 kg : 2,5 mg ; &gt; 20 kg : 5 mg. Contre-indication : allergie, intolérance.</p>
+
+        <button id="asthmaTerbutalineBtn" data-asthma-action="Terbutaline Bricanyl administrée selon protocole" data-count-badge="asthma-terbutaline" class="action drug count-action">
+          Terbutaline / Bricanyl®
+        </button>
+
+        <h4>Bromure d’ipratropium / Atrovent®</h4>
+        <p>0,5 mg sur 20 minutes. Pédiatrique : &gt; 2 ans : 0,25 mg ; &gt; 6 ans : 0,5 mg. Contre-indication : allergie, intolérance.</p>
+
+        <button id="asthmaIpratropiumBtn" data-asthma-action="Bromure d’ipratropium Atrovent administré selon protocole" data-count-badge="asthma-ipratropium" class="action drug count-action">
+          Ipratropium / Atrovent®
+        </button>
+      </div>
+
+      <div class="asthma-section yellow">
+        <h3>4 — Pose d’une voie veineuse périphérique</h3>
+
+        <p>Garde-veine avec sérum physiologique. Pédiatrique : Ringer Lactate.</p>
+
+        <button data-asthma-action="VVP posée : garde-veine sérum physiologique ; pédiatrique Ringer Lactate" class="action">
+          VVP posée
+        </button>
+      </div>
+
+      <div class="asthma-section medication">
+        <h3>5 — Méthylprednisolone / Solumedrol®</h3>
+
+        <p><strong>Asthme :</strong> 1 mg/kg IVL en 20 minutes.</p>
+        <p><strong>Pédiatrique :</strong> 2 mg/kg IVL, max 80 mg.</p>
+        <p><strong>BPCO :</strong> après avis médical.</p>
+
+        <button id="asthmaMethylpredBtn" data-asthma-action="Méthylprednisolone Solumedrol administrée selon protocole" data-count-badge="asthma-methylpred" class="action drug count-action">
+          Méthylprednisolone
+        </button>
+      </div>
+
+      <div class="asthma-section call15">
+        <h3>6 — Puis bilan : appel au 15</h3>
+
+        <button id="asthmaReport15Btn" data-asthma-action="Bilan exacerbation asthme / BPCO prêt pour appel au 15" class="action good">
+          Bilan prêt / appel 15
+        </button>
+      </div>
+
+      <button data-asthma-action="Fin protocole exacerbation asthme / BPCO" class="action">
+        Fin protocole exacerbation asthme / BPCO
+      </button>
+
+      <button id="resetAsthmaBpcoProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole asthme / BPCO
+      </button>
+    </section>
+
+    <section id="analgesiaProtocol" class="panel analgesia-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 10/07/25</p>
+          <h2>Protocole infirmier « PISU » — Antalgie A&E</h2>
+        </div>
+        <button id="closeAnalgesiaBtn" class="ghost">← Menu principal</button>
+      </div>
+
+      <div class="analgesia-sticky-tools">
+        <a id="analgesiaCall15Btn" class="analgesia-call15 analgesia-call15-idle" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="analgesiaCall15Status">15 si gravité / bilan</small>
+        </a>
+
+        <div class="protocol-status-row analgesia-status-row" style="--status-count: 4;">
+          <div class="protocol-status-card">
+            <span>Gravité</span>
+            <strong id="analgesiaGravityStatus">À évaluer</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Douleur</span>
+            <strong id="analgesiaPainStatus">EN ?</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Voie</span>
+            <strong id="analgesiaRouteStatus">À choisir</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Traitement</span>
+            <strong id="analgesiaTreatmentStatus">En attente</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="analgesia-section yellow">
+        <h3>1 — Évaluation de la gravité</h3>
+
+        <p><strong>Constantes :</strong> scope, FC, SpO2, FR, glycémie capillaire, température, GCS, EN ou EVS.</p>
+
+        <button id="analgesiaConstantsBtn" data-analgesia-action="Constantes réalisées : scope, FC, SpO2, FR, glycémie capillaire, température, GCS, EN ou EVS" class="action">
+          Constantes / EN ou EVS
+        </button>
+
+        <p><strong>Recherche de signes de gravité :</strong> récupérer le bilan secouriste et le compléter si nécessaire.</p>
+
+        <div class="analgesia-button-grid">
+          <button id="analgesiaSeverityBtn" data-analgesia-action="Signes de gravité ou anomalie significative sur les constantes" class="action danger">
+            Signes de gravité / anomalie constantes
+          </button>
+
+          <button id="analgesiaNoSeverityBtn" data-analgesia-action="Absence de signes de gravité" class="action good">
+            Absence de signes de gravité
+          </button>
+        </div>
+
+        <div class="analgesia-callout danger-callout">
+          Si signes de gravité ou anomalie significative sur les constantes : appel au 15 pour la suite de la prise en charge.
+        </div>
+      </div>
+
+      <div class="analgesia-section decision">
+        <h3>2 — Geste douloureux prévisible ?</h3>
+
+        <p>Exemples : mobilisation douloureuse du malade, immobilisation d’un foyer de fracture, etc.</p>
+
+        <div class="analgesia-button-grid">
+          <button id="analgesiaPainfulGestureBtn" data-analgesia-action="Geste douloureux prévisible : débuter mesures non médicamenteuses et médicamenteuses puis MEOPA avant le geste" class="action danger">
+            Geste douloureux prévisible
+          </button>
+
+          <button id="analgesiaNoPainfulGestureBtn" data-analgesia-action="Absence de geste douloureux prévisible" class="action good">
+            Pas de geste douloureux prévisible
+          </button>
+        </div>
+      </div>
+
+      <div class="analgesia-section blue">
+        <h3>3 — Mesures non médicamenteuses</h3>
+
+        <button data-analgesia-action="Réassurance du malade" class="action">
+          Réassurance
+        </button>
+
+        <button data-analgesia-action="Position antalgique et immobilisation" class="action">
+          Position antalgique / immobilisation
+        </button>
+
+        <button data-analgesia-action="Cryothérapie si disponible" class="action">
+          Cryothérapie si disponible
+        </button>
+      </div>
+
+      <div class="analgesia-section medication">
+        <h3>4 — Mesures médicamenteuses</h3>
+
+        <p>VVP en garde-veine avec sérum physiologique. Pédiatrique : Ringer Lactate.</p>
+
+        <button id="analgesiaVvpBtn" data-analgesia-action="VVP en garde-veine : sérum physiologique ; pédiatrique Ringer Lactate" class="action">
+          VVP garde-veine
+        </button>
+
+        <div class="dose-card">
+          <h4>Doses calculées / rappel</h4>
+          <p><strong>Poids utilisé :</strong> <span id="analgesiaWeightUsed">Non renseigné</span></p>
+          <p><strong>Âge utilisé :</strong> <span id="analgesiaAgeUsed">Non renseigné</span></p>
+          <p><strong>Paracétamol :</strong> <span id="analgesiaParacetamolDose">Poids / âge à renseigner</span></p>
+          <p><strong>Morphine :</strong> <span id="analgesiaMorphineDose">Poids / âge à renseigner</span></p>
+          <p><strong>MEOPA :</strong> <span id="analgesiaMeopaDose">Adulte 9 L/min / pédiatrique 6 L/min</span></p>
+          <button id="refreshAnalgesiaDosesBtn" class="secondary">Recalculer les doses</button>
+        </div>
+
+        <h4>Si douleur modérée — EN &lt; 6</h4>
+
+        <p><strong>Paracétamol / Doliprane® :</strong> adulte 1 g toutes les 6 h. Pédiatrique : 15 mg/kg toutes les 6 h.</p>
+        <p><strong>Contre-indications :</strong> allergie, insuffisance hépatique sévère.</p>
+
+        <button id="analgesiaModeratePainBtn" data-analgesia-action="Douleur modérée EN < 6" class="action">
+          Douleur modérée EN &lt; 6
+        </button>
+
+        <button id="analgesiaParacetamolBtn" data-analgesia-action="Paracétamol administré selon protocole" data-count-badge="analgesia-paracetamol" class="action drug count-action">
+          Paracétamol
+        </button>
+
+        <h4>Si douleur sévère — EN ≥ 6</h4>
+
+        <p><strong>Morphine :</strong> adulte 2 mg si &lt; 60 kg ou 3 mg si ≥ 60 kg toutes les 5 min jusqu’à EN &lt; 6, maximum 10 mg.</p>
+        <p><strong>Pédiatrique :</strong> dose de charge 0,1 mg/kg IVL, maximum 3 mg. Puis si besoin : 0,02 mg/kg/5 min si insuffisant, 2 réinjections possibles maximum.</p>
+        <p><strong>Surveillance :</strong> efficacité EN, GCS, FR. BAVU et Naloxone disponibles.</p>
+        <p><strong>Contre-indications :</strong> allergie, &lt; 6 mois, troubles de conscience, TC, détresse respiratoire, asthme ou BPCO sévère, épilepsie non contrôlée, insuffisance hépatique sévère, traumatisme abdominal.</p>
+
+        <button id="analgesiaSeverePainBtn" data-analgesia-action="Douleur sévère EN ≥ 6" class="action danger">
+          Douleur sévère EN ≥ 6
+        </button>
+
+        <button id="analgesiaMorphineBtn" data-analgesia-action="Morphine administrée selon protocole" data-count-badge="analgesia-morphine" class="action drug count-action">
+          Morphine
+        </button>
+      </div>
+
+      <div class="analgesia-section meopa">
+        <h3>5 — Protocole MEOPA / Kalinox®</h3>
+
+        <p><strong>Contre-indications :</strong> PNT, DRA, O2 à haut débit, emphysème, embolie gazeuse, plongée récente, accident de décompression, chirurgie œil/oreille récente, abdomen aigu, traumatisme crânien ou facial, troubles de conscience, carence en B12 ou folate, claustrophobie.</p>
+        <p><strong>Posologie :</strong> adulte débuter à 9 L/min. Pédiatrique : 6 L/min. Le ballon doit rester gonflé à 50% en fin d’inspiration.</p>
+        <p><strong>Attendre 3 à 5 minutes</strong> avant de débuter le geste douloureux.</p>
+
+        <button id="analgesiaMeopaBtn" data-analgesia-action="MEOPA / Kalinox administré selon protocole ; attendre 3 à 5 minutes avant le geste douloureux" data-count-badge="analgesia-meopa" class="action drug count-action">
+          MEOPA / Kalinox®
+        </button>
+
+        <button data-analgesia-action="Contre-indication MEOPA présente : MEOPA non réalisé" class="action danger">
+          Contre-indication MEOPA présente
+        </button>
+      </div>
+
+      <div class="analgesia-section call15">
+        <h3>6 — Puis bilan : appel au 15</h3>
+
+        <button id="analgesiaReport15Btn" data-analgesia-action="Bilan antalgie prêt pour appel au 15" class="action good">
+          Bilan prêt / appel 15
+        </button>
+      </div>
+
+      <button data-analgesia-action="Fin protocole antalgie A&E" class="action">
+        Fin protocole antalgie A&E
+      </button>
+
+      <button id="resetAnalgesiaProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole antalgie
+      </button>
     </section>
 
     <section class="panel">
@@ -474,6 +2080,45 @@
       <button id="copyLog" class="secondary">Copier le journal</button>
       <button id="downloadLog" class="secondary">Exporter .txt</button>
     </section>
+
+    <section class="panel handoff-block">
+      <div class="panel-title">
+        <h2>Transfert mission</h2>
+      </div>
+
+      <div class="export-actions">
+        <button id="createHandoffBtn" class="secondary">Créer QR / code</button>
+        <button id="showImportHandoffBtn" class="secondary">Importer code</button>
+      </div>
+
+      <div id="handoffBox" class="handoff-box hidden">
+        <p>
+          Ce code permet à un collègue de reprendre la mission avec le journal en cours.
+        </p>
+
+        <img id="handoffQrImage" class="handoff-qr hidden" alt="QR code transfert mission">
+
+        <textarea id="handoffCode" readonly rows="5" placeholder="Code de transfert"></textarea>
+
+        <div class="export-actions">
+          <button id="copyHandoffCodeBtn" class="secondary">Copier le code</button>
+        </div>
+
+        <small id="handoffWarning"></small>
+      </div>
+
+      <div id="importHandoffBox" class="handoff-box hidden">
+        <p>
+          Colle ici le code ou le lien de transfert reçu.
+        </p>
+
+        <textarea id="importHandoffCode" rows="5" placeholder="Coller le code ou le lien ici"></textarea>
+
+        <div class="export-actions">
+          <button id="confirmImportHandoffBtn" class="secondary">Importer la mission</button>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -484,5 +2129,13 @@
   <script src="app.js"></script>
   <script src="acr-adulte.js"></script>
   <script src="douleur-thoracique.js"></script>
+  <script src="exposition-fumees.js"></script>
+  <script src="brulures.js"></script>
+  <script src="crise-convulsive.js"></script>
+  <script src="anaphylaxie.js"></script>
+  <script src="hemorragie.js"></script>
+  <script src="hypoglycemie.js"></script>
+  <script src="asthme-bpco.js"></script>
+  <script src="antalgie.js"></script>
 </body>
 </html>

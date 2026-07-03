@@ -20,6 +20,7 @@
   const paBothArmsBtn = document.getElementById("dtPaBothArmsBtn");
 
   const report15Btn = document.getElementById("dtReport15Btn");
+  const resetChestPainProtocolBtn = document.getElementById("resetChestPainProtocolBtn");
 
   function logDt(text) {
     if (typeof addLog === "function") {
@@ -74,17 +75,22 @@
   function openProtocol() {
     if (!protocol) return;
 
-    protocol.classList.remove("hidden");
-    setCall15State("idle");
-    protocol.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
+    if (typeof window.showProtocolPage === "function") {
+      window.showProtocolPage("chestPainProtocol");
+    } else {
+      protocol.classList.remove("hidden");
+    }
 
+    setCall15State("idle");
     logDt("ouverture protocole");
   }
 
   function closeProtocol() {
+    if (typeof window.showMainMenu === "function") {
+      window.showMainMenu();
+      return;
+    }
+
     if (!protocol) return;
     protocol.classList.add("hidden");
   }
@@ -153,4 +159,30 @@
       logDt(button.dataset.dtAction);
     });
   });
+
+  function resetChestPainProtocolWithSecurity() {
+    const confirmation = window.confirm(
+      "Remettre à zéro le protocole douleur thoracique ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+    );
+
+    if (!confirmation) {
+      logDt("reset protocole douleur thoracique annulé");
+      return;
+    }
+
+    gravityStatus.textContent = "À évaluer";
+    ecgStatus.textContent = "À faire";
+    assessmentStatus.textContent = "En cours";
+
+    setCall15State("idle");
+
+    protocol.querySelectorAll(".action-done").forEach(button => {
+      button.classList.remove("action-done", "click-feedback", "attention-flash");
+      delete button.dataset.clickCount;
+    });
+
+    logDt("protocole douleur thoracique remis à zéro");
+  }
+
+  resetChestPainProtocolBtn?.addEventListener("click", resetChestPainProtocolWithSecurity);
 })();

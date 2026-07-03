@@ -955,10 +955,1482 @@ footer {
 
 @media (max-width: 560px) {
   .dt-summary-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .dt-button-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* FEEDBACK CLIC — confirmation visuelle des actions */
+button,
+a.samu15,
+a.dt-call15,
+a.smoke-call15,
+a.burn-call15,
+a.seizure-call15,
+a.anaphylaxis-call15,
+a.hemorrhage-call15,
+a.hypoglycemia-call15,
+a.asthma-call15,
+a.analgesia-call15 {
+  position: relative;
+}
+
+.click-feedback {
+  animation: clickConfirm 0.45s ease-in-out;
+}
+
+.action-done {
+  border-color: #22c55e !important;
+  box-shadow:
+    inset 0 0 0 999px rgba(34, 197, 94, 0.16),
+    0 0 0 3px rgba(34, 197, 94, 0.35) !important;
+}
+
+.action-done::after {
+  content: "✓";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #052e16;
+  font-size: 0.85rem;
+  font-weight: 900;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+@keyframes clickConfirm {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  45% {
+    transform: scale(0.97);
+    filter: brightness(1.45);
+    box-shadow:
+      inset 0 0 0 999px rgba(34, 197, 94, 0.28),
+      0 0 0 4px rgba(34, 197, 94, 0.45);
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* SOUS-PAGES PROTOCOLES */
+.acr-protocol,
+.dt-protocol,
+.smoke-protocol,
+.burns-protocol,
+.seizure-protocol,
+.anaphylaxis-protocol,
+.hemorrhage-protocol,
+.hypoglycemia-protocol,
+.asthma-protocol,
+.analgesia-protocol {
+  min-height: calc(100vh - 120px);
+}
+
+.acr-protocol .panel-title,
+.dt-protocol .panel-title,
+.smoke-protocol .panel-title,
+.burns-protocol .panel-title,
+.seizure-protocol .panel-title,
+.anaphylaxis-protocol .panel-title,
+.hemorrhage-protocol .panel-title,
+.hypoglycemia-protocol .panel-title,
+.asthma-protocol .panel-title,
+.analgesia-protocol .panel-title {
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  background: rgba(2, 6, 23, 0.96);
+  backdrop-filter: blur(14px);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.acr-protocol .ghost,
+.dt-protocol .ghost,
+.smoke-protocol .ghost,
+.burns-protocol .ghost,
+.seizure-protocol .ghost,
+.anaphylaxis-protocol .ghost,
+.hemorrhage-protocol .ghost,
+.hypoglycemia-protocol .ghost,
+.asthma-protocol .ghost,
+.analgesia-protocol .ghost {
+  border: 1px solid var(--line);
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+/* BADGE NUMÉRIQUE — CEE / ADRÉNALINE / CORDARONE */
+.count-action.action-done::after {
+  content: attr(data-click-count);
+  background: #facc15;
+  color: #111827;
+  border: 2px solid #fff7ed;
+  font-size: 0.9rem;
+}
+
+.count-action[data-count-badge="cee"].action-done::after {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.count-action[data-count-badge="adrenaline"].action-done::after {
+  background: #f59e0b;
+  color: #111827;
+}
+
+.count-action[data-count-badge="cordarone"].action-done::after {
+  background: #22c55e;
+  color: #052e16;
+}
+
+/* petit effet "dose validée" plus lisible */
+.count-action.action-done {
+  box-shadow:
+    inset 0 0 0 999px rgba(34, 197, 94, 0.10),
+    0 0 0 3px rgba(250, 204, 21, 0.30) !important;
+}
+
+/* FIX GLOBAL — tableaux de bord protocoles toujours sur une seule ligne */
+
+/* Douleur thoracique : Gravité | ECG | Bilan */
+.dt-summary-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  align-items: stretch !important;
+}
+
+.dt-summary-card {
+  min-width: 0 !important;
+  min-height: 62px !important;
+  padding: 7px 8px !important;
+  border-radius: 12px !important;
+  background: #0b1220 !important;
+  border: 1px solid #334155 !important;
+  overflow: hidden !important;
+}
+
+.dt-summary-card span {
+  color: #e2e8f0 !important;
+  font-size: .52rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .03em !important;
+  line-height: 1.05 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.dt-summary-card strong {
+  color: #ffffff !important;
+  font-size: .82rem !important;
+  line-height: 1.05 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* On empêche le passage en colonne sur mobile */
+@media (max-width: 560px) {
+  .dt-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* STANDARD FUTURS PROTOCOLES — items visibles sur une seule ligne */
+.protocol-status-row {
+  display: grid !important;
+  grid-template-columns: repeat(var(--status-count, 3), minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  align-items: stretch !important;
+}
+
+.protocol-status-card {
+  min-width: 0 !important;
+  min-height: 62px !important;
+  padding: 7px 8px !important;
+  border-radius: 12px !important;
+  background: #0b1220 !important;
+  border: 1px solid #334155 !important;
+  overflow: hidden !important;
+}
+
+.protocol-status-card span {
+  color: #e2e8f0 !important;
+  font-size: .52rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .03em !important;
+  line-height: 1.05 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.protocol-status-card strong {
+  color: #ffffff !important;
+  font-size: .82rem !important;
+  line-height: 1.05 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* MENU PROTOCOLE PISU — pas de coche de validation */
+.protocols-block .action-done {
+  box-shadow: none !important;
+}
+
+.protocols-block .action-done::after {
+  content: none !important;
+  display: none !important;
+}
+
+.protocols-block .click-feedback {
+  animation: none !important;
+}
+
+/* RESET PROTOCOLE — bouton discret mais sécurisé */
+.reset-protocol-btn {
+  width: 100%;
+  margin-top: 14px;
+  border: 1px solid #7f1d1d !important;
+  background: rgba(127, 29, 29, 0.35) !important;
+  color: #fecaca !important;
+  font-size: .88rem;
+}
+
+.reset-protocol-btn:active {
+  background: #7f1d1d !important;
+}
+
+/* PROTOCOLE EXPOSITION AUX FUMÉES */
+.smoke-protocol {
+  border-color: #f97316;
+}
+
+.smoke-sticky-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.smoke-call15 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+.smoke-call15 strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.smoke-call15 small {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.smoke-call15-idle {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+.smoke-call15-alert {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.smoke-call15-report {
+  background: #92400e;
+  border-color: #f59e0b;
+}
+
+.smoke-call15-done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.smoke-section {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #111827;
+}
+
+.smoke-section h3,
+.smoke-section p {
+  margin: 0;
+}
+
+.smoke-section p {
+  color: var(--muted);
+}
+
+.smoke-section.acr-context {
+  border-color: #ef4444;
+  background: rgba(127, 29, 29, 0.28);
+}
+
+.smoke-section.yellow {
+  border-color: #eab308;
+  background: rgba(113, 63, 18, 0.35);
+}
+
+.smoke-section.blue {
+  border-color: #3b82f6;
+  background: rgba(30, 64, 175, 0.25);
+}
+
+.smoke-section.co {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.28);
+}
+
+.smoke-section.cn {
+  border-color: #fb7185;
+  background: rgba(127, 29, 29, 0.24);
+}
+
+.smoke-section.call15 {
+  border-color: #10b981;
+  background: rgba(6, 78, 59, 0.25);
+}
+
+.smoke-button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.smoke-callout {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+@media (max-width: 560px) {
+  .smoke-button-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .smoke-status-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* PROTOCOLE BRÛLURES */
+.burns-protocol {
+  border-color: #fb923c;
+}
+
+.burns-sticky-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.burn-call15 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+.burn-call15 strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.burn-call15 small {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.burn-call15-idle {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+.burn-call15-alert {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.burn-call15-report {
+  background: #92400e;
+  border-color: #f59e0b;
+}
+
+.burn-call15-done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.burn-section {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #111827;
+}
+
+.burn-section h3,
+.burn-section p {
+  margin: 0;
+}
+
+.burn-section p {
+  color: var(--muted);
+}
+
+.burn-section.acr-context {
+  border-color: #ef4444;
+  background: rgba(127, 29, 29, 0.28);
+}
+
+.burn-section.yellow {
+  border-color: #eab308;
+  background: rgba(113, 63, 18, 0.35);
+}
+
+.burn-section.blue {
+  border-color: #3b82f6;
+  background: rgba(30, 64, 175, 0.25);
+}
+
+.burn-section.pain {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.25);
+}
+
+.burn-section.burns-care {
+  border-color: #fb923c;
+  background: rgba(154, 52, 18, 0.25);
+}
+
+.burn-section.e-burn {
+  border-color: #22c55e;
+  background: rgba(6, 78, 59, 0.22);
+}
+
+.burn-section.filling {
+  border-color: #38bdf8;
+  background: rgba(12, 74, 110, 0.22);
+}
+
+.burn-section.smoke-link {
+  border-color: #f97316;
+  background: rgba(124, 45, 18, 0.24);
+}
+
+.burn-section.call15 {
+  border-color: #10b981;
+  background: rgba(6, 78, 59, 0.25);
+}
+
+.burn-button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.burn-callout {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--line);
+}
+
+@media (max-width: 560px) {
+  .burn-button-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .burns-status-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* PROTOCOLE CRISE CONVULSIVE */
+.seizure-protocol {
+  border-color: #a855f7;
+}
+
+.seizure-sticky-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.seizure-call15 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+.seizure-call15 strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.seizure-call15 small {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.seizure-call15-idle {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+.seizure-call15-alert {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.seizure-call15-report {
+  background: #92400e;
+  border-color: #f59e0b;
+}
+
+.seizure-call15-done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.seizure-section,
+.seizure-branch {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #111827;
+}
+
+.seizure-section h3,
+.seizure-section p,
+.seizure-branch h3,
+.seizure-branch p {
+  margin: 0;
+}
+
+.seizure-section p,
+.seizure-branch p {
+  color: var(--muted);
+}
+
+.seizure-section.yellow {
+  border-color: #eab308;
+  background: rgba(113, 63, 18, 0.35);
+}
+
+.seizure-section.decision {
+  border-color: #a855f7;
+  background: rgba(88, 28, 135, 0.25);
+}
+
+.seizure-section.medication {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.30);
+}
+
+.seizure-section.call15 {
+  border-color: #10b981;
+  background: rgba(6, 78, 59, 0.25);
+}
+
+.seizure-branch {
+  border-color: #a855f7;
+  background: rgba(88, 28, 135, 0.20);
+}
+
+.seizure-button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.seizure-callout {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--line);
+}
+
+.count-action[data-count-badge="seizure-treatment"].action-done::after {
+  background: #a855f7;
+  color: #ffffff;
+}
+
+@media (max-width: 560px) {
+  .seizure-button-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .seizure-status-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+.dose-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid #f59e0b;
+}
+
+.dose-card h4,
+.dose-card p {
+  margin: 0;
+}
+
+.dose-card p {
+  color: var(--muted);
+}
+
+.dose-card strong {
+  color: var(--text);
+}
+
+/* PROTOCOLE ANAPHYLAXIE */
+.anaphylaxis-protocol {
+  border-color: #ef4444;
+}
+
+.anaphylaxis-sticky-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.anaphylaxis-call15 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+.anaphylaxis-call15 strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.anaphylaxis-call15 small {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.anaphylaxis-call15-idle {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+.anaphylaxis-call15-alert {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.anaphylaxis-call15-report {
+  background: #92400e;
+  border-color: #f59e0b;
+}
+
+.anaphylaxis-call15-done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.anaphylaxis-section,
+.anaphylaxis-branch {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #111827;
+}
+
+.anaphylaxis-section h3,
+.anaphylaxis-section h4,
+.anaphylaxis-section p,
+.anaphylaxis-branch h3,
+.anaphylaxis-branch p {
+  margin: 0;
+}
+
+.anaphylaxis-section p,
+.anaphylaxis-branch p {
+  color: var(--muted);
+}
+
+.anaphylaxis-section.yellow {
+  border-color: #eab308;
+  background: rgba(113, 63, 18, 0.35);
+}
+
+.anaphylaxis-section.criteria {
+  border-color: #3b82f6;
+  background: rgba(30, 64, 175, 0.22);
+}
+
+.anaphylaxis-section.blue {
+  border-color: #3b82f6;
+  background: rgba(30, 64, 175, 0.22);
+}
+
+.anaphylaxis-section.medication {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.30);
+}
+
+.anaphylaxis-section.call15 {
+  border-color: #10b981;
+  background: rgba(6, 78, 59, 0.25);
+}
+
+.anaphylaxis-branch {
+  border-color: #ef4444;
+  background: rgba(127, 29, 29, 0.20);
+}
+
+.anaphylaxis-button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.anaphylaxis-callout {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--line);
+}
+
+.count-action[data-count-badge="anaphylaxis-adrenaline"].action-done::after {
+  background: #f59e0b;
+  color: #111827;
+}
+
+@media (max-width: 560px) {
+  .anaphylaxis-button-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .anaphylaxis-status-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* PROTOCOLE HEMORRAGIE SEVERE */
+.hemorrhage-protocol {
+  border-color: #ef4444;
+}
+
+.hemorrhage-sticky-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.hemorrhage-call15 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+.hemorrhage-call15 strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.hemorrhage-call15 small {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.hemorrhage-call15-idle {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+.hemorrhage-call15-alert {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.hemorrhage-call15-report {
+  background: #92400e;
+  border-color: #f59e0b;
+}
+
+.hemorrhage-call15-done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.hemorrhage-section {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #111827;
+}
+
+.hemorrhage-section h3,
+.hemorrhage-section h4,
+.hemorrhage-section p {
+  margin: 0;
+}
+
+.hemorrhage-section p {
+  color: var(--muted);
+}
+
+.hemorrhage-section.intro {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.25);
+}
+
+.hemorrhage-section.massive {
+  border-color: #ef4444;
+  background: rgba(127, 29, 29, 0.25);
+}
+
+.hemorrhage-section.airway {
+  border-color: #3b82f6;
+  background: rgba(30, 64, 175, 0.22);
+}
+
+.hemorrhage-section.respiration {
+  border-color: #38bdf8;
+  background: rgba(12, 74, 110, 0.22);
+}
+
+.hemorrhage-section.circulation {
+  border-color: #f97316;
+  background: rgba(124, 45, 18, 0.25);
+}
+
+.hemorrhage-section.head {
+  border-color: #a855f7;
+  background: rgba(88, 28, 135, 0.22);
+}
+
+.hemorrhage-section.evacuation {
+  border-color: #10b981;
+  background: rgba(6, 78, 59, 0.25);
+}
+
+.hemorrhage-section.ryan {
+  border-color: #eab308;
+  background: rgba(113, 63, 18, 0.25);
+}
+
+.count-action[data-count-badge="hemorrhage-txa"].action-done::after {
+  background: #f59e0b;
+  color: #111827;
+}
+
+@media (max-width: 560px) {
+  .hemorrhage-status-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
+
+/* PROTOCOLE HYPOGLYCEMIE */
+.hypoglycemia-protocol {
+  border-color: #22c55e;
+}
+
+.hypoglycemia-sticky-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.hypoglycemia-call15 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+.hypoglycemia-call15 strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.hypoglycemia-call15 small {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.hypoglycemia-call15-idle {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+.hypoglycemia-call15-alert {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.hypoglycemia-call15-report {
+  background: #92400e;
+  border-color: #f59e0b;
+}
+
+.hypoglycemia-call15-done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.hypoglycemia-section {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #111827;
+}
+
+.hypoglycemia-section h3,
+.hypoglycemia-section h4,
+.hypoglycemia-section p {
+  margin: 0;
+}
+
+.hypoglycemia-section p {
+  color: var(--muted);
+}
+
+.hypoglycemia-section.yellow {
+  border-color: #eab308;
+  background: rgba(113, 63, 18, 0.35);
+}
+
+.hypoglycemia-section.objective {
+  border-color: #22c55e;
+  background: rgba(6, 78, 59, 0.25);
+}
+
+.hypoglycemia-section.conscious {
+  border-color: #84cc16;
+  background: rgba(63, 98, 18, 0.25);
+}
+
+.hypoglycemia-section.unconscious {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.28);
+}
+
+.hypoglycemia-section.call15 {
+  border-color: #10b981;
+  background: rgba(6, 78, 59, 0.25);
+}
+
+.hypoglycemia-button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hypoglycemia-callout {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--line);
+}
+
+.count-action[data-count-badge="hypoglycemia-glucagon"].action-done::after,
+.count-action[data-count-badge="hypoglycemia-g10"].action-done::after,
+.count-action[data-count-badge="hypoglycemia-g30"].action-done::after {
+  background: #22c55e;
+  color: #052e16;
+}
+
+@media (max-width: 560px) {
+  .hypoglycemia-button-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hypoglycemia-status-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* PROTOCOLE ASTHME / BPCO */
+.asthma-protocol {
+  border-color: #38bdf8;
+}
+
+.asthma-sticky-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.asthma-call15 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+.asthma-call15 strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.asthma-call15 small {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.asthma-call15-idle {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+.asthma-call15-alert {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.asthma-call15-report {
+  background: #92400e;
+  border-color: #f59e0b;
+}
+
+.asthma-call15-done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.asthma-section {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #111827;
+}
+
+.asthma-section h3,
+.asthma-section h4,
+.asthma-section p {
+  margin: 0;
+}
+
+.asthma-section p {
+  color: var(--muted);
+}
+
+.asthma-section.yellow {
+  border-color: #eab308;
+  background: rgba(113, 63, 18, 0.35);
+}
+
+.asthma-section.blue {
+  border-color: #3b82f6;
+  background: rgba(30, 64, 175, 0.22);
+}
+
+.asthma-section.aerosol {
+  border-color: #38bdf8;
+  background: rgba(12, 74, 110, 0.25);
+}
+
+.asthma-section.medication {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.30);
+}
+
+.asthma-section.call15 {
+  border-color: #10b981;
+  background: rgba(6, 78, 59, 0.25);
+}
+
+.asthma-button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.asthma-callout {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--line);
+}
+
+.count-action[data-count-badge="asthma-terbutaline"].action-done::after,
+.count-action[data-count-badge="asthma-ipratropium"].action-done::after,
+.count-action[data-count-badge="asthma-methylpred"].action-done::after {
+  background: #38bdf8;
+  color: #082f49;
+}
+
+@media (max-width: 560px) {
+  .asthma-button-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .asthma-status-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* PROTOCOLE ANTALGIE */
+.analgesia-protocol {
+  border-color: #f59e0b;
+}
+
+.analgesia-sticky-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.analgesia-call15 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+.analgesia-call15 strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.analgesia-call15 small {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.analgesia-call15-idle {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+.analgesia-call15-alert {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.analgesia-call15-report {
+  background: #92400e;
+  border-color: #f59e0b;
+}
+
+.analgesia-call15-done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.analgesia-section {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #111827;
+}
+
+.analgesia-section h3,
+.analgesia-section h4,
+.analgesia-section p {
+  margin: 0;
+}
+
+.analgesia-section p {
+  color: var(--muted);
+}
+
+.analgesia-section.yellow {
+  border-color: #eab308;
+  background: rgba(113, 63, 18, 0.35);
+}
+
+.analgesia-section.decision {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.25);
+}
+
+.analgesia-section.blue {
+  border-color: #3b82f6;
+  background: rgba(30, 64, 175, 0.22);
+}
+
+.analgesia-section.medication {
+  border-color: #f97316;
+  background: rgba(124, 45, 18, 0.25);
+}
+
+.analgesia-section.meopa {
+  border-color: #22c55e;
+  background: rgba(6, 78, 59, 0.22);
+}
+
+.analgesia-section.call15 {
+  border-color: #10b981;
+  background: rgba(6, 78, 59, 0.25);
+}
+
+.analgesia-button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.analgesia-callout {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--line);
+}
+
+.count-action[data-count-badge="analgesia-paracetamol"].action-done::after,
+.count-action[data-count-badge="analgesia-morphine"].action-done::after,
+.count-action[data-count-badge="analgesia-meopa"].action-done::after {
+  background: #f59e0b;
+  color: #111827;
+}
+
+@media (max-width: 560px) {
+  .analgesia-button-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analgesia-status-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* INTERVENANT + TRANSFERT MISSION */
+.responder-block {
+  border-color: #38bdf8;
+}
+
+.handoff-block {
+  border-color: #a855f7;
+}
+
+.handoff-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.handoff-box p,
+.handoff-box small {
+  margin: 0;
+  color: var(--muted);
+}
+
+.handoff-box textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: .8rem;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #020617;
+  color: #f8fafc;
+}
+
+.handoff-qr {
+  width: min(320px, 100%);
+  justify-self: center;
+  padding: 10px;
+  border-radius: 18px;
+  background: white;
+}
+
+/* BLOCS ACCORDEON - Intervenant / Identite patient */
+.collapsible-panel {
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.collapsible-title {
+  align-items: center;
+  gap: 10px;
+}
+
+.collapse-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #0f172a;
+  color: #f8fafc;
+  font: inherit;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
+}
+
+.collapse-chevron {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+
+.collapsible-panel.collapsed .collapse-chevron {
+  transform: rotate(-90deg);
+}
+
+.collapse-summary {
+  display: block;
+  margin: 6px 0 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.collapsible-content {
+  display: grid;
+  gap: 12px;
+}
+
+.collapsible-content[hidden] {
+  display: none !important;
+}
+
+.collapsible-panel.collapsed {
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.collapsible-panel.collapsed .collapse-summary {
+  color: #cbd5e1;
 }

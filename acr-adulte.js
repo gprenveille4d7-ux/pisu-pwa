@@ -17,6 +17,7 @@
   const cordaroneStatus = document.getElementById("cordaroneStatus");
   const startTimerBtn = document.getElementById("acrStartTimer");
   const resetTimerBtn = document.getElementById("acrResetTimer");
+  const resetAcrProtocolBtn = document.getElementById("resetAcrProtocolBtn");
 
   const shockBranch = document.getElementById("shockBranch");
   const noShockBranch = document.getElementById("noShockBranch");
@@ -153,17 +154,22 @@
   function openProtocol() {
     if (!protocol) return;
 
-    protocol.classList.remove("hidden");
-    setCall15State("alert");
+    if (typeof window.showProtocolPage === "function") {
+      window.showProtocolPage("acrAdultProtocol");
+    } else {
+      protocol.classList.remove("hidden");
+    }
 
+    setCall15State("alert");
     logAcr("ouverture protocole");
-    protocol.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
   }
 
   function closeProtocol() {
+    if (typeof window.showMainMenu === "function") {
+      window.showMainMenu();
+      return;
+    }
+
     if (!protocol) return;
     protocol.classList.add("hidden");
   }
@@ -355,6 +361,7 @@
 
   startTimerBtn?.addEventListener("click", startAcrTimer);
   resetTimerBtn?.addEventListener("click", resetAcrTimer);
+  resetAcrProtocolBtn?.addEventListener("click", resetAcrProtocolWithSecurity);
 
   showShockBranchBtn?.addEventListener("click", () => {
     showBranch("shock");
@@ -398,6 +405,53 @@
       }
     });
   });
+
+  function resetAcrProtocolWithSecurity() {
+    const confirmation = window.confirm(
+      "Remettre à zéro le protocole ACR adulte ?\n\nCette action réinitialise les compteurs et les validations du protocole, mais conserve le journal mission."
+    );
+
+    if (!confirmation) {
+      logAcr("reset protocole ACR adulte annulé");
+      return;
+    }
+
+    clearInterval(acrTimerInterval);
+    acrRemaining = 120;
+    updateAcrTimer();
+
+    clearInterval(adrenalineInterval);
+    adrenalineRemaining = null;
+    adrenalineCount = 0;
+    updateAdrenalineTimer();
+
+    ceeCount = 0;
+    updateCeeCounter();
+
+    cordarone300Due = false;
+    cordarone150Due = false;
+    cordarone300Done = false;
+    cordarone150Done = false;
+    updateCordaroneStatus();
+
+    shockMedsReminder?.classList.add("hidden");
+    shockBranch?.classList.add("hidden");
+    noShockBranch?.classList.add("hidden");
+    racsBranch?.classList.add("hidden");
+
+    localStorage.removeItem("pisu-counter-cee");
+    localStorage.removeItem("pisu-counter-adrenaline");
+    localStorage.removeItem("pisu-counter-cordarone");
+
+    protocol.querySelectorAll(".action-done").forEach(button => {
+      button.classList.remove("action-done", "click-feedback", "attention-flash");
+      delete button.dataset.clickCount;
+    });
+
+    setCall15State("alert");
+
+    logAcr("protocole ACR adulte remis à zéro");
+  }
 
   updateAcrTimer();
   updateCeeCounter();
