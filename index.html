@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PISU ACR</title>
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PISU ACR">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Prototype hors ligne</p>
+      <h1>PISU ACR adulte</h1>
+    </div>
+    <button id="installBtn" class="ghost hidden">Installer</button>
+  </header>
+
+  <main>
+    <section class="panel warning">
+      <strong>Version test — à valider.</strong>
+      <span>Ne pas utiliser comme protocole officiel sans validation médicale / institutionnelle.</span>
+    </section>
+
+    <section class="timer-card">
+      <div class="timer-label">Cycle RCP</div>
+      <div id="timer" class="timer">02:00</div>
+      <div class="timer-actions">
+        <button id="startTimer" class="primary">Démarrer 2 min</button>
+        <button id="resetTimer" class="secondary">Réinitialiser</button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <button data-action="Début de prise en charge ACR" class="action">Début ACR</button>
+      <button data-action="RCP en cours" class="action">RCP</button>
+      <button data-action="Analyse du rythme" class="action">Analyse rythme</button>
+      <button data-action="Choc indiqué" class="action danger">Choc indiqué</button>
+      <button data-action="Choc non indiqué" class="action">Choc non indiqué</button>
+      <button data-action="CEE réalisé" class="action danger">CEE réalisé</button>
+      <button data-action="Adrénaline — vérifier protocole local" class="action drug">Adrénaline</button>
+      <button data-action="Cordarone / Amiodarone — vérifier protocole local" class="action drug">Cordarone</button>
+      <button data-action="Relais compressions" class="action">Relais RCP</button>
+      <button data-action="Ventilation / VAS évaluées" class="action">Ventilation</button>
+      <button data-action="ROSC / reprise activité circulatoire" class="action good">ROSC</button>
+      <button data-action="Fin de prise en charge" class="action">Fin</button>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>Journal mission</h2>
+        <button id="clearLog" class="ghost">Effacer</button>
+      </div>
+      <ol id="log"></ol>
+    </section>
+
+    <section class="export-actions">
+      <button id="copyLog" class="secondary">Copier le journal</button>
+      <button id="downloadLog" class="secondary">Exporter .txt</button>
+    </section>
+  </main>
+
+  <footer>
+    <span id="offlineStatus">Vérification hors ligne…</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

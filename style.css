@@ -1,0 +1,186 @@
+:root {
+  color-scheme: dark;
+  --bg: #020617;
+  --card: #0f172a;
+  --card2: #111827;
+  --text: #f8fafc;
+  --muted: #cbd5e1;
+  --line: #334155;
+  --primary: #e5e7eb;
+  --primaryText: #020617;
+  --danger: #7f1d1d;
+  --dangerBorder: #ef4444;
+  --drug: #78350f;
+  --drugBorder: #f59e0b;
+  --good: #064e3b;
+  --goodBorder: #10b981;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 55%);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 18px 16px 12px;
+  background: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+
+h1, h2, p { margin: 0; }
+h1 { font-size: 1.35rem; }
+h2 { font-size: 1.05rem; }
+.eyebrow { color: var(--muted); font-size: .78rem; margin-bottom: 3px; }
+
+main {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: 14px;
+}
+
+.panel, .timer-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+}
+
+.warning {
+  display: grid;
+  gap: 4px;
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.35);
+}
+
+.timer-card {
+  text-align: center;
+}
+
+.timer-label {
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .75rem;
+}
+
+.timer {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(4rem, 18vw, 7rem);
+  line-height: 1;
+  font-weight: 900;
+  margin: 8px 0 14px;
+}
+
+.timer-actions, .export-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+button {
+  appearance: none;
+  border: 0;
+  border-radius: 15px;
+  min-height: 52px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+  background: #1f2937;
+  border: 1px solid var(--line);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.primary {
+  background: var(--primary);
+  color: var(--primaryText);
+}
+
+.secondary {
+  background: #1e293b;
+}
+
+.ghost {
+  min-height: 40px;
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.hidden { display: none; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.action {
+  min-height: 72px;
+  text-align: left;
+  font-size: 1.03rem;
+}
+
+.danger {
+  background: var(--danger);
+  border-color: var(--dangerBorder);
+}
+
+.drug {
+  background: var(--drug);
+  border-color: var(--drugBorder);
+}
+
+.good {
+  background: var(--good);
+  border-color: var(--goodBorder);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#log {
+  padding-left: 22px;
+  margin: 12px 0 0;
+}
+
+#log li {
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  color: var(--muted);
+}
+
+#log strong {
+  color: var(--text);
+}
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  padding: 20px;
+  font-size: .85rem;
+}
