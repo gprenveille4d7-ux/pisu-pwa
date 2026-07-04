@@ -1,4 +1,6 @@
 ﻿const CACHE_NAME = "pisu-acr-cache-v1";
+const CHARTER_VERSION = "2026-07-04-v1";
+const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
 let timerInterval = null;
 let remaining = 120;
 let deferredPrompt = null;
@@ -26,6 +28,20 @@ const responderPanel = document.querySelector(".responder-block");
 const toggleResponderBtn = document.getElementById("toggleResponderBtn");
 const responderContent = document.getElementById("responderContent");
 const responderSummary = document.getElementById("responderSummary");
+const crewPanel = document.querySelector(".crew-block");
+const toggleCrewBtn = document.getElementById("toggleCrewBtn");
+const crewContent = document.getElementById("crewContent");
+const crewSummary = document.getElementById("crewSummary");
+const crewRosterSelect = document.getElementById("crewRosterSelect");
+const crewMissionRoleInput = document.getElementById("crewMissionRole");
+const addCrewToMissionBtn = document.getElementById("addCrewToMissionBtn");
+const missionCrewList = document.getElementById("missionCrewList");
+const crewMemberNameInput = document.getElementById("crewMemberName");
+const crewMemberDefaultRoleInput = document.getElementById("crewMemberDefaultRole");
+const crewMemberServiceInput = document.getElementById("crewMemberService");
+const crewMemberNoteInput = document.getElementById("crewMemberNote");
+const saveCrewMemberBtn = document.getElementById("saveCrewMemberBtn");
+const crewRosterList = document.getElementById("crewRosterList");
 const patientIdentityPanel = document.querySelector(".identity-block");
 const togglePatientIdentityBtn = document.getElementById("togglePatientIdentityBtn");
 const patientIdentityContent = document.getElementById("patientIdentityContent");
@@ -44,6 +60,37 @@ const handoffWarning = document.getElementById("handoffWarning");
 const importHandoffBox = document.getElementById("importHandoffBox");
 const importHandoffCode = document.getElementById("importHandoffCode");
 const confirmImportHandoffBtn = document.getElementById("confirmImportHandoffBtn");
+const floatingVitalsBtn = document.getElementById("floatingVitalsBtn");
+const vitalsOverlay = document.getElementById("vitalsOverlay");
+const vitalsSheet = document.getElementById("vitalsSheet");
+const closeVitalsSheetBtn = document.getElementById("closeVitalsSheetBtn");
+const vitalsMomentInput = document.getElementById("vitalsMoment");
+const vitalsFcInput = document.getElementById("vitalsFc");
+const vitalsTasInput = document.getElementById("vitalsTas");
+const vitalsTadInput = document.getElementById("vitalsTad");
+const vitalsSpo2Input = document.getElementById("vitalsSpo2");
+const vitalsOxygenSupportInput = document.getElementById("vitalsOxygenSupport");
+const vitalsOxygenFlowInput = document.getElementById("vitalsOxygenFlow");
+const vitalsFrInput = document.getElementById("vitalsFr");
+const vitalsTempInput = document.getElementById("vitalsTemp");
+const vitalsGcsInput = document.getElementById("vitalsGcs");
+const vitalsPainInput = document.getElementById("vitalsPain");
+const vitalsGlycemiaInput = document.getElementById("vitalsGlycemia");
+const saveVitalsBtn = document.getElementById("saveVitalsBtn");
+const clearVitalsFormBtn = document.getElementById("clearVitalsFormBtn");
+const vitalsLastSummary = document.getElementById("vitalsLastSummary");
+const vitalsHistory = document.getElementById("vitalsHistory");
+const userCharterOverlay = document.getElementById("userCharterOverlay");
+const charterAcceptCheck = document.getElementById("charterAcceptCheck");
+const acceptCharterBtn = document.getElementById("acceptCharterBtn");
+const charterVersionText = document.getElementById("charterVersionText");
+const openCharterLinkBtn = document.getElementById("openCharterLinkBtn");
+const openLegalNoticeBtn = document.getElementById("openLegalNoticeBtn");
+const openValidationStatusBtn = document.getElementById("openValidationStatusBtn");
+const legalOverlay = document.getElementById("legalOverlay");
+const legalModalTitle = document.getElementById("legalModalTitle");
+const legalModalContent = document.getElementById("legalModalContent");
+const closeLegalModalBtn = document.getElementById("closeLegalModalBtn");
 
 const ACTION_BUTTON_SELECTOR = [
   "[data-action]",
@@ -351,6 +398,7 @@ function exportText() {
   const items = getLog();
   const responder = getResponderIdentity();
   const responderLine = formatResponderIdentity(responder);
+  const crewLines = getMissionCrewLines();
 
   const exportDate = new Date().toLocaleString("fr-FR");
 
@@ -441,6 +489,11 @@ function exportText() {
     responderLine,
     "",
     "----------------------------------------",
+    "ÉQUIPAGE MISSION",
+    "----------------------------------------",
+    ...crewLines,
+    "",
+    "----------------------------------------",
     "IDENTITÉ PATIENT",
     "----------------------------------------",
     `Nom / Prénom : ${patientName}`,
@@ -469,6 +522,9 @@ function exportText() {
     "Je suis :",
     responderLine,
     "",
+    "Équipage mission :",
+    ...crewLines,
+    "",
     "Je vous appelle au sujet de :",
     `${patientName} — ${patientAge} — ${patientSex}`,
     "",
@@ -476,7 +532,11 @@ function exportText() {
     formatLogList(selectedProtocols, "À compléter : motif de l'appel / situation actuelle."),
     "",
     "Constantes vitales / signes cliniques :",
-    "À compléter : FC, FR, TA, SpO2, température, douleur, conscience, signes cliniques utiles.",
+    "Constantes initiales :",
+    getInitialVitalsLine(),
+    "",
+    "Dernières constantes :",
+    getLatestVitalsLine(),
     "",
     "Éléments ACR / rythme :",
     formatLogList(rhythmLines),
@@ -506,6 +566,9 @@ function exportText() {
     "",
     "Je pense que le problème est :",
     formatLogList(selectedProtocols, "À compléter."),
+    "",
+    "Constantes enregistrées :",
+    ...getAllVitalsLines(),
     "",
     "Actions réalisées :",
     "",
@@ -711,8 +774,10 @@ function resetMissionCompletely() {
 
   clearAllProtocolCounters();
   resetPatientIdentityFields();
+  resetMissionCrew();
   resetAllVisualValidations();
   resetMissionHandoffUi?.();
+  clearVitalsHistory();
 
   if (logEl) {
     logEl.innerHTML = "";
@@ -738,6 +803,7 @@ document.getElementById("clearLog").addEventListener("click", () => {
     clearAllProtocolCounters();
     resetMissionHandoffUi?.();
     resetAllVisualValidations();
+    clearVitalsHistory();
 
     if (logEl) logEl.innerHTML = "";
     remaining = 120;
@@ -1192,10 +1258,12 @@ function decodeMissionPayload(codeOrUrl) {
 function buildMissionPayload() {
   return {
     type: "pisu-mission-transfer",
-    version: 1,
+    version: 3,
     createdAt: new Date().toISOString(),
     responder: getResponderIdentity(),
     patient: getPatientSnapshot(),
+    crew: getMissionCrew(),
+    vitals: getVitalsEntries(),
     log: getLog()
   };
 }
@@ -1337,6 +1405,19 @@ function importMissionPayloadFromText(text) {
   }
 
   applyPatientSnapshot(payload.patient);
+
+  if (Array.isArray(payload.vitals)) {
+    saveVitalsEntries(payload.vitals);
+    renderVitalsHistory();
+  } else {
+    clearVitalsHistory();
+  }
+
+  if (Array.isArray(payload.crew)) {
+    applyMissionCrewSnapshot(payload.crew);
+  } else {
+    resetMissionCrew();
+  }
 
   localStorage.setItem("pisuLog", JSON.stringify(payload.log || []));
   loadLog();
@@ -1556,6 +1637,13 @@ function setupCollapsiblePanels() {
   );
 
   setupCollapsiblePanel(
+    crewPanel,
+    toggleCrewBtn,
+    crewContent,
+    "pisu-collapse-crew"
+  );
+
+  setupCollapsiblePanel(
     patientIdentityPanel,
     togglePatientIdentityBtn,
     patientIdentityContent,
@@ -1573,6 +1661,1002 @@ function setupCollapsiblePanels() {
   updateResponderSummary();
   updatePatientIdentitySummary();
   updateHandoffSummary();
+  updateCrewSummary();
+}
+
+const VITALS_STORAGE_KEY = "pisuVitals";
+
+function populateOrderedRangeSelect(select, config) {
+  if (!select) return;
+
+  const {
+    min,
+    max,
+    start,
+    step = 1,
+    direction = "around",
+    suffix = "",
+    decimals = 0
+  } = config;
+
+  const currentValue = select.value;
+
+  select.innerHTML = "";
+
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = "Non renseigné";
+  select.appendChild(emptyOption);
+
+  const values = [];
+
+  function addValue(value) {
+    const rounded = Number(value.toFixed(decimals));
+    if (rounded < min || rounded > max) return;
+    if (values.includes(rounded)) return;
+    values.push(rounded);
+  }
+
+  if (direction === "down") {
+    for (let value = start; value >= min; value -= step) {
+      addValue(value);
+    }
+  } else if (direction === "up") {
+    for (let value = start; value <= max; value += step) {
+      addValue(value);
+    }
+  } else {
+    for (let value = start; value <= max; value += step) {
+      addValue(value);
+    }
+
+    for (let value = start - step; value >= min; value -= step) {
+      addValue(value);
+    }
+  }
+
+  values.forEach(value => {
+    const option = document.createElement("option");
+    const textValue = decimals > 0
+      ? value.toFixed(decimals).replace(".", ",")
+      : String(value);
+
+    option.value = decimals > 0
+      ? value.toFixed(decimals)
+      : String(value);
+
+    option.textContent = `${textValue}${suffix}`;
+
+    select.appendChild(option);
+  });
+
+  if (currentValue && Array.from(select.options).some(option => option.value === currentValue)) {
+    select.value = currentValue;
+  }
+}
+
+function populateVitalsSelects() {
+  populateOrderedRangeSelect(vitalsSpo2Input, {
+    min: 40,
+    max: 100,
+    start: 100,
+    step: 1,
+    direction: "down",
+    suffix: "%"
+  });
+
+  populateOrderedRangeSelect(vitalsFcInput, {
+    min: 20,
+    max: 250,
+    start: 80,
+    step: 1,
+    direction: "around",
+    suffix: "/min"
+  });
+
+  populateOrderedRangeSelect(vitalsFrInput, {
+    min: 0,
+    max: 80,
+    start: 20,
+    step: 1,
+    direction: "around",
+    suffix: "/min"
+  });
+
+  populateOrderedRangeSelect(vitalsTasInput, {
+    min: 40,
+    max: 280,
+    start: 120,
+    step: 1,
+    direction: "around"
+  });
+
+  populateOrderedRangeSelect(vitalsTadInput, {
+    min: 20,
+    max: 180,
+    start: 70,
+    step: 1,
+    direction: "around"
+  });
+
+  populateOrderedRangeSelect(vitalsOxygenFlowInput, {
+    min: 0,
+    max: 15,
+    start: 15,
+    step: 1,
+    direction: "down",
+    suffix: " L/min"
+  });
+
+  populateOrderedRangeSelect(vitalsTempInput, {
+    min: 34,
+    max: 42,
+    start: 37,
+    step: 0.1,
+    direction: "around",
+    suffix: " °C",
+    decimals: 1
+  });
+
+  populateOrderedRangeSelect(vitalsGlycemiaInput, {
+    min: 0.2,
+    max: 6,
+    start: 1,
+    step: 0.05,
+    direction: "around",
+    suffix: " g/L",
+    decimals: 2
+  });
+
+  populateOrderedRangeSelect(vitalsGcsInput, {
+    min: 3,
+    max: 15,
+    start: 15,
+    step: 1,
+    direction: "down"
+  });
+
+  populateOrderedRangeSelect(vitalsPainInput, {
+    min: 0,
+    max: 10,
+    start: 0,
+    step: 1,
+    direction: "up",
+    suffix: "/10"
+  });
+}
+
+function normalizeDecimalValue(value) {
+  return String(value || "").trim().replace(",", ".");
+}
+
+function getCleanValue(input) {
+  return input?.value?.trim() || "";
+}
+
+function getVitalsEntries() {
+  try {
+    const entries = JSON.parse(localStorage.getItem(VITALS_STORAGE_KEY) || "[]");
+    return Array.isArray(entries) ? entries : [];
+  } catch {
+    localStorage.removeItem(VITALS_STORAGE_KEY);
+    return [];
+  }
+}
+
+function saveVitalsEntries(entries) {
+  localStorage.setItem(VITALS_STORAGE_KEY, JSON.stringify(entries));
+}
+
+function formatVitalsTime(date = new Date()) {
+  return date.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+}
+
+function buildVitalsEntry() {
+  const now = new Date();
+  const entries = getVitalsEntries();
+
+  return {
+    id: window.crypto?.randomUUID ? window.crypto.randomUUID() : `vitals-${Date.now()}`,
+    number: entries.length + 1,
+    createdAt: now.toISOString(),
+    time: formatVitalsTime(now),
+    moment: getCleanValue(vitalsMomentInput) || "Non précisé",
+    fc: getCleanValue(vitalsFcInput),
+    tas: getCleanValue(vitalsTasInput),
+    tad: getCleanValue(vitalsTadInput),
+    spo2: getCleanValue(vitalsSpo2Input),
+    oxygenSupport: getCleanValue(vitalsOxygenSupportInput),
+    oxygenFlow: normalizeDecimalValue(getCleanValue(vitalsOxygenFlowInput)),
+    fr: getCleanValue(vitalsFrInput),
+    temperature: normalizeDecimalValue(getCleanValue(vitalsTempInput)),
+    gcs: getCleanValue(vitalsGcsInput),
+    pain: getCleanValue(vitalsPainInput),
+    glycemia: normalizeDecimalValue(getCleanValue(vitalsGlycemiaInput))
+  };
+}
+
+function hasVitalsData(entry) {
+  return Boolean(
+    entry.fc ||
+    entry.tas ||
+    entry.tad ||
+    entry.spo2 ||
+    entry.oxygenSupport ||
+    entry.oxygenFlow ||
+    entry.fr ||
+    entry.temperature ||
+    entry.gcs ||
+    entry.pain ||
+    entry.glycemia
+  );
+}
+
+function formatVitalsEntry(entry, options = {}) {
+  const parts = [];
+
+  if (entry.fc) parts.push(`FC ${entry.fc}/min`);
+
+  if (entry.tas || entry.tad) {
+    const tas = entry.tas || "?";
+    const tad = entry.tad || "?";
+    parts.push(`TA ${tas}/${tad}`);
+  }
+
+  if (entry.spo2) {
+    let spo2Text = `SpO₂ ${entry.spo2}%`;
+
+    if (entry.oxygenSupport) {
+      spo2Text += ` sous ${entry.oxygenSupport}`;
+    }
+
+    if (entry.oxygenFlow) {
+      spo2Text += ` ${entry.oxygenFlow} L/min`;
+    }
+
+    parts.push(spo2Text);
+  } else if (entry.oxygenSupport || entry.oxygenFlow) {
+    let oxygenText = `O₂ ${entry.oxygenSupport || ""}`.trim();
+
+    if (entry.oxygenFlow) {
+      oxygenText += ` ${entry.oxygenFlow} L/min`;
+    }
+
+    parts.push(oxygenText);
+  }
+
+  if (entry.fr) parts.push(`FR ${entry.fr}/min`);
+  if (entry.temperature) parts.push(`T° ${entry.temperature.replace(".", ",")}°C`);
+  if (entry.gcs) parts.push(`GCS ${entry.gcs}`);
+  if (entry.pain) parts.push(`EN ${entry.pain}/10`);
+  if (entry.glycemia) parts.push(`Glycémie ${entry.glycemia.replace(".", ",")} g/L`);
+
+  if (parts.length === 0) {
+    return "Constantes non renseignées";
+  }
+
+  const prefix = options.withNumber === false
+    ? `${entry.time} — ${entry.moment}`
+    : `${entry.time} — Constantes #${entry.number} (${entry.moment})`;
+
+  return `${prefix} : ${parts.join(" ; ")}.`;
+}
+
+function clearVitalsForm() {
+  [
+    vitalsFcInput,
+    vitalsTasInput,
+    vitalsTadInput,
+    vitalsSpo2Input,
+    vitalsOxygenFlowInput,
+    vitalsFrInput,
+    vitalsTempInput,
+    vitalsGlycemiaInput
+  ].forEach(input => {
+    if (input) input.value = "";
+  });
+
+  if (vitalsOxygenSupportInput) vitalsOxygenSupportInput.value = "";
+  if (vitalsGcsInput) vitalsGcsInput.value = "";
+  if (vitalsPainInput) vitalsPainInput.value = "";
+}
+
+function renderVitalsHistory() {
+  const entries = getVitalsEntries();
+
+  if (vitalsLastSummary) {
+    if (entries.length === 0) {
+      vitalsLastSummary.textContent = "Aucune constante enregistrée.";
+    } else {
+      const latest = entries[entries.length - 1];
+      vitalsLastSummary.textContent = `Dernières constantes : ${formatVitalsEntry(latest, { withNumber: false })}`;
+    }
+  }
+
+  if (!vitalsHistory) return;
+
+  if (entries.length === 0) {
+    vitalsHistory.textContent = "Aucune constante enregistrée.";
+    return;
+  }
+
+  vitalsHistory.innerHTML = "";
+
+  entries.slice().reverse().forEach(entry => {
+    const item = document.createElement("div");
+    item.className = "vitals-history-item";
+    item.textContent = formatVitalsEntry(entry);
+    vitalsHistory.appendChild(item);
+  });
+}
+
+function openVitalsSheet() {
+  populateVitalsSelects();
+  renderVitalsHistory();
+
+  vitalsOverlay?.classList.remove("hidden");
+  vitalsSheet?.classList.remove("hidden");
+  document.body.classList.add("vitals-sheet-open");
+}
+
+function closeVitalsSheet() {
+  vitalsOverlay?.classList.add("hidden");
+  vitalsSheet?.classList.add("hidden");
+  document.body.classList.remove("vitals-sheet-open");
+}
+
+function saveCurrentVitals() {
+  const entry = buildVitalsEntry();
+
+  if (!hasVitalsData(entry)) {
+    alert("Aucune constante renseignée.");
+    return;
+  }
+
+  const entries = getVitalsEntries();
+  entries.push(entry);
+  saveVitalsEntries(entries);
+
+  const line = formatVitalsEntry(entry).replace(`${entry.time} — `, "");
+  addLog(line);
+
+  renderVitalsHistory();
+
+  if (handoffCode?.value) {
+    resetMissionHandoffUi?.();
+  }
+}
+
+function clearVitalsHistory() {
+  localStorage.removeItem(VITALS_STORAGE_KEY);
+  clearVitalsForm();
+  renderVitalsHistory();
+}
+
+function getInitialVitalsLine() {
+  const entries = getVitalsEntries();
+  if (entries.length === 0) return "À compléter.";
+
+  return formatVitalsEntry(entries[0], { withNumber: false });
+}
+
+function getLatestVitalsLine() {
+  const entries = getVitalsEntries();
+  if (entries.length === 0) return "À compléter.";
+
+  return formatVitalsEntry(entries[entries.length - 1], { withNumber: false });
+}
+
+function getAllVitalsLines() {
+  const entries = getVitalsEntries();
+
+  if (entries.length === 0) {
+    return ["À compléter."];
+  }
+
+  return entries.map(entry => formatVitalsEntry(entry));
+}
+
+function setupVitalsFeature() {
+  populateVitalsSelects();
+  renderVitalsHistory();
+
+  floatingVitalsBtn?.addEventListener("click", openVitalsSheet);
+  closeVitalsSheetBtn?.addEventListener("click", closeVitalsSheet);
+  vitalsOverlay?.addEventListener("click", closeVitalsSheet);
+
+  saveVitalsBtn?.addEventListener("click", saveCurrentVitals);
+  clearVitalsFormBtn?.addEventListener("click", clearVitalsForm);
+}
+
+window.pisuVitals = {
+  getEntries: getVitalsEntries,
+  getInitialLine: getInitialVitalsLine,
+  getLatestLine: getLatestVitalsLine,
+  getAllLines: getAllVitalsLines,
+  clear: clearVitalsHistory
+};
+
+const CREW_ROSTER_STORAGE_KEY = "pisuCrewRoster";
+const MISSION_CREW_STORAGE_KEY = "pisuMissionCrew";
+
+function createCrewId() {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  return `crew-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getCrewRoster() {
+  try {
+    const roster = JSON.parse(localStorage.getItem(CREW_ROSTER_STORAGE_KEY) || "[]");
+    return Array.isArray(roster) ? roster : [];
+  } catch {
+    localStorage.removeItem(CREW_ROSTER_STORAGE_KEY);
+    return [];
+  }
+}
+
+function saveCrewRoster(roster) {
+  const sortedRoster = roster.slice().sort((a, b) => {
+    return String(a.name || "").localeCompare(String(b.name || ""), "fr");
+  });
+
+  localStorage.setItem(CREW_ROSTER_STORAGE_KEY, JSON.stringify(sortedRoster));
+}
+
+function getMissionCrew() {
+  try {
+    const crew = JSON.parse(localStorage.getItem(MISSION_CREW_STORAGE_KEY) || "[]");
+    return Array.isArray(crew) ? crew : [];
+  } catch {
+    localStorage.removeItem(MISSION_CREW_STORAGE_KEY);
+    return [];
+  }
+}
+
+function saveMissionCrew(crew) {
+  localStorage.setItem(MISSION_CREW_STORAGE_KEY, JSON.stringify(crew));
+}
+
+function formatCrewMember(member) {
+  return [
+    member.missionRole || "Équipier",
+    member.name || "Nom non renseigné",
+    member.defaultRole || "",
+    member.service || ""
+  ].filter(Boolean).join(" — ");
+}
+
+function formatCrewRosterMember(member) {
+  return [
+    member.name || "Nom non renseigné",
+    member.defaultRole || "Fonction non renseignée",
+    member.service || ""
+  ].filter(Boolean).join(" — ");
+}
+
+function getMissionCrewLines() {
+  const crew = getMissionCrew();
+
+  if (crew.length === 0) {
+    return ["Aucun équipage associé renseigné."];
+  }
+
+  return crew.map(member => formatCrewMember(member));
+}
+
+function getMissionCrewSummaryText() {
+  const crew = getMissionCrew();
+
+  if (crew.length === 0) {
+    return "Aucun équipage renseigné";
+  }
+
+  return crew
+    .map(member => `${member.missionRole || "Équipier"} : ${member.name || "Nom non renseigné"}`)
+    .join(" · ");
+}
+
+function updateCrewSummary() {
+  if (!crewSummary) return;
+  crewSummary.textContent = getMissionCrewSummaryText();
+}
+
+function renderCrewRosterSelect() {
+  if (!crewRosterSelect) return;
+
+  const selectedValue = crewRosterSelect.value;
+  const roster = getCrewRoster();
+
+  crewRosterSelect.innerHTML = "";
+
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = roster.length === 0
+    ? "Aucun collègue enregistré"
+    : "Sélectionner un collègue";
+  crewRosterSelect.appendChild(emptyOption);
+
+  roster.forEach(member => {
+    const option = document.createElement("option");
+    option.value = member.id;
+    option.textContent = formatCrewRosterMember(member);
+    crewRosterSelect.appendChild(option);
+  });
+
+  if (selectedValue && roster.some(member => member.id === selectedValue)) {
+    crewRosterSelect.value = selectedValue;
+  }
+}
+
+function renderMissionCrewList() {
+  if (!missionCrewList) return;
+
+  const crew = getMissionCrew();
+
+  if (crew.length === 0) {
+    missionCrewList.textContent = "Aucun équipage renseigné pour cette mission.";
+    updateCrewSummary();
+    return;
+  }
+
+  missionCrewList.innerHTML = "";
+
+  crew.forEach(member => {
+    const item = document.createElement("div");
+    item.className = "crew-item";
+
+    const main = document.createElement("div");
+    main.className = "crew-item-main";
+    main.textContent = `${member.missionRole || "Équipier"} — ${member.name || "Nom non renseigné"}`;
+
+    const meta = document.createElement("div");
+    meta.className = "crew-item-meta";
+    meta.textContent = [
+      member.defaultRole || "",
+      member.service || ""
+    ].filter(Boolean).join(" — ") || "Fonction / service non renseignés";
+
+    const actions = document.createElement("div");
+    actions.className = "crew-item-actions";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "crew-mini-btn danger";
+    removeBtn.textContent = "Retirer de la mission";
+    removeBtn.addEventListener("click", () => {
+      removeCrewFromMission(member.id);
+    });
+
+    actions.appendChild(removeBtn);
+
+    item.appendChild(main);
+    item.appendChild(meta);
+    item.appendChild(actions);
+
+    missionCrewList.appendChild(item);
+  });
+
+  updateCrewSummary();
+}
+
+function renderCrewRosterList() {
+  if (!crewRosterList) return;
+
+  const roster = getCrewRoster();
+
+  if (roster.length === 0) {
+    crewRosterList.textContent = "Aucun collègue enregistré.";
+    return;
+  }
+
+  crewRosterList.innerHTML = "";
+
+  roster.forEach(member => {
+    const item = document.createElement("div");
+    item.className = "crew-item";
+
+    const main = document.createElement("div");
+    main.className = "crew-item-main";
+    main.textContent = member.name || "Nom non renseigné";
+
+    const meta = document.createElement("div");
+    meta.className = "crew-item-meta";
+    meta.textContent = [
+      member.defaultRole || "Fonction non renseignée",
+      member.service || "",
+      member.note || ""
+    ].filter(Boolean).join(" — ");
+
+    const actions = document.createElement("div");
+    actions.className = "crew-item-actions";
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "crew-mini-btn danger";
+    deleteBtn.textContent = "Supprimer du carnet";
+    deleteBtn.addEventListener("click", () => {
+      deleteCrewMemberFromRoster(member.id);
+    });
+
+    actions.appendChild(deleteBtn);
+
+    item.appendChild(main);
+    item.appendChild(meta);
+    item.appendChild(actions);
+
+    crewRosterList.appendChild(item);
+  });
+}
+
+function renderCrewFeature() {
+  renderCrewRosterSelect();
+  renderMissionCrewList();
+  renderCrewRosterList();
+  updateCrewSummary();
+}
+
+function clearCrewMemberForm() {
+  if (crewMemberNameInput) crewMemberNameInput.value = "";
+  if (crewMemberDefaultRoleInput) crewMemberDefaultRoleInput.value = "";
+  if (crewMemberServiceInput) crewMemberServiceInput.value = "";
+  if (crewMemberNoteInput) crewMemberNoteInput.value = "";
+}
+
+function saveCrewMemberToRoster() {
+  const name = crewMemberNameInput?.value?.trim() || "";
+
+  if (!name) {
+    alert("Nom du collègue à renseigner.");
+    return;
+  }
+
+  const roster = getCrewRoster();
+  const existing = roster.find(member => {
+    return String(member.name || "").toLowerCase() === name.toLowerCase();
+  });
+
+  if (existing) {
+    alert("Ce collègue existe déjà dans le carnet.");
+    return;
+  }
+
+  const member = {
+    id: createCrewId(),
+    name,
+    defaultRole: crewMemberDefaultRoleInput?.value || "",
+    service: crewMemberServiceInput?.value?.trim() || "",
+    note: crewMemberNoteInput?.value?.trim() || ""
+  };
+
+  roster.push(member);
+  saveCrewRoster(roster);
+
+  clearCrewMemberForm();
+  renderCrewFeature();
+
+  if (crewRosterSelect) {
+    crewRosterSelect.value = member.id;
+  }
+
+  if (typeof addLog === "function") {
+    addLog(`Carnet équipage : collègue ajouté — ${formatCrewRosterMember(member)}`);
+  }
+}
+
+function addSelectedCrewToMission() {
+  const selectedId = crewRosterSelect?.value || "";
+
+  if (!selectedId) {
+    alert("Sélectionne un collègue dans le carnet.");
+    return;
+  }
+
+  const roster = getCrewRoster();
+  const selectedMember = roster.find(member => member.id === selectedId);
+
+  if (!selectedMember) {
+    alert("Collègue introuvable dans le carnet.");
+    return;
+  }
+
+  const missionRole = crewMissionRoleInput?.value || "Équipier";
+  const missionCrew = getMissionCrew();
+
+  const missionMember = {
+    id: selectedMember.id,
+    name: selectedMember.name,
+    defaultRole: selectedMember.defaultRole,
+    service: selectedMember.service,
+    note: selectedMember.note || "",
+    missionRole,
+    addedAt: new Date().toISOString()
+  };
+
+  const existingIndex = missionCrew.findIndex(member => member.id === selectedId);
+
+  if (existingIndex >= 0) {
+    missionCrew[existingIndex] = missionMember;
+    saveMissionCrew(missionCrew);
+
+    if (typeof addLog === "function") {
+      addLog(`Équipage mission : rôle mis à jour — ${formatCrewMember(missionMember)}`);
+    }
+  } else {
+    missionCrew.push(missionMember);
+    saveMissionCrew(missionCrew);
+
+    if (typeof addLog === "function") {
+      addLog(`Équipage mission : ${formatCrewMember(missionMember)}`);
+    }
+  }
+
+  renderCrewFeature();
+
+  if (handoffCode?.value) {
+    resetMissionHandoffUi?.();
+  }
+}
+
+function removeCrewFromMission(memberId) {
+  const missionCrew = getMissionCrew();
+  const member = missionCrew.find(item => item.id === memberId);
+
+  if (!member) return;
+
+  const updatedCrew = missionCrew.filter(item => item.id !== memberId);
+  saveMissionCrew(updatedCrew);
+
+  if (typeof addLog === "function") {
+    addLog(`Correction équipage : retrait mission — ${formatCrewMember(member)}`);
+  }
+
+  renderCrewFeature();
+
+  if (handoffCode?.value) {
+    resetMissionHandoffUi?.();
+  }
+}
+
+function deleteCrewMemberFromRoster(memberId) {
+  const roster = getCrewRoster();
+  const member = roster.find(item => item.id === memberId);
+
+  if (!member) return;
+
+  const confirmation = window.confirm(
+    `Supprimer définitivement ce collègue du carnet ?\n\n${formatCrewRosterMember(member)}`
+  );
+
+  if (!confirmation) return;
+
+  const updatedRoster = roster.filter(item => item.id !== memberId);
+  saveCrewRoster(updatedRoster);
+
+  const missionCrew = getMissionCrew();
+  const wasInMission = missionCrew.some(item => item.id === memberId);
+
+  if (wasInMission) {
+    const updatedMissionCrew = missionCrew.filter(item => item.id !== memberId);
+    saveMissionCrew(updatedMissionCrew);
+
+    if (typeof addLog === "function") {
+      addLog(`Correction équipage : collègue supprimé du carnet et retiré de la mission — ${formatCrewRosterMember(member)}`);
+    }
+
+    if (handoffCode?.value) {
+      resetMissionHandoffUi?.();
+    }
+  }
+
+  renderCrewFeature();
+}
+
+function resetMissionCrew() {
+  localStorage.removeItem(MISSION_CREW_STORAGE_KEY);
+  renderCrewFeature();
+}
+
+function applyMissionCrewSnapshot(crew = []) {
+  if (Array.isArray(crew)) {
+    saveMissionCrew(crew);
+  } else {
+    localStorage.removeItem(MISSION_CREW_STORAGE_KEY);
+  }
+
+  renderCrewFeature();
+}
+
+function setupCrewFeature() {
+  renderCrewFeature();
+
+  saveCrewMemberBtn?.addEventListener("click", saveCrewMemberToRoster);
+  addCrewToMissionBtn?.addEventListener("click", addSelectedCrewToMission);
+}
+
+window.pisuCrew = {
+  getRoster: getCrewRoster,
+  getMissionCrew,
+  getMissionCrewLines,
+  resetMissionCrew,
+  applyMissionCrewSnapshot
+};
+
+function getCharterAcceptance() {
+  try {
+    return JSON.parse(localStorage.getItem(CHARTER_STORAGE_KEY) || "{}");
+  } catch {
+    localStorage.removeItem(CHARTER_STORAGE_KEY);
+    return {};
+  }
+}
+
+function hasAcceptedCurrentCharter() {
+  const acceptance = getCharterAcceptance();
+
+  return Boolean(
+    acceptance.accepted === true &&
+    acceptance.version === CHARTER_VERSION &&
+    acceptance.acceptedAt
+  );
+}
+
+function showUserCharter() {
+  userCharterOverlay?.classList.remove("hidden");
+  document.body.classList.add("vitals-sheet-open");
+
+  if (charterVersionText) {
+    charterVersionText.textContent = `Version charte : ${CHARTER_VERSION}`;
+  }
+
+  if (charterAcceptCheck) {
+    charterAcceptCheck.checked = false;
+  }
+
+  if (acceptCharterBtn) {
+    acceptCharterBtn.disabled = true;
+  }
+}
+
+function hideUserCharter() {
+  userCharterOverlay?.classList.add("hidden");
+  document.body.classList.remove("vitals-sheet-open");
+}
+
+function acceptUserCharter() {
+  if (!charterAcceptCheck?.checked) return;
+
+  const acceptance = {
+    accepted: true,
+    version: CHARTER_VERSION,
+    acceptedAt: new Date().toISOString()
+  };
+
+  localStorage.setItem(CHARTER_STORAGE_KEY, JSON.stringify(acceptance));
+  hideUserCharter();
+
+  if (typeof addLog === "function") {
+    addLog(`Charte utilisateur acceptée — version ${CHARTER_VERSION}`);
+  }
+}
+
+function getCharterHtml() {
+  return `
+    <h3>Charte utilisateur</h3>
+    <p><strong>Version :</strong> ${escapeHtml(CHARTER_VERSION)}</p>
+    <p>Cette application est un aide-mémoire numérique destiné à accompagner l’utilisation de protocoles PISU dans un cadre professionnel ou de formation.</p>
+    <p>Elle ne remplace pas le jugement clinique, la formation professionnelle, les protocoles institutionnels validés, ni les consignes du médecin régulateur.</p>
+    <p>L’utilisateur reste responsable de vérifier la pertinence des informations affichées, l’adéquation au patient, les doses, les contre-indications, les protocoles locaux et les décisions prises pendant la prise en charge.</p>
+    <p>Les données saisies doivent être limitées au strict nécessaire et utilisées dans le respect du secret professionnel et de la protection des données.</p>
+    <p>Cette version est un prototype fonctionnel à valider.</p>
+  `;
+}
+
+function getLegalNoticeHtml() {
+  return `
+    <h3>Mentions légales</h3>
+
+    <p><strong>Nom de l’application :</strong> Protocole PISU</p>
+    <p><strong>Version :</strong> prototype à valider</p>
+    <p><strong>Éditeur :</strong> À compléter</p>
+    <p><strong>Contact :</strong> À compléter</p>
+    <p><strong>Hébergement :</strong> GitHub Pages — GitHub, Inc. — à compléter précisément si diffusion publique.</p>
+
+    <h3>Finalité</h3>
+    <p>Application d’aide-mémoire et de traçabilité locale autour de protocoles PISU. Elle ne constitue pas une prescription médicale autonome.</p>
+
+    <h3>Données</h3>
+    <p>Les données saisies peuvent inclure des informations de prise en charge. Elles sont destinées à rester locales dans l’appareil, sauf action volontaire de l’utilisateur : export, copie ou transfert QR.</p>
+
+    <h3>Prototype</h3>
+    <p>Cette version doit être relue, validée et autorisée avant toute utilisation institutionnelle.</p>
+  `;
+}
+
+function getValidationStatusHtml() {
+  const acceptance = getCharterAcceptance();
+
+  if (!acceptance.accepted) {
+    return `
+      <h3>Validation utilisateur</h3>
+      <p>La charte utilisateur n’a pas encore été validée sur cet appareil.</p>
+      <p><strong>Version actuelle :</strong> ${escapeHtml(CHARTER_VERSION)}</p>
+    `;
+  }
+
+  const acceptedDate = acceptance.acceptedAt
+    ? new Date(acceptance.acceptedAt).toLocaleString("fr-FR")
+    : "Date inconnue";
+
+  const status = acceptance.version === CHARTER_VERSION
+    ? "Version actuelle validée"
+    : "Ancienne version validée — une nouvelle validation sera demandée";
+
+  return `
+    <h3>Validation utilisateur</h3>
+    <p><strong>Statut :</strong> ${escapeHtml(status)}</p>
+    <p><strong>Version validée :</strong> ${escapeHtml(acceptance.version || "Non renseignée")}</p>
+    <p><strong>Version actuelle :</strong> ${escapeHtml(CHARTER_VERSION)}</p>
+    <p><strong>Date de validation :</strong> ${escapeHtml(acceptedDate)}</p>
+  `;
+}
+
+function openLegalModal(title, html) {
+  if (legalModalTitle) {
+    legalModalTitle.textContent = title;
+  }
+
+  if (legalModalContent) {
+    legalModalContent.innerHTML = html;
+  }
+
+  legalOverlay?.classList.remove("hidden");
+  document.body.classList.add("vitals-sheet-open");
+}
+
+function closeLegalModal() {
+  legalOverlay?.classList.add("hidden");
+  document.body.classList.remove("vitals-sheet-open");
+}
+
+function setupUserCharterFeature() {
+  charterAcceptCheck?.addEventListener("change", () => {
+    if (acceptCharterBtn) {
+      acceptCharterBtn.disabled = !charterAcceptCheck.checked;
+    }
+  });
+
+  acceptCharterBtn?.addEventListener("click", acceptUserCharter);
+
+  openCharterLinkBtn?.addEventListener("click", () => {
+    openLegalModal("Charte utilisateur", getCharterHtml());
+  });
+
+  openLegalNoticeBtn?.addEventListener("click", () => {
+    openLegalModal("Mentions légales", getLegalNoticeHtml());
+  });
+
+  openValidationStatusBtn?.addEventListener("click", () => {
+    openLegalModal("Validation", getValidationStatusHtml());
+  });
+
+  closeLegalModalBtn?.addEventListener("click", closeLegalModal);
+
+  legalOverlay?.addEventListener("click", event => {
+    if (event.target === legalOverlay) {
+      closeLegalModal();
+    }
+  });
+
+  if (!hasAcceptedCurrentCharter()) {
+    showUserCharter();
+  }
 }
 
 function restoreCounterBadges() {
@@ -1590,9 +2674,12 @@ function restoreCounterBadges() {
 restoreCounterBadges();
 
 loadResponderIdentity();
+setupCrewFeature();
 setupCollapsiblePanels();
 invalidateHandoffWhenPatientChanges();
 setupMobileLayoutOffsets();
+setupVitalsFeature();
+setupUserCharterFeature();
 checkMissionHashImport();
 
 loadLog();

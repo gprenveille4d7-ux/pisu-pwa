@@ -10,9 +10,67 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=153">
+  <link rel="stylesheet" href="style.css?v=158">
 </head>
 <body>
+  <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
+    <section class="charter-modal">
+      <div class="charter-header">
+        <p class="eyebrow">Première utilisation</p>
+        <h1 id="charterTitle">Charte utilisateur — Protocole PISU</h1>
+      </div>
+
+      <div class="charter-content">
+        <h2>Objet de l’application</h2>
+        <p>
+          Cette application est un aide-mémoire numérique destiné à accompagner l’utilisation de protocoles PISU dans un cadre professionnel ou de formation.
+        </p>
+
+        <h2>Limites d’utilisation</h2>
+        <p>
+          L’application ne remplace pas le jugement clinique, la formation professionnelle, les protocoles institutionnels validés, ni les consignes du médecin régulateur.
+        </p>
+
+        <h2>Responsabilité de l’utilisateur</h2>
+        <p>
+          L’utilisateur reste responsable de vérifier la pertinence des informations affichées, l’adéquation au patient, les doses, les contre-indications, les protocoles locaux et les décisions prises pendant la prise en charge.
+        </p>
+
+        <h2>Données saisies</h2>
+        <p>
+          Les données saisies dans l’application peuvent concerner une prise en charge médicale. Elles doivent être limitées au strict nécessaire. L’utilisateur doit respecter les règles applicables à la confidentialité, au secret professionnel et à la protection des données.
+        </p>
+
+        <h2>Prototype à valider</h2>
+        <p>
+          Cette version est un prototype fonctionnel à valider. Toute utilisation opérationnelle doit être autorisée et vérifiée selon l’organisation locale.
+        </p>
+
+        <h2>Urgence vitale</h2>
+        <p>
+          En situation d’urgence, l’application ne doit jamais retarder les gestes prioritaires, l’appel au 15, la réanimation, la défibrillation ou la prise en charge clinique.
+        </p>
+      </div>
+
+      <label class="charter-check">
+        <input id="charterAcceptCheck" type="checkbox">
+        <span>
+          Je reconnais avoir lu cette charte, comprendre les limites de l’application et rester responsable de mon usage professionnel.
+        </span>
+      </label>
+
+      <div class="charter-actions">
+        <button id="acceptCharterBtn" class="primary" type="button" disabled>
+          Accepter et utiliser l’application
+        </button>
+      </div>
+
+      <small id="charterVersionText" class="charter-version">
+        Version charte : 2026-07-04-v1
+      </small>
+    </section>
+  </div>
+
   <header class="app-header">
     <div>
       <p class="eyebrow">Prototype hors ligne</p>
@@ -64,6 +122,102 @@
             <input id="responderService" type="text" placeholder="Ex : Urgences / SMUR Falaise">
           </label>
         </div>
+      </div>
+    </section>
+
+    <section class="panel crew-block collapsible-panel">
+      <div class="panel-title collapsible-title">
+        <button id="toggleCrewBtn" class="collapse-toggle" type="button" aria-expanded="true" aria-controls="crewContent">
+          <span>Équipage mission</span>
+          <span class="collapse-chevron">▾</span>
+        </button>
+      </div>
+
+      <small id="crewSummary" class="collapse-summary">Aucun équipage renseigné</small>
+
+      <div id="crewContent" class="collapsible-content">
+        <div class="crew-subsection">
+          <h3>Sélection rapide</h3>
+
+          <div class="crew-grid">
+            <label>
+              Collègue enregistré
+              <select id="crewRosterSelect">
+                <option value="">Sélectionner un collègue</option>
+              </select>
+            </label>
+
+            <label>
+              Rôle sur la mission
+              <select id="crewMissionRole">
+                <option value="Conducteur">Conducteur</option>
+                <option value="Équipier">Équipier</option>
+                <option value="IDE">IDE</option>
+                <option value="Médecin">Médecin</option>
+                <option value="Ambulancier">Ambulancier</option>
+                <option value="Observateur">Observateur</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </label>
+          </div>
+
+          <button id="addCrewToMissionBtn" class="secondary" type="button">
+            Ajouter à l’équipage mission
+          </button>
+        </div>
+
+        <div class="crew-subsection">
+          <h3>Équipage actuel</h3>
+          <div id="missionCrewList" class="crew-list">
+            Aucun équipage renseigné pour cette mission.
+          </div>
+        </div>
+
+        <details class="crew-details">
+          <summary>Ajouter un collègue au carnet</summary>
+
+          <div class="crew-grid crew-form">
+            <label>
+              Nom / Prénom
+              <input id="crewMemberName" type="text" placeholder="Ex : Nicolas Martin">
+            </label>
+
+            <label>
+              Fonction habituelle
+              <select id="crewMemberDefaultRole">
+                <option value="">Non renseignée</option>
+                <option value="Ambulancier">Ambulancier</option>
+                <option value="Conducteur ambulancier">Conducteur ambulancier</option>
+                <option value="IDE">IDE</option>
+                <option value="Médecin">Médecin</option>
+                <option value="Aide-soignant">Aide-soignant</option>
+                <option value="Secouriste">Secouriste</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </label>
+
+            <label>
+              Service / base
+              <input id="crewMemberService" type="text" placeholder="Ex : SMUR Falaise">
+            </label>
+
+            <label>
+              Note
+              <input id="crewMemberNote" type="text" placeholder="Optionnel">
+            </label>
+          </div>
+
+          <button id="saveCrewMemberBtn" class="secondary" type="button">
+            Enregistrer dans le carnet
+          </button>
+        </details>
+
+        <details class="crew-details">
+          <summary>Carnet équipage</summary>
+          <div id="crewRosterList" class="crew-list">
+            Aucun collègue enregistré.
+          </div>
+        </details>
       </div>
     </section>
 
@@ -2341,10 +2495,158 @@
     ← Menu
   </button>
 
+  <button id="floatingVitalsBtn" class="floating-vitals-button" type="button">
+    📊 Constantes
+  </button>
+
+  <div id="vitalsOverlay" class="vitals-overlay hidden"></div>
+
+  <section id="vitalsSheet" class="vitals-sheet hidden" aria-label="Saisie des constantes">
+    <div class="vitals-sheet-header">
+      <div>
+        <p class="eyebrow">Bilan clinique</p>
+        <h2>Constantes</h2>
+      </div>
+
+      <button id="closeVitalsSheetBtn" class="ghost" type="button">Fermer</button>
+    </div>
+
+    <div class="vitals-last-summary" id="vitalsLastSummary">
+      Aucune constante enregistrée.
+    </div>
+
+    <div class="vitals-grid">
+      <label>
+        Moment
+        <select id="vitalsMoment">
+          <option value="Initial">Initial</option>
+          <option value="Réévaluation">Réévaluation</option>
+          <option value="Après traitement">Après traitement</option>
+          <option value="Après RACS">Après RACS</option>
+          <option value="Avant transport">Avant transport</option>
+          <option value="À l’arrivée">À l’arrivée</option>
+        </select>
+      </label>
+
+      <label>
+        FC /min
+        <select id="vitalsFc">
+          <option value="">Non renseignée</option>
+        </select>
+      </label>
+
+      <label>
+        TA systolique
+        <select id="vitalsTas">
+          <option value="">Non renseignée</option>
+        </select>
+      </label>
+
+      <label>
+        TA diastolique
+        <select id="vitalsTad">
+          <option value="">Non renseignée</option>
+        </select>
+      </label>
+
+      <label>
+        SpO₂ %
+        <select id="vitalsSpo2">
+          <option value="">Non renseignée</option>
+        </select>
+      </label>
+
+      <label>
+        Support O₂
+        <select id="vitalsOxygenSupport">
+          <option value="">Non renseigné</option>
+          <option value="Air ambiant">Air ambiant</option>
+          <option value="Lunettes O₂">Lunettes O₂</option>
+          <option value="Masque moyenne concentration">Masque moyenne concentration</option>
+          <option value="Masque haute concentration">Masque haute concentration</option>
+          <option value="BAVU">BAVU</option>
+          <option value="Aérosol">Aérosol</option>
+          <option value="Ventilation">Ventilation</option>
+        </select>
+      </label>
+
+      <label>
+        Débit O₂ L/min
+        <select id="vitalsOxygenFlow">
+          <option value="">Non renseigné</option>
+        </select>
+      </label>
+
+      <label>
+        FR /min
+        <select id="vitalsFr">
+          <option value="">Non renseignée</option>
+        </select>
+      </label>
+
+      <label>
+        Température °C
+        <select id="vitalsTemp">
+          <option value="">Non renseignée</option>
+        </select>
+      </label>
+
+      <label>
+        GCS
+        <select id="vitalsGcs">
+          <option value="">Non renseigné</option>
+        </select>
+      </label>
+
+      <label>
+        Douleur EN
+        <select id="vitalsPain">
+          <option value="">Non renseignée</option>
+        </select>
+      </label>
+
+      <label>
+        Glycémie g/L
+        <select id="vitalsGlycemia">
+          <option value="">Non renseignée</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="vitals-actions">
+      <button id="saveVitalsBtn" class="primary" type="button">Enregistrer constantes</button>
+      <button id="clearVitalsFormBtn" class="secondary" type="button">Vider formulaire</button>
+    </div>
+
+    <details class="vitals-history-details">
+      <summary>Historique des constantes</summary>
+      <div id="vitalsHistory" class="vitals-history">
+        Aucune constante enregistrée.
+      </div>
+    </details>
+  </section>
+
   <footer>
     <span id="offlineStatus">Vérification hors ligne...</span>
     <span class="creator-credit">Créée par Guillaume Prenveille — Infirmier des urgences de Falaise</span>
   </footer>
+
+  <footer class="legal-footer">
+    <button id="openCharterLinkBtn" type="button">Charte utilisateur</button>
+    <button id="openLegalNoticeBtn" type="button">Mentions légales</button>
+    <button id="openValidationStatusBtn" type="button">Validation</button>
+  </footer>
+
+  <div id="legalOverlay" class="legal-overlay hidden" role="dialog" aria-modal="true">
+    <section class="legal-modal">
+      <div class="legal-header">
+        <h2 id="legalModalTitle">Informations</h2>
+        <button id="closeLegalModalBtn" class="ghost" type="button">Fermer</button>
+      </div>
+
+      <div id="legalModalContent" class="legal-content"></div>
+    </section>
+  </div>
 
   <script src="app.js"></script>
   <script src="acr-adulte.js"></script>
