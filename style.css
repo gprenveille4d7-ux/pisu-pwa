@@ -2434,3 +2434,243 @@ a.analgesia-call15 {
 .collapsible-panel.collapsed .collapse-summary {
   color: #cbd5e1;
 }
+
+.handoff-block.collapsed .handoff-box {
+  display: none;
+}
+
+/* RETOUR MENU FLOTTANT MOBILE */
+.floating-back-menu {
+  display: none;
+}
+
+.floating-back-menu.hidden {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  body.protocol-mode .floating-back-menu {
+    position: fixed;
+    right: calc(14px + env(safe-area-inset-right));
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    z-index: 120;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 48px;
+    padding: 0 16px;
+
+    border-radius: 999px;
+    border: 1px solid #38bdf8;
+    background: #0f172a;
+    color: #f8fafc;
+
+    font-size: 0.95rem;
+    font-weight: 900;
+
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  body.protocol-mode .floating-back-menu:active {
+    transform: scale(0.96);
+    background: #1e293b;
+  }
+}
+
+/* TITRE PROTOCOLE MOBILE - moins colle au haut */
+@media (max-width: 700px) {
+  main > section[id$="Protocol"] > .panel-title {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+
+    margin-top: calc(10px + env(safe-area-inset-top));
+    padding-top: 8px;
+  }
+
+  main > section[id$="Protocol"] > .panel-title > .ghost {
+    display: none !important;
+  }
+
+  main > section[id$="Protocol"] {
+    padding-bottom: calc(86px + env(safe-area-inset-bottom));
+  }
+}
+
+/* RESET MISSION PRINCIPALE */
+.new-mission-block {
+  border-color: #7f1d1d;
+}
+
+.new-mission-text {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.new-mission-reset-btn {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid #ef4444 !important;
+  background: rgba(127, 29, 29, 0.42) !important;
+  color: #fecaca !important;
+  font-weight: 900;
+}
+
+.new-mission-reset-btn:active {
+  background: #7f1d1d !important;
+  transform: scale(0.98);
+}
+
+/* PROTOCOLE ACR ENFANT */
+.child-acr-protocol {
+  border-color: #f97316;
+}
+
+.child-acr-sticky-tools {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.child-acr-call15 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+.child-acr-call15 strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.child-acr-call15 small {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.child-acr-call15-idle {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+.child-acr-call15-alert {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.child-acr-call15-report {
+  background: #92400e;
+  border-color: #f59e0b;
+}
+
+.child-acr-call15-done {
+  background: #166534;
+  border-color: #22c55e;
+}
+
+.child-acr-section,
+.child-acr-branch {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #111827;
+}
+
+.child-acr-section h3,
+.child-acr-section p,
+.child-acr-branch h3,
+.child-acr-branch p {
+  margin: 0;
+}
+
+.child-acr-section p,
+.child-acr-branch p {
+  color: var(--muted);
+}
+
+.child-acr-section.danger-zone {
+  border-color: #ef4444;
+  background: rgba(127, 29, 29, 0.28);
+}
+
+.child-acr-section.yellow {
+  border-color: #eab308;
+  background: rgba(113, 63, 18, 0.35);
+}
+
+.child-acr-section.blue {
+  border-color: #3b82f6;
+  background: rgba(30, 64, 175, 0.22);
+}
+
+.child-acr-section.rcp {
+  border-color: #38bdf8;
+  background: rgba(12, 74, 110, 0.25);
+}
+
+.child-acr-section.decision {
+  border-color: #a855f7;
+  background: rgba(88, 28, 135, 0.24);
+}
+
+.child-acr-branch {
+  border-color: #f97316;
+  background: rgba(124, 45, 18, 0.22);
+}
+
+.child-acr-button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.child-acr-callout {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #f59e0b;
+}
+
+.count-action[data-count-badge="child-cee"].action-done::after {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.count-action[data-count-badge="child-adrenaline"].action-done::after {
+  background: #f59e0b;
+  color: #111827;
+}
+
+.count-action[data-count-badge="child-cordarone"].action-done::after {
+  background: #22c55e;
+  color: #052e16;
+}
+
+@media (max-width: 560px) {
+  .child-acr-button-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .child-acr-status-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}

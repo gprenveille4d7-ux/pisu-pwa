@@ -7,6 +7,8 @@ const timerEl = document.getElementById("timer");
 const logEl = document.getElementById("log");
 const offlineStatus = document.getElementById("offlineStatus");
 const installBtn = document.getElementById("installBtn");
+const floatingBackMenuBtn = document.getElementById("floatingBackMenuBtn");
+const newMissionResetBtn = document.getElementById("newMissionResetBtn");
 const patientNameInput = document.getElementById("patientName");
 const patientAgeInput = document.getElementById("patientAge");
 const patientSexInput = document.getElementById("patientSex");
@@ -29,6 +31,10 @@ const patientIdentityContent = document.getElementById("patientIdentityContent")
 const patientIdentitySummary = document.getElementById("patientIdentitySummary");
 const createHandoffBtn = document.getElementById("createHandoffBtn");
 const showImportHandoffBtn = document.getElementById("showImportHandoffBtn");
+const handoffPanel = document.querySelector(".handoff-block");
+const toggleHandoffBtn = document.getElementById("toggleHandoffBtn");
+const handoffContent = document.getElementById("handoffContent");
+const handoffSummary = document.getElementById("handoffSummary");
 const handoffBox = document.getElementById("handoffBox");
 const handoffQrImage = document.getElementById("handoffQrImage");
 const handoffCode = document.getElementById("handoffCode");
@@ -344,7 +350,9 @@ function exportText() {
   ]);
 
   const acrLines = findAllLogsContaining(items, [
-    "ACR adulte"
+    "ACR adulte",
+    "ACR enfant",
+    "Arrêt cardiaque enfant"
   ]);
 
   const ceeLines = findAllLogsContaining(items, [
@@ -618,32 +626,89 @@ const resetTimerBtn = document.getElementById("resetTimer");
 if (startTimerBtn) startTimerBtn.addEventListener("click", startTimer);
 if (resetTimerBtn) resetTimerBtn.addEventListener("click", resetTimer);
 
+function clearAllProtocolCounters() {
+  [
+    "pisu-counter-cee",
+    "pisu-counter-adrenaline",
+    "pisu-counter-cordarone",
+    "pisu-counter-child-cee",
+    "pisu-counter-child-adrenaline",
+    "pisu-counter-child-cordarone",
+    "pisu-counter-seizure-treatment",
+    "pisu-counter-anaphylaxis-adrenaline",
+    "pisu-counter-hemorrhage-txa",
+    "pisu-counter-hypoglycemia-glucagon",
+    "pisu-counter-hypoglycemia-g10",
+    "pisu-counter-hypoglycemia-g30",
+    "pisu-counter-asthma-terbutaline",
+    "pisu-counter-asthma-ipratropium",
+    "pisu-counter-asthma-methylpred",
+    "pisu-counter-analgesia-paracetamol",
+    "pisu-counter-analgesia-morphine",
+    "pisu-counter-analgesia-meopa"
+  ].forEach(key => localStorage.removeItem(key));
+}
+
+function resetPatientIdentityFields() {
+  if (patientNameInput) patientNameInput.value = "";
+  if (patientAgeInput) patientAgeInput.value = "";
+  if (patientSexInput) patientSexInput.value = "";
+  if (patientCategoryInput) patientCategoryInput.value = "";
+  if (patientWeightInput) patientWeightInput.value = "";
+  if (patientNoteInput) patientNoteInput.value = "";
+
+  updatePatientIdentitySummary?.();
+}
+
+function resetAllVisualValidations() {
+  document.querySelectorAll(".action-done, .click-feedback, .attention-flash").forEach(element => {
+    element.classList.remove("action-done", "click-feedback", "attention-flash");
+    delete element.dataset.clickCount;
+  });
+}
+
+function resetMissionCompletely() {
+  const confirmation = window.confirm(
+    "Créer une nouvelle mission ?\n\nCela efface le patient, le journal, les QR codes, les validations et les compteurs.\n\nL’intervenant reste enregistré."
+  );
+
+  if (!confirmation) {
+    return;
+  }
+
+  localStorage.removeItem("pisuLog");
+
+  clearAllProtocolCounters();
+  resetPatientIdentityFields();
+  resetAllVisualValidations();
+  resetMissionHandoffUi?.();
+
+  if (logEl) {
+    logEl.innerHTML = "";
+  }
+
+  remaining = 120;
+
+  if (timerEl) {
+    timerEl.textContent = "02:00";
+  }
+
+  if (typeof showMainMenu === "function") {
+    showMainMenu();
+  }
+
+  addLog("Nouvelle mission créée — journal remis à zéro");
+}
+
 document.getElementById("clearLog").addEventListener("click", () => {
   if (confirm("Effacer le journal de cette mission ?")) {
     localStorage.removeItem("pisuLog");
 
-    localStorage.removeItem("pisu-counter-cee");
-    localStorage.removeItem("pisu-counter-adrenaline");
-    localStorage.removeItem("pisu-counter-cordarone");
-    localStorage.removeItem("pisu-counter-seizure-treatment");
-    localStorage.removeItem("pisu-counter-anaphylaxis-adrenaline");
-    localStorage.removeItem("pisu-counter-hemorrhage-txa");
-    localStorage.removeItem("pisu-counter-hypoglycemia-glucagon");
-    localStorage.removeItem("pisu-counter-hypoglycemia-g10");
-    localStorage.removeItem("pisu-counter-hypoglycemia-g30");
-    localStorage.removeItem("pisu-counter-asthma-terbutaline");
-    localStorage.removeItem("pisu-counter-asthma-ipratropium");
-    localStorage.removeItem("pisu-counter-asthma-methylpred");
-    localStorage.removeItem("pisu-counter-analgesia-paracetamol");
-    localStorage.removeItem("pisu-counter-analgesia-morphine");
-    localStorage.removeItem("pisu-counter-analgesia-meopa");
+    clearAllProtocolCounters();
+    resetMissionHandoffUi?.();
+    resetAllVisualValidations();
 
-    document.querySelectorAll(".action-done").forEach(button => {
-      button.classList.remove("action-done");
-      delete button.dataset.clickCount;
-    });
-
-    logEl.innerHTML = "";
+    if (logEl) logEl.innerHTML = "";
     remaining = 120;
     if (timerEl) timerEl.textContent = "02:00";
   }
@@ -747,7 +812,7 @@ function markButtonAsClicked(button) {
 
 document.addEventListener("click", event => {
   const clickedElement = event.target.closest(
-    "[data-action], [data-acr-action], [data-dt-action], [data-smoke-action], [data-burn-action], [data-seizure-action], [data-anaphylaxis-action], [data-hemo-action], [data-hypo-action], [data-asthma-action], [data-analgesia-action], #call15Btn, #dtCall15Btn, #smokeCall15Btn, #burnCall15Btn, #seizureCall15Btn, #anaphylaxisCall15Btn, #hemorrhageCall15Btn, #hypoglycemiaCall15Btn, #asthmaCall15Btn, #analgesiaCall15Btn"
+    "[data-action], [data-acr-action], [data-child-acr-action], [data-dt-action], [data-smoke-action], [data-burn-action], [data-seizure-action], [data-anaphylaxis-action], [data-hemo-action], [data-hypo-action], [data-asthma-action], [data-analgesia-action], #call15Btn, #childAcrCall15Btn, #dtCall15Btn, #smokeCall15Btn, #burnCall15Btn, #seizureCall15Btn, #anaphylaxisCall15Btn, #hemorrhageCall15Btn, #hypoglycemiaCall15Btn, #asthmaCall15Btn, #analgesiaCall15Btn"
   );
 
   if (!clickedElement) return;
@@ -765,7 +830,7 @@ document.addEventListener("click", event => {
 
 function getProtocolPages() {
   return Array.from(document.querySelectorAll(
-    "#acrAdultProtocol, #chestPainProtocol, #smokeExposureProtocol, #burnsProtocol, #seizureProtocol, #anaphylaxisProtocol, #hemorrhageProtocol, #hypoglycemiaProtocol, #asthmaBpcoProtocol, #analgesiaProtocol"
+    "#acrAdultProtocol, #childAcrProtocol, #chestPainProtocol, #smokeExposureProtocol, #burnsProtocol, #seizureProtocol, #anaphylaxisProtocol, #hemorrhageProtocol, #hypoglycemiaProtocol, #asthmaBpcoProtocol, #analgesiaProtocol"
   ));
 }
 
@@ -784,6 +849,9 @@ function showMainMenu() {
   getMainPageSections().forEach(section => {
     section.classList.remove("hidden");
   });
+
+  document.body.classList.remove("protocol-mode");
+  floatingBackMenuBtn?.classList.add("hidden");
 
   window.scrollTo({
     top: 0,
@@ -806,6 +874,9 @@ function showProtocolPage(protocolId) {
 
   targetProtocol.classList.remove("hidden");
 
+  document.body.classList.add("protocol-mode");
+  floatingBackMenuBtn?.classList.remove("hidden");
+
   window.scrollTo({
     top: 0,
     behavior: "smooth"
@@ -814,6 +885,10 @@ function showProtocolPage(protocolId) {
 
 window.showMainMenu = showMainMenu;
 window.showProtocolPage = showProtocolPage;
+
+floatingBackMenuBtn?.addEventListener("click", () => {
+  showMainMenu();
+});
 
 function getResponderIdentity() {
   return {
@@ -937,12 +1012,70 @@ function buildTransferUrl(code) {
   return `${window.location.origin}${window.location.pathname}#mission=${encodeURIComponent(code)}`;
 }
 
+function updateHandoffSummary(text = null) {
+  if (!handoffSummary) return;
+
+  if (text) {
+    handoffSummary.textContent = text;
+    return;
+  }
+
+  if (handoffCode?.value) {
+    handoffSummary.textContent = "Code de transfert généré";
+    return;
+  }
+
+  handoffSummary.textContent = "Aucun code de transfert généré";
+}
+
+function resetMissionHandoffUi() {
+  if (handoffCode) {
+    handoffCode.value = "";
+  }
+
+  if (importHandoffCode) {
+    importHandoffCode.value = "";
+  }
+
+  if (handoffQrImage) {
+    handoffQrImage.src = "";
+    handoffQrImage.classList.add("hidden");
+  }
+
+  if (handoffBox) {
+    handoffBox.classList.add("hidden");
+  }
+
+  if (importHandoffBox) {
+    importHandoffBox.classList.add("hidden");
+  }
+
+  if (handoffWarning) {
+    handoffWarning.textContent = "";
+  }
+
+  updateHandoffSummary("Aucun code de transfert généré");
+}
+
 function createMissionHandoff() {
   const payload = buildMissionPayload();
   const code = encodeMissionPayload(payload);
   const transferUrl = buildTransferUrl(code);
 
   handoffBox?.classList.remove("hidden");
+
+  setCollapsibleState(
+    handoffPanel,
+    toggleHandoffBtn,
+    handoffContent,
+    "pisu-collapse-handoff",
+    false
+  );
+
+  updateHandoffSummary(`Code généré à ${new Date().toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit"
+  })}`);
 
   if (handoffCode) {
     handoffCode.value = transferUrl;
@@ -1031,6 +1164,14 @@ function checkMissionHashImport() {
 
   const code = window.location.hash.split("mission=")[1];
 
+  setCollapsibleState(
+    handoffPanel,
+    toggleHandoffBtn,
+    handoffContent,
+    "pisu-collapse-handoff",
+    false
+  );
+
   if (importHandoffBox) {
     importHandoffBox.classList.remove("hidden");
   }
@@ -1050,11 +1191,21 @@ function checkMissionHashImport() {
 
 saveResponderBtn?.addEventListener("click", saveResponderIdentity);
 
+newMissionResetBtn?.addEventListener("click", resetMissionCompletely);
+
 createHandoffBtn?.addEventListener("click", createMissionHandoff);
 
 copyHandoffCodeBtn?.addEventListener("click", copyMissionHandoffCode);
 
 showImportHandoffBtn?.addEventListener("click", () => {
+  setCollapsibleState(
+    handoffPanel,
+    toggleHandoffBtn,
+    handoffContent,
+    "pisu-collapse-handoff",
+    false
+  );
+
   importHandoffBox?.classList.toggle("hidden");
 });
 
@@ -1150,6 +1301,29 @@ function setupIdentitySummaries() {
   });
 }
 
+function invalidateHandoffWhenPatientChanges() {
+  [
+    patientNameInput,
+    patientAgeInput,
+    patientSexInput,
+    patientCategoryInput,
+    patientWeightInput,
+    patientNoteInput
+  ].forEach(input => {
+    input?.addEventListener("input", () => {
+      if (handoffCode?.value) {
+        resetMissionHandoffUi?.();
+      }
+    });
+
+    input?.addEventListener("change", () => {
+      if (handoffCode?.value) {
+        resetMissionHandoffUi?.();
+      }
+    });
+  });
+}
+
 function setupCollapsiblePanels() {
   setupCollapsiblePanel(
     responderPanel,
@@ -1165,9 +1339,17 @@ function setupCollapsiblePanels() {
     "pisu-collapse-patient-identity"
   );
 
+  setupCollapsiblePanel(
+    handoffPanel,
+    toggleHandoffBtn,
+    handoffContent,
+    "pisu-collapse-handoff"
+  );
+
   setupIdentitySummaries();
   updateResponderSummary();
   updatePatientIdentitySummary();
+  updateHandoffSummary();
 }
 
 function restoreCounterBadges() {
@@ -1186,6 +1368,7 @@ restoreCounterBadges();
 
 loadResponderIdentity();
 setupCollapsiblePanels();
+invalidateHandoffWhenPatientChanges();
 checkMissionHashImport();
 
 loadLog();

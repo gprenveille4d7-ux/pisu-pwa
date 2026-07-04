@@ -154,7 +154,7 @@
           Arrêt cardiaque Adulte
         </button>
 
-        <button data-action="Sélection protocole PISU : Arrêt cardiaque enfant" class="action danger">
+        <button id="openChildAcrBtn" data-action="Sélection protocole PISU : Arrêt cardiaque enfant" class="action danger">
           Arrêt Cardiaque Enfant
         </button>
 
@@ -394,6 +394,200 @@
 
       <button id="resetAcrProtocolBtn" class="ghost reset-protocol-btn">
         Reset protocole ACR adulte
+      </button>
+    </section>
+
+    <section id="childAcrProtocol" class="panel child-acr-protocol hidden">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Mise à jour protocole : 29/07/25</p>
+          <h2>Protocole infirmier « PISU » — ACR Enfant</h2>
+        </div>
+        <button id="closeChildAcrBtn" class="ghost">← Menu principal</button>
+      </div>
+
+      <div class="child-acr-sticky-tools">
+        <a id="childAcrCall15Btn" class="child-acr-call15 child-acr-call15-alert" href="tel:15" aria-label="Appeler le 15">
+          <span class="samu15-icon">☎</span>
+          <strong>15</strong>
+          <small id="childAcrCall15Status">Appel 15 à faire</small>
+        </a>
+
+        <div class="protocol-status-row child-acr-status-row" style="--status-count: 4;">
+          <div class="protocol-status-card">
+            <span>Cycle RCP</span>
+            <strong id="childAcrTimer">02:00</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>CEE</span>
+            <strong id="childAcrCeeStatus">0</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Adrénaline</span>
+            <strong id="childAcrAdrenalineStatus">--:--</strong>
+          </div>
+
+          <div class="protocol-status-card">
+            <span>Cordarone</span>
+            <strong id="childAcrCordaroneStatus">--</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="child-acr-section danger-zone">
+        <h3>ACR enfant</h3>
+        <p><strong>Inconscient + absence de respiration + mauvaise coloration = ACR.</strong></p>
+        <p><strong>Priorité à la ventilation.</strong></p>
+
+        <button data-child-acr-action="ACR enfant identifié : inconscient, absence de respiration, mauvaise coloration ; appel au 15 ; priorité ventilation" class="action danger">
+          ACR enfant identifié / Appel 15
+        </button>
+      </div>
+
+      <div class="dose-card">
+        <h4>Doses calculées selon le poids</h4>
+        <p><strong>Poids utilisé :</strong> <span id="childAcrWeightUsed">Non renseigné</span></p>
+        <p><strong>CEE :</strong> <span id="childAcrCeeDose">Poids à renseigner</span></p>
+        <p><strong>Adrénaline :</strong> <span id="childAcrAdrenalineDose">Poids à renseigner</span></p>
+        <p><strong>Cordarone 3e CEE :</strong> <span id="childAcrCordarone300Dose">Poids à renseigner</span></p>
+        <p><strong>Cordarone 5e CEE :</strong> <span id="childAcrCordarone150Dose">Poids à renseigner</span></p>
+        <button id="refreshChildAcrDosesBtn" class="secondary">Recalculer les doses</button>
+      </div>
+
+      <div class="child-acr-section yellow">
+        <h3>1 — Vérifier la perméabilité des VAS</h3>
+
+        <button data-child-acr-action="Perméabilité des VAS vérifiée : absence de corps étranger ; aspiration si besoin ; canule de Guedel si nécessaire" class="action">
+          VAS vérifiées / Guedel si besoin
+        </button>
+      </div>
+
+      <div class="child-acr-section blue">
+        <h3>2 — Ventiler l’enfant</h3>
+
+        <p>Procéder immédiatement à <strong>5 insufflations au BAVU</strong>, O₂ 15 L/min. Efficacité : la poitrine doit se soulever.</p>
+
+        <button data-child-acr-action="5 insufflations au BAVU réalisées, O2 15 L/min, efficacité thoracique vérifiée" class="action">
+          5 insufflations BAVU
+        </button>
+      </div>
+
+      <div class="child-acr-section rcp">
+        <h3>3 — RCP 15 compressions / 2 insufflations</h3>
+
+        <p><strong>MCE :</strong> fréquence 100–120/min, profondeur 1/3 de la cage thoracique, décompression complète.</p>
+        <p><strong>Ventilation :</strong> position neutre, Guedel, BAVU O₂ 15 L/min.</p>
+
+        <div class="timer-actions">
+          <button id="startChildAcrTimerBtn" class="primary">Démarrer cycle 2 min</button>
+          <button id="resetChildAcrTimerBtn" class="secondary">Réinitialiser cycle</button>
+        </div>
+
+        <button data-child-acr-action="RCP enfant débutée : 15 compressions pour 2 insufflations" data-child-start-cycle="true" class="action">
+          RCP 15/2
+        </button>
+      </div>
+
+      <div class="child-acr-section yellow">
+        <h3>4 — Placer les électrodes de défibrillation</h3>
+
+        <p>Chez le jeune enfant, placement des électrodes en antéro-postérieur. Analyse du rythme puis suivre l’algorithme.</p>
+
+        <button data-child-acr-action="Électrodes de défibrillation placées ; analyse de rythme réalisée" class="action">
+          Électrodes / analyse rythme
+        </button>
+      </div>
+
+      <div class="child-acr-section yellow">
+        <h3>5 — Abord intra-osseux</h3>
+
+        <p>Poser un cathéter intra-osseux sans retarder la RCP et la défibrillation. Soluté : Ringer Lactate.</p>
+
+        <button data-child-acr-action="Cathéter intra-osseux posé sans retarder RCP/défibrillation ; soluté Ringer Lactate" class="action">
+          KTIO / Ringer Lactate
+        </button>
+      </div>
+
+      <div class="child-acr-section decision">
+        <h3>Analyse de rythme toutes les 2 minutes</h3>
+
+        <div class="child-acr-button-grid">
+          <button id="childShockIndicatedBtn" data-child-acr-action="Choc indiqué : FV / TV sans pouls" class="action danger">
+            Choc indiqué
+          </button>
+
+          <button id="childShockNotIndicatedBtn" data-child-acr-action="Choc non indiqué : asystolie / AESP" class="action">
+            Choc non indiqué
+          </button>
+
+          <button id="childRacsBtn" data-child-acr-action="RACS : reprise d’une activité cardiaque spontanée" class="action good">
+            RACS
+          </button>
+        </div>
+      </div>
+
+      <div id="childShockBranch" class="child-acr-branch hidden">
+        <h3>Choc indiqué — FV / TV sans pouls</h3>
+
+        <button id="childCeeBtn" data-child-acr-action="CEE enfant 4 J/kg puis reprise immédiate RCP 2 minutes" data-child-cee="true" data-count-badge="child-cee" class="action danger count-action">
+          CEE 4 J/kg + RCP 2 min
+        </button>
+
+        <div class="child-acr-callout">
+          À partir du 3e CEE : Adrénaline 10 µg/kg toutes les 4 min.
+          Au 3e CEE : Cordarone 5 mg/kg max 300 mg.
+          Au 5e CEE : Cordarone 5 mg/kg max 150 mg.
+        </div>
+
+        <button id="childShockAdrenalineBtn" data-child-acr-action="À partir du 3e CEE : Adrénaline 10 microgrammes/kg toutes les 4 minutes" data-child-adrenaline="true" data-count-badge="child-adrenaline" class="action drug count-action">
+          Adrénaline 10 µg/kg
+        </button>
+
+        <button id="childCordarone300Btn" data-child-acr-action="Au 3e CEE : Cordarone 5 mg/kg, maximum 300 mg" data-child-cordarone="300" data-count-badge="child-cordarone" class="action drug count-action">
+          Cordarone 3e CEE
+        </button>
+
+        <button id="childCordarone150Btn" data-child-acr-action="Au 5e CEE : Cordarone 5 mg/kg, maximum 150 mg" data-child-cordarone="150" data-count-badge="child-cordarone" class="action drug count-action">
+          Cordarone 5e CEE
+        </button>
+      </div>
+
+      <div id="childNoShockBranch" class="child-acr-branch hidden">
+        <h3>Choc non indiqué — Asystolie / AESP</h3>
+
+        <button id="childNoShockAdrenalineBtn" data-child-acr-action="Choc non indiqué : Adrénaline 10 microgrammes/kg dès que possible puis toutes les 4 minutes" data-child-adrenaline="true" data-count-badge="child-adrenaline" class="action drug count-action">
+          Adrénaline dès que possible
+        </button>
+      </div>
+
+      <div id="childRacsBranch" class="child-acr-branch hidden">
+        <h3>Si RACS</h3>
+
+        <button data-child-acr-action="Si RACS : appel au 15" class="action good">
+          Appel 15 / bilan RACS
+        </button>
+
+        <button data-child-acr-action="Si RACS : couverture de survie, glycémie capillaire, prise en charge d’une hypoglycémie si besoin" class="action">
+          Couverture / glycémie
+        </button>
+
+        <button data-child-acr-action="Si ventilation efficace : masque haute concentration O2 15 L/min, débit QSP SpO2 94-98%, PLS" class="action">
+          Ventilation efficace : MHC + PLS
+        </button>
+
+        <button data-child-acr-action="Si ventilation inefficace : poursuite BAVU O2 15 L/min, débit QSP SpO2 94-98%" class="action">
+          Ventilation inefficace : BAVU
+        </button>
+      </div>
+
+      <button data-child-acr-action="Fin protocole ACR enfant" class="action">
+        Fin protocole ACR enfant
+      </button>
+
+      <button id="resetChildAcrProtocolBtn" class="ghost reset-protocol-btn">
+        Reset protocole ACR enfant
       </button>
     </section>
 
@@ -2081,12 +2275,18 @@
       <button id="downloadLog" class="secondary">Exporter .txt</button>
     </section>
 
-    <section class="panel handoff-block">
-      <div class="panel-title">
-        <h2>Transfert mission</h2>
+    <section class="panel handoff-block collapsible-panel">
+      <div class="panel-title collapsible-title">
+        <button id="toggleHandoffBtn" class="collapse-toggle" type="button" aria-expanded="false" aria-controls="handoffContent">
+          <span>Transfert mission / QR code</span>
+          <span class="collapse-chevron">▾</span>
+        </button>
       </div>
 
-      <div class="export-actions">
+      <small id="handoffSummary" class="collapse-summary">Aucun code de transfert généré</small>
+
+      <div id="handoffContent" class="collapsible-content">
+        <div class="export-actions">
         <button id="createHandoffBtn" class="secondary">Créer QR / code</button>
         <button id="showImportHandoffBtn" class="secondary">Importer code</button>
       </div>
@@ -2118,8 +2318,28 @@
           <button id="confirmImportHandoffBtn" class="secondary">Importer la mission</button>
         </div>
       </div>
+      </div>
+    </section>
+
+    <section class="panel new-mission-block">
+      <div class="panel-title">
+        <h2>Nouvelle mission</h2>
+      </div>
+
+      <p class="new-mission-text">
+        Remet à zéro le patient, le journal, les QR codes et les validations.
+        L’intervenant reste enregistré.
+      </p>
+
+      <button id="newMissionResetBtn" class="ghost new-mission-reset-btn">
+        Reset mission complète
+      </button>
     </section>
   </main>
+
+  <button id="floatingBackMenuBtn" class="floating-back-menu hidden" type="button">
+    ← Menu
+  </button>
 
   <footer>
     <span id="offlineStatus">Vérification hors ligne...</span>
@@ -2128,6 +2348,7 @@
 
   <script src="app.js"></script>
   <script src="acr-adulte.js"></script>
+  <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>
   <script src="exposition-fumees.js"></script>
   <script src="brulures.js"></script>
