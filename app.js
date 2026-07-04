@@ -7,6 +7,7 @@ const timerEl = document.getElementById("timer");
 const logEl = document.getElementById("log");
 const offlineStatus = document.getElementById("offlineStatus");
 const installBtn = document.getElementById("installBtn");
+const appHeader = document.querySelector("body > header, header.app-header, .app-header");
 const floatingBackMenuBtn = document.getElementById("floatingBackMenuBtn");
 const newMissionResetBtn = document.getElementById("newMissionResetBtn");
 const patientNameInput = document.getElementById("patientName");
@@ -43,6 +44,36 @@ const handoffWarning = document.getElementById("handoffWarning");
 const importHandoffBox = document.getElementById("importHandoffBox");
 const importHandoffCode = document.getElementById("importHandoffCode");
 const confirmImportHandoffBtn = document.getElementById("confirmImportHandoffBtn");
+
+const ACTION_BUTTON_SELECTOR = [
+  "[data-action]",
+  "[data-acr-action]",
+  "[data-child-acr-action]",
+  "[data-dt-action]",
+  "[data-smoke-action]",
+  "[data-burn-action]",
+  "[data-seizure-action]",
+  "[data-anaphylaxis-action]",
+  "[data-hemo-action]",
+  "[data-hypo-action]",
+  "[data-asthma-action]",
+  "[data-analgesia-action]"
+].join(", ");
+
+const ACTION_FEEDBACK_SELECTOR = [
+  ACTION_BUTTON_SELECTOR,
+  "#call15Btn",
+  "#childAcrCall15Btn",
+  "#dtCall15Btn",
+  "#smokeCall15Btn",
+  "#burnCall15Btn",
+  "#seizureCall15Btn",
+  "#anaphylaxisCall15Btn",
+  "#hemorrhageCall15Btn",
+  "#hypoglycemiaCall15Btn",
+  "#asthmaCall15Btn",
+  "#analgesiaCall15Btn"
+].join(", ");
 
 function formatTime(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -810,10 +841,171 @@ function markButtonAsClicked(button) {
   }, 500);
 }
 
+const LONG_PRESS_DURATION = 750;
+const LONG_PRESS_MOVE_TOLERANCE = 12;
+
+let longPressTimer = null;
+let longPressTarget = null;
+let longPressStartX = 0;
+let longPressStartY = 0;
+
+function getActionLabel(button) {
+  const datasetKeys = [
+    "action",
+    "acrAction",
+    "childAcrAction",
+    "dtAction",
+    "smokeAction",
+    "burnAction",
+    "seizureAction",
+    "anaphylaxisAction",
+    "hemoAction",
+    "hypoAction",
+    "asthmaAction",
+    "analgesiaAction"
+  ];
+
+  for (const key of datasetKeys) {
+    if (button.dataset[key]) {
+      return button.dataset[key];
+    }
+  }
+
+  return button.textContent.trim().replace(/\s+/g, " ");
+}
+
+function isLongPressCorrectableButton(button) {
+  if (!button) return false;
+
+  if (!button.matches(ACTION_BUTTON_SELECTOR)) return false;
+
+  if (!button.classList.contains("action-done")) return false;
+
+  if (button.closest(".protocols-block")) return false;
+
+  if (button.closest(".export-actions")) return false;
+
+  if (button.closest(".panel-title")) return false;
+
+  if (button.matches("a")) return false;
+
+  if (button.classList.contains("count-action")) return false;
+
+  if (button.dataset.countBadge) return false;
+
+  if (button.id && button.id.toLowerCase().includes("call15")) return false;
+
+  if (button.id && button.id.toLowerCase().includes("reset")) return false;
+
+  return true;
+}
+
+function clearLongPressTimer() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+  }
+
+  longPressTimer = null;
+  longPressTarget = null;
+}
+
+function cancelSimpleValidation(button) {
+  if (!isLongPressCorrectableButton(button)) return;
+
+  const label = getActionLabel(button);
+
+  button.classList.remove("action-done", "click-feedback", "attention-flash", "long-press-pending");
+  button.classList.add("undo-feedback");
+
+  delete button.dataset.clickCount;
+
+  window.setTimeout(() => {
+    button.classList.remove("undo-feedback");
+  }, 650);
+
+  if (typeof addLog === "function") {
+    addLog(`Correction : validation annulée visuellement — ${label}`);
+  }
+
+  if (handoffCode?.value) {
+    resetMissionHandoffUi?.();
+  }
+}
+
+function startLongPressDetection(event) {
+  const button = event.target.closest(ACTION_BUTTON_SELECTOR);
+
+  if (!isLongPressCorrectableButton(button)) return;
+
+  longPressTarget = button;
+  longPressStartX = event.clientX;
+  longPressStartY = event.clientY;
+
+  button.classList.add("long-press-pending");
+
+  longPressTimer = window.setTimeout(() => {
+    const target = longPressTarget;
+
+    if (!target) return;
+
+    cancelSimpleValidation(target);
+
+    target.dataset.longPressCorrected = "true";
+
+    if (navigator.vibrate) {
+      navigator.vibrate(35);
+    }
+
+    clearLongPressTimer();
+  }, LONG_PRESS_DURATION);
+}
+
+function moveLongPressDetection(event) {
+  if (!longPressTarget) return;
+
+  const deltaX = Math.abs(event.clientX - longPressStartX);
+  const deltaY = Math.abs(event.clientY - longPressStartY);
+
+  if (deltaX > LONG_PRESS_MOVE_TOLERANCE || deltaY > LONG_PRESS_MOVE_TOLERANCE) {
+    longPressTarget.classList.remove("long-press-pending");
+    clearLongPressTimer();
+  }
+}
+
+function stopLongPressDetection() {
+  if (longPressTarget) {
+    longPressTarget.classList.remove("long-press-pending");
+  }
+
+  clearLongPressTimer();
+}
+
+document.addEventListener("pointerdown", startLongPressDetection, { passive: true });
+document.addEventListener("pointermove", moveLongPressDetection, { passive: true });
+document.addEventListener("pointerup", stopLongPressDetection, { passive: true });
+document.addEventListener("pointercancel", stopLongPressDetection, { passive: true });
+
+document.addEventListener("contextmenu", event => {
+  const button = event.target.closest(ACTION_BUTTON_SELECTOR);
+
+  if (isLongPressCorrectableButton(button)) {
+    event.preventDefault();
+  }
+});
+
 document.addEventListener("click", event => {
-  const clickedElement = event.target.closest(
-    "[data-action], [data-acr-action], [data-child-acr-action], [data-dt-action], [data-smoke-action], [data-burn-action], [data-seizure-action], [data-anaphylaxis-action], [data-hemo-action], [data-hypo-action], [data-asthma-action], [data-analgesia-action], #call15Btn, #childAcrCall15Btn, #dtCall15Btn, #smokeCall15Btn, #burnCall15Btn, #seizureCall15Btn, #anaphylaxisCall15Btn, #hemorrhageCall15Btn, #hypoglycemiaCall15Btn, #asthmaCall15Btn, #analgesiaCall15Btn"
-  );
+  const button = event.target.closest(ACTION_BUTTON_SELECTOR);
+
+  if (!button?.dataset.longPressCorrected) return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  delete button.dataset.longPressCorrected;
+}, true);
+
+document.addEventListener("click", event => {
+  const clickedElement = event.target.closest(ACTION_FEEDBACK_SELECTOR);
 
   if (!clickedElement) return;
 
@@ -1324,6 +1516,37 @@ function invalidateHandoffWhenPatientChanges() {
   });
 }
 
+function updateMobileLayoutOffsets() {
+  if (!appHeader) return;
+
+  const headerHeight = Math.ceil(appHeader.getBoundingClientRect().height);
+
+  document.documentElement.style.setProperty(
+    "--app-header-height",
+    `${headerHeight}px`
+  );
+
+  document.documentElement.style.setProperty(
+    "--protocol-sticky-top",
+    `${headerHeight + 10}px`
+  );
+}
+
+function setupMobileLayoutOffsets() {
+  updateMobileLayoutOffsets();
+
+  window.addEventListener("resize", updateMobileLayoutOffsets);
+
+  window.addEventListener("orientationchange", () => {
+    window.setTimeout(updateMobileLayoutOffsets, 250);
+  });
+
+  if ("ResizeObserver" in window && appHeader) {
+    const observer = new ResizeObserver(updateMobileLayoutOffsets);
+    observer.observe(appHeader);
+  }
+}
+
 function setupCollapsiblePanels() {
   setupCollapsiblePanel(
     responderPanel,
@@ -1369,6 +1592,7 @@ restoreCounterBadges();
 loadResponderIdentity();
 setupCollapsiblePanels();
 invalidateHandoffWhenPatientChanges();
+setupMobileLayoutOffsets();
 checkMissionHashImport();
 
 loadLog();

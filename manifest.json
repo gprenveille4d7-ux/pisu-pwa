@@ -1,6 +1,6 @@
 {
-  "name": "PISU ACR adulte",
-  "short_name": "PISU ACR",
+  "name": "Protocole PISU",
+  "short_name": "PISU",
   "description": "Prototype PWA hors ligne pour journalisation PISU ACR adulte.",
   "start_url": "./",
   "scope": "./",
