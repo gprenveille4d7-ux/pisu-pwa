@@ -3,6 +3,7 @@ const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
 const PISU_EVENTS_STORAGE_KEY = "pisuStructuredEvents";
 const SAED_STRUCTURED_EXPORT_VERSION = "saed-structured-v1";
+const VITALS_ALERT_STORAGE_KEY = "pisuLatestVitalsAlert";
 let timerInterval = null;
 let remaining = 120;
 let deferredPrompt = null;
@@ -81,6 +82,7 @@ const vitalsGlycemiaInput = document.getElementById("vitalsGlycemia");
 const saveVitalsBtn = document.getElementById("saveVitalsBtn");
 const clearVitalsFormBtn = document.getElementById("clearVitalsFormBtn");
 const vitalsLastSummary = document.getElementById("vitalsLastSummary");
+const vitalsAlertBanner = document.getElementById("vitalsAlertBanner");
 const vitalsHistory = document.getElementById("vitalsHistory");
 const userCharterOverlay = document.getElementById("userCharterOverlay");
 const charterAcceptCheck = document.getElementById("charterAcceptCheck");
@@ -123,6 +125,34 @@ const ACTION_FEEDBACK_SELECTOR = [
   "#asthmaCall15Btn",
   "#analgesiaCall15Btn"
 ].join(", ");
+
+const CALL15_BUTTON_SELECTOR = [
+  "#call15Btn",
+  "#childAcrCall15Btn",
+  "#dtCall15Btn",
+  "#smokeCall15Btn",
+  "#burnCall15Btn",
+  "#seizureCall15Btn",
+  "#anaphylaxisCall15Btn",
+  "#hemorrhageCall15Btn",
+  "#hypoglycemiaCall15Btn",
+  "#asthmaCall15Btn",
+  "#analgesiaCall15Btn"
+].join(", ");
+
+const PROTOCOL_CALL15_BUTTON_MAP = {
+  acrAdultProtocol: "call15Btn",
+  childAcrProtocol: "childAcrCall15Btn",
+  chestPainProtocol: "dtCall15Btn",
+  smokeExposureProtocol: "smokeCall15Btn",
+  burnsProtocol: "burnCall15Btn",
+  seizureProtocol: "seizureCall15Btn",
+  anaphylaxisProtocol: "anaphylaxisCall15Btn",
+  hemorrhageProtocol: "hemorrhageCall15Btn",
+  hypoglycemiaProtocol: "hypoglycemiaCall15Btn",
+  asthmaBpcoProtocol: "asthmaCall15Btn",
+  analgesiaProtocol: "analgesiaCall15Btn"
+};
 
 function formatTime(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -210,38 +240,48 @@ function addStructuredEvent(event) {
   saveStructuredEvents(events);
 }
 
-function extractProtocolFromMessage(message) {
-  const text = String(message || "");
-  const normalizedText = normalizeForSearch(text);
+function normalizeProtocolName(value) {
+  const normalized = normalizeForSearch(value);
 
-  const knownProtocols = [
-    "ACR adulte",
-    "ACR enfant",
-    "Douleur thoracique",
-    "Exposition aux fumées",
-    "Brûlure",
-    "Crise convulsive",
-    "Anaphylaxie",
-    "Hémorragie sévère",
-    "Hypoglycémie",
-    "Asthme/BPCO",
-    "Antalgie"
+  if (!normalized) return "";
+
+  const protocolMatchers = [
+    { test: "arret cardiaque adulte", label: "ACR adulte" },
+    { test: "acr adulte", label: "ACR adulte" },
+    { test: "arret cardiaque enfant", label: "ACR enfant" },
+    { test: "acr enfant", label: "ACR enfant" },
+    { test: "douleur thoracique", label: "Douleur thoracique" },
+    { test: "exposition aux fumees", label: "Exposition aux fumées" },
+    { test: "fumee", label: "Exposition aux fumées" },
+    { test: "brulure", label: "Brûlures" },
+    { test: "brulures", label: "Brûlures" },
+    { test: "crise convulsive", label: "Crise convulsive" },
+    { test: "convulsion", label: "Crise convulsive" },
+    { test: "anaphylaxie", label: "Anaphylaxie" },
+    { test: "hemorragie", label: "Hémorragie sévère" },
+    { test: "hypoglycemie adulte et enfant", label: "Hypoglycémie" },
+    { test: "hypoglycemie", label: "Hypoglycémie" },
+    { test: "asthme", label: "Asthme/BPCO" },
+    { test: "bpco", label: "Asthme/BPCO" },
+    { test: "antalgie", label: "Antalgie" }
   ];
 
-  const foundProtocol = knownProtocols.find(protocol => {
-    return normalizedText.includes(normalizeForSearch(protocol));
-  });
+  const found = protocolMatchers.find(item => normalized.includes(item.test));
+  return found?.label || "";
+}
 
-  if (foundProtocol) return foundProtocol;
+function extractProtocolFromMessage(message) {
+  const text = String(message || "");
 
   if (text.includes("Sélection protocole PISU :")) {
-    return text.split("Sélection protocole PISU :")[1]?.trim() || "Protocole PISU";
+    const selectedProtocol = text.split("Sélection protocole PISU :")[1]?.trim() || "";
+    return normalizeProtocolName(selectedProtocol) || "Mission PISU";
   }
 
-  const beforeColon = text.split(":")[0]?.trim();
+  const normalizedProtocol = normalizeProtocolName(text);
 
-  if (beforeColon && beforeColon.length < 40) {
-    return beforeColon;
+  if (normalizedProtocol) {
+    return normalizedProtocol;
   }
 
   return "Mission PISU";
@@ -499,7 +539,7 @@ function inferStructuredEvent(message, options = {}) {
   }
 
   if (
-    normalized.includes("signes de gravite") ||
+    (normalized.includes("signes de gravite") && !normalized.includes("absence de signes de gravite")) ||
     normalized.includes("anomalie significative") ||
     normalized.includes("detresse") ||
     normalized.includes("aggravation")
@@ -510,6 +550,77 @@ function inferStructuredEvent(message, options = {}) {
       sectionSAED: "S",
       priorite: "haute"
     });
+  }
+
+  if (normalized.includes("hypoglycemie")) {
+    if (normalized.includes("glycemie corrigee")) {
+      setClinical({
+        categorie: "constante",
+        sousCategorie: "glycemie",
+        sectionSAED: "S",
+        priorite: "haute"
+      });
+    }
+
+    if (normalized.includes("absence de signes de gravite")) {
+      setClinical({
+        categorie: "signe_clinique",
+        sousCategorie: "absence_gravite",
+        sectionSAED: "S",
+        priorite: "moyenne"
+      });
+    }
+
+    if (
+      normalized.includes("signes de gravite") &&
+      !normalized.includes("absence de signes de gravite")
+    ) {
+      setClinical({
+        categorie: "signe_clinique",
+        sousCategorie: "gravite",
+        sectionSAED: "S",
+        priorite: "haute"
+      });
+    }
+
+    if (
+      normalized.includes("pompe a insuline") ||
+      normalized.includes("pompe eteinte")
+    ) {
+      setClinical({
+        categorie: "geste",
+        sousCategorie: "pompe_insuline",
+        sectionSAED: "E",
+        priorite: "moyenne"
+      });
+    }
+
+    if (
+      normalized.includes("patient conscient") ||
+      normalized.includes("capable de deglutir")
+    ) {
+      setClinical({
+        categorie: "evolution",
+        sousCategorie: "conscience_deglutition",
+        sectionSAED: "S",
+        priorite: "moyenne"
+      });
+    }
+
+    if (
+      normalized.includes("resucrage") ||
+      normalized.includes("sucres rapides") ||
+      normalized.includes("jus de fruits") ||
+      normalized.includes("confiture") ||
+      normalized.includes("g30")
+    ) {
+      setClinical({
+        categorie: "medicament",
+        sousCategorie: "resucrage",
+        sectionSAED: "E",
+        priorite: "haute"
+      });
+    }
   }
 
   if (options && Object.keys(options).length > 0) {
@@ -638,20 +749,29 @@ function formatLinesOrFallback(lines, fallback = "Aucun élément renseigné.") 
 function getProtocolNamesFromEventsAndLog(events, rawLogItems = []) {
   const protocols = new Set();
 
+  function addProtocol(value) {
+    const protocol = normalizeProtocolName(value);
+
+    if (!protocol) return;
+    if (protocol === "Mission PISU") return;
+
+    protocols.add(protocol);
+  }
+
   events.forEach(event => {
-    if (event.protocole && event.protocole !== "Mission PISU") {
-      protocols.add(event.protocole);
-    }
+    addProtocol(event.protocole);
   });
 
   rawLogItems.forEach(item => {
     const text = String(item?.text || item || "");
+
     if (text.includes("Sélection protocole PISU :")) {
-      protocols.add(text.split("Sélection protocole PISU :")[1]?.trim());
+      const selectedProtocol = text.split("Sélection protocole PISU :")[1]?.trim() || "";
+      addProtocol(selectedProtocol);
     }
   });
 
-  return Array.from(protocols).filter(Boolean);
+  return Array.from(protocols);
 }
 
 function getEventsByCategory(events, category) {
@@ -946,7 +1066,7 @@ window.pisuPatient = {
   getMidazolamBuccolamDoseFromCategory
 };
 
-function exportText() {
+function exportTextLegacy() {
   const rawLogItems = getLog();
   const model = buildStructuredSaedModel(rawLogItems);
 
@@ -1183,6 +1303,236 @@ function exportText() {
 
   return lines.join("\n");
 }
+
+function exportText() {
+  const rawLogItems = getLog();
+  const model = buildStructuredSaedModel(rawLogItems);
+
+  const responder = typeof getResponderIdentity === "function"
+    ? getResponderIdentity()
+    : {};
+
+  const responderLine = typeof formatResponderIdentity === "function"
+    ? formatResponderIdentity(responder)
+    : "Intervenant à compléter";
+
+  const crewLines = typeof getMissionCrewLines === "function"
+    ? getMissionCrewLines()
+    : ["Aucun équipage associé renseigné."];
+
+  const patientName = patientNameInput?.value?.trim() || "Identité non renseignée";
+  const patientAge = patientAgeInput?.value?.trim() || "À compléter";
+  const patientSex = patientSexInput?.value?.trim() || "À compléter";
+  const patientCategory = patientCategoryInput?.value?.trim() || "À compléter";
+  const patientWeight = patientWeightInput?.value?.trim() || "À compléter";
+  const patientNote = patientNoteInput?.value?.trim() || "";
+
+  const initialVitals = window.pisuVitals?.getInitialLine?.() || "";
+  const latestVitals = window.pisuVitals?.getLatestLine?.() || "";
+
+  const protocolLine = model.protocolNames.length > 0
+    ? model.protocolNames.join(" / ")
+    : "À préciser";
+
+  function bulletLines(lines) {
+    return uniqueLines(lines)
+      .filter(Boolean)
+      .map(line => `- ${line}`);
+  }
+
+  function eventBullets(events, limit = 10) {
+    return bulletLines(
+      events
+        .map(eventLine)
+        .filter(Boolean)
+    ).slice(0, limit);
+  }
+
+  function addBlock(lines, title, contentLines) {
+    const cleanLines = contentLines.filter(Boolean);
+
+    if (cleanLines.length === 0) return;
+
+    lines.push(title);
+    lines.push(...cleanLines);
+    lines.push("");
+  }
+
+  function latestRawLogContaining(patterns) {
+    const normalizedPatterns = patterns.map(normalizeForSearch);
+
+    const found = rawLogItems
+      .slice()
+      .reverse()
+      .find(item => {
+        const text = typeof item === "string" ? item : formatLogLine(item);
+        const normalizedLine = normalizeForSearch(text);
+        return normalizedPatterns.some(pattern => normalizedLine.includes(pattern));
+      });
+
+    if (!found) return "";
+
+    return typeof found === "string" ? found : formatLogLine(found);
+  }
+
+  const departLine = latestRawLogContaining(["Départ intervention"]);
+  const arriveeLine = latestRawLogContaining(["Arrivée sur les lieux"]);
+  const gpsDepartLine = latestRawLogContaining(["GPS Départ intervention"]);
+  const gpsArriveeLine = latestRawLogContaining(["GPS Arrivée sur les lieux"]);
+
+  const situationEvents = model.clinicalEvents.filter(event => {
+    return [
+      "situation",
+      "signe_clinique",
+      "rythme",
+      "evolution"
+    ].includes(event.categorie);
+  });
+
+  const evaluationEvents = model.clinicalEvents.filter(event => {
+    return [
+      "geste",
+      "medicament",
+      "materiel",
+      "surveillance",
+      "constante"
+    ].includes(event.categorie);
+  });
+
+  const appelEvents = model.clinicalEvents.filter(event => {
+    return ["appel", "decision", "demande", "transport"].includes(event.categorie);
+  });
+
+  const priorityEvents = model.clinicalEvents.filter(event => {
+    if (event.categorie === "constante") return false;
+    if (event.visibleSynthese === false) return false;
+    if (!["realise", "a_confirmer", "selectionne"].includes(event.statut)) return false;
+
+    return event.priorite === "haute" || event.priorite === "moyenne";
+  });
+
+  const syntheseClinique = eventBullets(priorityEvents, 8);
+  const saedLines = [];
+
+  addBlock(saedLines, "S — SITUATION", [
+    `- Patient : ${patientName}`,
+    `- Âge / naissance : ${patientAge} ; sexe : ${patientSex} ; poids : ${patientWeight}`,
+    `- Protocole engagé : ${protocolLine}`,
+    latestVitals ? `- Dernières constantes : ${latestVitals}` : "",
+    ...eventBullets(situationEvents, 8)
+  ]);
+
+  addBlock(saedLines, "A — ANTÉCÉDENTS", [
+    "- Antécédents médicaux utiles : À compléter",
+    "- Allergies : À compléter",
+    "- Traitements en cours : À compléter",
+    patientNote ? `- Remarque identité / contexte : ${patientNote}` : ""
+  ]);
+
+  addBlock(saedLines, "E — ÉVALUATION / ACTIONS", [
+    ...eventBullets(evaluationEvents, 12)
+  ]);
+
+  if (appelEvents.length > 0) {
+    addBlock(saedLines, "D — DEMANDE / DÉCISION", [
+      ...eventBullets(appelEvents, 8),
+      "- Décision / consignes reçues : À compléter"
+    ]);
+  } else {
+    addBlock(saedLines, "D — DEMANDE / DÉCISION", [
+      "- Appel / bilan régulateur non tracé dans l’application",
+      "- Demande : avis médical, conduite à tenir, renfort, destination ou consignes",
+      "- Décision / consignes reçues : À compléter"
+    ]);
+  }
+
+  const clinicalChronologyLines = model.clinicalChronology.length > 0
+    ? model.clinicalChronology
+    : ["Aucune chronologie clinique utile structurée."];
+
+  const journalCompleteLines = rawLogItems.length > 0
+    ? rawLogItems.map(item => typeof item === "string" ? item : formatLogLine(item))
+    : ["Journal vide."];
+
+  const lines = [
+    "========================================",
+    "FEUILLE SAED — INTERVENTION PISU",
+    "========================================",
+    "",
+    `Export généré le : ${new Date().toLocaleString("fr-FR")}`,
+    `Version export : ${SAED_STRUCTURED_EXPORT_VERSION}`,
+    "Version application : prototype à valider",
+    "",
+    "========================================",
+    "1. SYNTHÈSE RAPIDE",
+    "========================================",
+    "",
+    responderLine,
+    "",
+    "Équipage :",
+    ...crewLines.map(line => `- ${line}`),
+    "",
+    `Patient : ${patientName}`,
+    `Âge / naissance : ${patientAge}`,
+    `Sexe : ${patientSex}`,
+    `Catégorie : ${patientCategory}`,
+    `Poids estimé : ${patientWeight}`,
+    "",
+    `Motif / protocole : ${protocolLine}`,
+    "",
+    "Constantes :",
+    initialVitals && latestVitals && initialVitals !== latestVitals
+      ? `- Initiales : ${initialVitals}`
+      : "",
+    latestVitals
+      ? `- Dernières : ${latestVitals}`
+      : "- Non renseignées",
+    "",
+    "Résumé clinique :",
+    ...(syntheseClinique.length > 0
+      ? syntheseClinique
+      : ["- Aucun élément clinique prioritaire structuré."]),
+    "",
+    "Demande :",
+    appelEvents.length > 0
+      ? "- Appel / bilan régulateur tracé dans la chronologie."
+      : "- Avis médical / conduite à tenir à demander ou à tracer.",
+    "",
+    "========================================",
+    "2. SAED",
+    "========================================",
+    "",
+    ...saedLines,
+    "Repères intervention :",
+    departLine ? `- ${departLine}` : "- Départ intervention : À compléter",
+    arriveeLine ? `- ${arriveeLine}` : "- Arrivée sur les lieux : À compléter",
+    gpsDepartLine ? `- ${gpsDepartLine}` : "",
+    gpsArriveeLine ? `- ${gpsArriveeLine}` : "",
+    "",
+    "========================================",
+    "3. CHRONOLOGIE CLINIQUE UTILE",
+    "========================================",
+    "",
+    ...clinicalChronologyLines,
+    "",
+    "========================================",
+    "4. JOURNAL COMPLET",
+    "========================================",
+    "",
+    ...journalCompleteLines,
+    "",
+    "========================================",
+    "FIN FEUILLE SAED",
+    "========================================"
+  ];
+
+  return lines
+    .filter((line, index, allLines) => {
+      return line !== "" || allLines[index - 1] !== "";
+    })
+    .join("\n");
+}
+
 function formatAddress(properties) {
   if (!properties) return "";
 
@@ -1675,6 +2025,8 @@ function showMainMenu() {
     top: 0,
     behavior: "smooth"
   });
+
+  window.requestAnimationFrame(applyCall15AlertDisplay);
 }
 
 function showProtocolPage(protocolId) {
@@ -1699,6 +2051,8 @@ function showProtocolPage(protocolId) {
     top: 0,
     behavior: "smooth"
   });
+
+  window.requestAnimationFrame(applyCall15AlertDisplay);
 }
 
 window.showMainMenu = showMainMenu;
@@ -1818,12 +2172,13 @@ function decodeMissionPayload(codeOrUrl) {
 function buildMissionPayload() {
   return {
     type: "pisu-mission-transfer",
-    version: 4,
+    version: 5,
     createdAt: new Date().toISOString(),
     responder: getResponderIdentity(),
     patient: getPatientSnapshot(),
     crew: getMissionCrew(),
     vitals: getVitalsEntries(),
+    vitalsAlert: getLatestVitalsAlert(),
     events: getStructuredEvents(),
     log: getLog()
   };
@@ -1973,6 +2328,15 @@ function importMissionPayloadFromText(text) {
   } else {
     clearVitalsHistory();
   }
+
+  if (payload.vitalsAlert && payload.vitalsAlert.level) {
+    saveLatestVitalsAlert(payload.vitalsAlert);
+  } else {
+    localStorage.removeItem(VITALS_ALERT_STORAGE_KEY);
+  }
+
+  renderVitalsAlertBanner();
+  applyCall15AlertDisplay();
 
   if (Array.isArray(payload.crew)) {
     applyMissionCrewSnapshot(payload.crew);
@@ -2259,8 +2623,10 @@ function populateOrderedRangeSelect(select, config) {
 
   function addValue(value) {
     const rounded = Number(value.toFixed(decimals));
+
     if (rounded < min || rounded > max) return;
     if (values.includes(rounded)) return;
+
     values.push(rounded);
   }
 
@@ -2270,6 +2636,14 @@ function populateOrderedRangeSelect(select, config) {
     }
   } else if (direction === "up") {
     for (let value = start; value <= max; value += step) {
+      addValue(value);
+    }
+  } else if (direction === "downThenUp") {
+    for (let value = start; value >= min; value -= step) {
+      addValue(value);
+    }
+
+    for (let value = start + step; value <= max; value += step) {
       addValue(value);
     }
   } else {
@@ -2293,7 +2667,6 @@ function populateOrderedRangeSelect(select, config) {
       : String(value);
 
     option.textContent = `${textValue}${suffix}`;
-
     select.appendChild(option);
   });
 
@@ -2370,7 +2743,7 @@ function populateVitalsSelects() {
     max: 6,
     start: 1,
     step: 0.05,
-    direction: "around",
+    direction: "downThenUp",
     suffix: " g/L",
     decimals: 2
   });
@@ -2513,6 +2886,283 @@ function formatVitalsEntry(entry, options = {}) {
   return `${prefix} : ${parts.join(" ; ")}.`;
 }
 
+function readNumericVital(value) {
+  if (value === null || value === undefined || value === "") return null;
+
+  const number = Number(String(value).replace(",", "."));
+
+  return Number.isFinite(number) ? number : null;
+}
+
+function getCurrentProtocolPageId() {
+  const pages = typeof getProtocolPages === "function"
+    ? getProtocolPages()
+    : Array.from(document.querySelectorAll("section[id$='Protocol']"));
+
+  const visiblePage = pages.find(page => {
+    return !page.classList.contains("hidden") && page.offsetParent !== null;
+  });
+
+  return visiblePage?.id || "";
+}
+
+function isPediatricVitalsContext() {
+  const category = window.pisuPatient?.getCategory?.() || patientCategoryInput?.value || "";
+  const protocolId = getCurrentProtocolPageId();
+
+  return (
+    protocolId === "childAcrProtocol" ||
+    category.startsWith("enfant") ||
+    category.startsWith("nourrisson")
+  );
+}
+
+function getEmptyVitalsAlert() {
+  return {
+    level: "none",
+    call15Level: "none",
+    red: [],
+    orange: [],
+    reasons: [],
+    message: "",
+    createdAt: new Date().toISOString()
+  };
+}
+
+function getVitalsAlertWeight(level) {
+  if (level === "red") return 3;
+  if (level === "orange") return 2;
+  return 1;
+}
+
+function analyzeVitalsAlerts(entry) {
+  const alert = getEmptyVitalsAlert();
+
+  const fc = readNumericVital(entry.fc);
+  const tas = readNumericVital(entry.tas);
+  const spo2 = readNumericVital(entry.spo2);
+  const fr = readNumericVital(entry.fr);
+  const temperature = readNumericVital(entry.temperature);
+  const gcs = readNumericVital(entry.gcs);
+  const glycemia = readNumericVital(entry.glycemia);
+
+  const pediatricContext = isPediatricVitalsContext();
+
+  function addRed(reason) {
+    alert.red.push(reason);
+  }
+
+  function addOrange(reason) {
+    alert.orange.push(reason);
+  }
+
+  if (!pediatricContext) {
+    if (tas !== null && tas < 90) addRed(`TAS ${tas} mmHg < 90`);
+    else if (tas !== null && tas >= 90 && tas <= 100) addOrange(`TAS ${tas} mmHg limite`);
+
+    if (fc !== null && fc <= 40) addRed(`FC ${fc}/min <= 40`);
+    else if (fc !== null && fc >= 160) addRed(`FC ${fc}/min >= 160`);
+    else if (fc !== null && fc >= 130 && fc <= 159) addOrange(`FC ${fc}/min élevée`);
+    else if (fc !== null && fc >= 41 && fc <= 50) addOrange(`FC ${fc}/min basse`);
+
+    if (fc !== null && tas !== null && tas > 0) {
+      const shockIndex = fc / tas;
+
+      if (shockIndex > 1.2) {
+        addRed(`Shock index ${shockIndex.toFixed(2).replace(".", ",")} > 1,2`);
+      } else if (shockIndex > 1) {
+        addOrange(`Shock index ${shockIndex.toFixed(2).replace(".", ",")} > 1`);
+      }
+    }
+  }
+
+  if (fr !== null && fr < 10) addRed(`FR ${fr}/min < 10`);
+  else if (fr !== null && fr >= 30) addRed(`FR ${fr}/min >= 30`);
+  else if (fr !== null && fr >= 25 && fr <= 29) addOrange(`FR ${fr}/min élevée`);
+  else if (fr !== null && fr >= 10 && fr <= 11) addOrange(`FR ${fr}/min basse`);
+
+  if (spo2 !== null && spo2 < 90) addRed(`SpO₂ ${spo2}% < 90`);
+  else if (spo2 !== null && spo2 >= 90 && spo2 <= 92) addOrange(`SpO₂ ${spo2}% limite`);
+
+  if (gcs !== null && gcs <= 8) addRed(`GCS ${gcs} <= 8`);
+  else if (gcs !== null && gcs >= 9 && gcs <= 12) addOrange(`GCS ${gcs} altéré`);
+
+  if (glycemia !== null && glycemia < 0.6) {
+    addRed(`Glycémie ${String(entry.glycemia).replace(".", ",")} g/L < 0,60`);
+  } else if (glycemia !== null && glycemia >= 0.6 && glycemia < 0.7) {
+    addOrange(`Glycémie ${String(entry.glycemia).replace(".", ",")} g/L < 0,70`);
+  }
+
+  if (glycemia !== null && glycemia < 0.7 && gcs !== null && gcs < 15) {
+    addRed("Glycémie basse avec trouble de conscience");
+  }
+
+  if (temperature !== null && temperature < 35) {
+    addOrange(`Température ${String(entry.temperature).replace(".", ",")}°C < 35`);
+  } else if (temperature !== null && temperature >= 40) {
+    addOrange(`Température ${String(entry.temperature).replace(".", ",")}°C >= 40`);
+  }
+
+  alert.reasons = [...alert.red, ...alert.orange];
+
+  if (alert.red.length > 0) {
+    alert.level = "red";
+    alert.call15Level = "red";
+    alert.message = "Constantes inquiétantes : bilan médecin régulateur prioritaire.";
+  } else if (alert.orange.length >= 2) {
+    alert.level = "orange";
+    alert.call15Level = "red";
+    alert.message = "Plusieurs constantes limites : bilan médecin régulateur prioritaire à envisager.";
+  } else if (alert.orange.length === 1) {
+    alert.level = "orange";
+    alert.call15Level = "orange";
+    alert.message = "Constante limite : surveillance rapprochée et bilan selon contexte.";
+  }
+
+  alert.createdAt = new Date().toISOString();
+
+  return alert;
+}
+
+function saveLatestVitalsAlert(alert) {
+  if (!alert || alert.level === "none") {
+    localStorage.removeItem(VITALS_ALERT_STORAGE_KEY);
+    return;
+  }
+
+  localStorage.setItem(VITALS_ALERT_STORAGE_KEY, JSON.stringify(alert));
+}
+
+function getLatestVitalsAlert() {
+  try {
+    const alert = JSON.parse(localStorage.getItem(VITALS_ALERT_STORAGE_KEY) || "{}");
+
+    if (!alert || !alert.level) {
+      return getEmptyVitalsAlert();
+    }
+
+    return alert;
+  } catch {
+    localStorage.removeItem(VITALS_ALERT_STORAGE_KEY);
+    return getEmptyVitalsAlert();
+  }
+}
+
+function clearVitalsAlerts() {
+  localStorage.removeItem(VITALS_ALERT_STORAGE_KEY);
+  renderVitalsAlertBanner();
+  applyCall15AlertDisplay();
+}
+
+function renderVitalsAlertBanner(alert = getLatestVitalsAlert()) {
+  if (!vitalsAlertBanner) return;
+
+  vitalsAlertBanner.classList.remove("alert-orange", "alert-red");
+
+  const reasons = Array.isArray(alert?.reasons) ? alert.reasons : [];
+
+  if (!alert || alert.level === "none" || reasons.length === 0) {
+    vitalsAlertBanner.classList.add("hidden");
+    vitalsAlertBanner.textContent = "Aucune alerte constante.";
+    return;
+  }
+
+  vitalsAlertBanner.classList.remove("hidden");
+  vitalsAlertBanner.classList.add(alert.level === "red" ? "alert-red" : "alert-orange");
+
+  vitalsAlertBanner.textContent = `${alert.message} ${reasons.join(" ; ")}.`;
+}
+
+function getCall15Buttons() {
+  return Array.from(document.querySelectorAll(CALL15_BUTTON_SELECTOR));
+}
+
+function getCurrentProtocolCall15Button() {
+  const protocolId = getCurrentProtocolPageId();
+  const buttonId = PROTOCOL_CALL15_BUTTON_MAP[protocolId];
+
+  if (!buttonId) return null;
+
+  return document.getElementById(buttonId);
+}
+
+function getProtocolBaseCall15Alert() {
+  const protocolId = getCurrentProtocolPageId();
+
+  if (protocolId === "acrAdultProtocol") {
+    return {
+      level: "red",
+      reason: "ACR adulte : appel / bilan 15 prioritaire."
+    };
+  }
+
+  if (protocolId === "childAcrProtocol") {
+    return {
+      level: "red",
+      reason: "ACR enfant : appel / bilan 15 prioritaire."
+    };
+  }
+
+  return {
+    level: "none",
+    reason: ""
+  };
+}
+
+function getEffectiveCall15Alert() {
+  const vitalsAlert = getLatestVitalsAlert();
+  const protocolAlert = getProtocolBaseCall15Alert();
+
+  const vitalsLevel = vitalsAlert?.call15Level || "none";
+  const protocolLevel = protocolAlert.level || "none";
+
+  const effectiveLevel = getVitalsAlertWeight(protocolLevel) > getVitalsAlertWeight(vitalsLevel)
+    ? protocolLevel
+    : vitalsLevel;
+
+  const reasons = [];
+
+  if (protocolAlert.reason) reasons.push(protocolAlert.reason);
+
+  if (vitalsAlert?.reasons?.length) {
+    reasons.push(`Constantes : ${vitalsAlert.reasons.join(" ; ")}`);
+  }
+
+  return {
+    level: effectiveLevel,
+    reasons
+  };
+}
+
+function applyCall15AlertDisplay() {
+  const buttons = getCall15Buttons();
+
+  buttons.forEach(button => {
+    button.classList.remove("call15-alert-orange", "call15-alert-red");
+    button.removeAttribute("data-call15-alert");
+    button.removeAttribute("title");
+  });
+
+  const currentButton = getCurrentProtocolCall15Button();
+
+  if (!currentButton) return;
+
+  if (currentButton.classList.contains("action-done")) return;
+
+  const effectiveAlert = getEffectiveCall15Alert();
+
+  if (!effectiveAlert || effectiveAlert.level === "none") return;
+
+  currentButton.classList.add(
+    effectiveAlert.level === "red"
+      ? "call15-alert-red"
+      : "call15-alert-orange"
+  );
+
+  currentButton.dataset.call15Alert = effectiveAlert.level;
+  currentButton.title = effectiveAlert.reasons.join(" ");
+}
+
 function clearVitalsForm() {
   [
     vitalsFcInput,
@@ -2544,10 +3194,16 @@ function renderVitalsHistory() {
     }
   }
 
-  if (!vitalsHistory) return;
+  if (!vitalsHistory) {
+    renderVitalsAlertBanner();
+    applyCall15AlertDisplay();
+    return;
+  }
 
   if (entries.length === 0) {
     vitalsHistory.textContent = "Aucune constante enregistrée.";
+    renderVitalsAlertBanner();
+    applyCall15AlertDisplay();
     return;
   }
 
@@ -2559,6 +3215,9 @@ function renderVitalsHistory() {
     item.textContent = formatVitalsEntry(entry);
     vitalsHistory.appendChild(item);
   });
+
+  renderVitalsAlertBanner();
+  applyCall15AlertDisplay();
 }
 
 function updateVitalsFloatingButtonState(isOpen) {
@@ -2595,7 +3254,7 @@ function closeVitalsSheet() {
 }
 
 function toggleVitalsSheet() {
-  const isOpen = document.body.classList.contains("vitals-sheet-open");
+  const isOpen = vitalsSheet && !vitalsSheet.classList.contains("hidden");
 
   if (isOpen) {
     closeVitalsSheet();
@@ -2617,7 +3276,46 @@ function saveCurrentVitals() {
   saveVitalsEntries(entries);
 
   const line = formatVitalsEntry(entry).replace(`${entry.time} — `, "");
-  addLog(line);
+  addLog(line, {
+    protocole: "Constantes",
+    categorie: "constante",
+    sousCategorie: "bilan_vital",
+    libelleCourt: line,
+    libelleLong: line,
+    statut: "realise",
+    sectionSAED: "S",
+    priorite: "haute",
+    type: "clinique",
+    visibleSynthese: true,
+    visibleSAED: true,
+    visibleChrono: true,
+    visibleJournal: true
+  });
+
+  const alert = analyzeVitalsAlerts(entry);
+  saveLatestVitalsAlert(alert);
+  renderVitalsAlertBanner(alert);
+  applyCall15AlertDisplay();
+
+  if (alert.level !== "none") {
+    const alertLine = `Alerte constantes ${alert.level.toUpperCase()} : ${alert.reasons.join(" ; ")} — ${alert.message}`;
+
+    addLog(alertLine, {
+      protocole: getCurrentProtocolPageId() || "Constantes",
+      categorie: "signe_clinique",
+      sousCategorie: "alerte_constantes",
+      libelleCourt: alertLine,
+      libelleLong: alertLine,
+      statut: "a_confirmer",
+      sectionSAED: "S",
+      priorite: alert.call15Level === "red" ? "haute" : "moyenne",
+      type: "clinique",
+      visibleSynthese: true,
+      visibleSAED: true,
+      visibleChrono: true,
+      visibleJournal: true
+    });
+  }
 
   renderVitalsHistory();
 
@@ -2628,8 +3326,11 @@ function saveCurrentVitals() {
 
 function clearVitalsHistory() {
   localStorage.removeItem(VITALS_STORAGE_KEY);
+  localStorage.removeItem(VITALS_ALERT_STORAGE_KEY);
   clearVitalsForm();
   renderVitalsHistory();
+  renderVitalsAlertBanner();
+  applyCall15AlertDisplay();
 }
 
 function getInitialVitalsLine() {
@@ -2659,6 +3360,8 @@ function getAllVitalsLines() {
 function setupVitalsFeature() {
   populateVitalsSelects();
   renderVitalsHistory();
+  renderVitalsAlertBanner();
+  applyCall15AlertDisplay();
   updateVitalsFloatingButtonState(false);
 
   floatingVitalsBtn?.addEventListener("click", toggleVitalsSheet);
@@ -2667,6 +3370,14 @@ function setupVitalsFeature() {
 
   saveVitalsBtn?.addEventListener("click", saveCurrentVitals);
   clearVitalsFormBtn?.addEventListener("click", clearVitalsForm);
+
+  document.addEventListener("click", event => {
+    const call15Button = event.target.closest?.(CALL15_BUTTON_SELECTOR);
+
+    if (!call15Button) return;
+
+    window.setTimeout(applyCall15AlertDisplay, 80);
+  });
 }
 
 window.pisuVitals = {
@@ -2675,6 +3386,12 @@ window.pisuVitals = {
   getLatestLine: getLatestVitalsLine,
   getAllLines: getAllVitalsLines,
   clear: clearVitalsHistory
+};
+
+window.pisuVitalsAlerts = {
+  getLatest: getLatestVitalsAlert,
+  clear: clearVitalsAlerts,
+  analyze: analyzeVitalsAlerts
 };
 
 const CREW_ROSTER_STORAGE_KEY = "pisuCrewRoster";

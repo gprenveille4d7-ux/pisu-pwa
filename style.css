@@ -2587,6 +2587,72 @@ a.analgesia-call15 {
   }
 }
 
+/* ALERTES CONSTANTES */
+.vitals-alert-banner {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #475569;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e2e8f0;
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.vitals-alert-banner.alert-orange {
+  border-color: #f59e0b;
+  background: rgba(69, 26, 3, 0.82);
+  color: #ffedd5;
+}
+
+.vitals-alert-banner.alert-red {
+  border-color: #ef4444;
+  background: rgba(127, 29, 29, 0.88);
+  color: #fee2e2;
+}
+
+.call15-alert-orange {
+  border-color: #f59e0b !important;
+  background: #451a03 !important;
+  color: #ffedd5 !important;
+  animation: call15OrangePulse 1.35s ease-in-out infinite;
+}
+
+.call15-alert-red {
+  border-color: #ef4444 !important;
+  background: #7f1d1d !important;
+  color: #fee2e2 !important;
+  animation: call15RedFlash 0.82s ease-in-out infinite;
+}
+
+@keyframes call15OrangePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.25);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.38);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.08);
+  }
+}
+
+@keyframes call15RedFlash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2);
+    filter: brightness(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 7px rgba(239, 68, 68, 0.5);
+    filter: brightness(1.25);
+  }
+}
+
 /* RESET MISSION PRINCIPALE */
 .new-mission-block {
   border-color: #7f1d1d;
