@@ -3890,6 +3890,7 @@ function showUserCharter() {
   closeVitalsSheet?.();
 
   userCharterOverlay?.classList.remove("hidden");
+  document.body.classList.remove("charter-pending");
   document.body.classList.add("modal-open", "charter-open");
 
   if (charterVersionText) {
@@ -3907,7 +3908,7 @@ function showUserCharter() {
 
 function hideUserCharter() {
   userCharterOverlay?.classList.add("hidden");
-  document.body.classList.remove("modal-open", "charter-open");
+  document.body.classList.remove("modal-open", "charter-open", "charter-pending");
 }
 
 function acceptUserCharter() {
@@ -4037,6 +4038,8 @@ function setupUserCharterFeature() {
 
   if (!hasAcceptedCurrentCharter()) {
     showUserCharter();
+  } else {
+    hideUserCharter();
   }
 }
 

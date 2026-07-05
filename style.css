@@ -3317,8 +3317,17 @@ body.modal-open {
 }
 
 body.charter-open .floating-vitals-button,
+body.charter-pending .floating-vitals-button,
 body.charter-open .floating-back-menu {
   display: none !important;
+}
+
+body.charter-pending .floating-back-menu {
+  display: none !important;
+}
+
+body.charter-pending .charter-overlay.hidden {
+  display: grid !important;
 }
 
 .charter-overlay {
