@@ -23,7 +23,11 @@
   --protocol-sticky-top: calc(var(--app-header-height) + 10px);
 }
 
-* { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -3380,4 +3384,525 @@ body.charter-pending .charter-overlay.hidden {
   font-size: 0.78rem;
   font-weight: 900;
   color: #cbd5e1;
+}
+
+/* SECURITE AFFICHAGE - CARTES STICKY / CARRE VOLANT */
+.protocol-status-row,
+.acr-status-row,
+.child-acr-status-row,
+.dt-status-row,
+.smoke-status-row,
+.burns-status-row,
+.seizure-status-row,
+.anaphylaxis-status-row,
+.hemorrhage-status-row,
+.hypoglycemia-status-row,
+.asthma-status-row,
+.analgesia-status-row {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.protocol-status-card,
+.acr-status-card,
+.child-acr-status-card,
+.dt-status-card,
+.smoke-status-card,
+.burns-status-card,
+.seizure-status-card,
+.anaphylaxis-status-card,
+.hemorrhage-status-card,
+.hypoglycemia-status-card,
+.asthma-status-card,
+.analgesia-status-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.protocol-status-card span,
+.protocol-status-card strong,
+.acr-status-card span,
+.acr-status-card strong,
+.child-acr-status-card span,
+.child-acr-status-card strong,
+.dt-status-card span,
+.dt-status-card strong,
+.smoke-status-card span,
+.smoke-status-card strong,
+.burns-status-card span,
+.burns-status-card strong,
+.seizure-status-card span,
+.seizure-status-card strong,
+.anaphylaxis-status-card span,
+.anaphylaxis-status-card strong,
+.hemorrhage-status-card span,
+.hemorrhage-status-card strong,
+.hypoglycemia-status-card span,
+.hypoglycemia-status-card strong,
+.asthma-status-card span,
+.asthma-status-card strong,
+.analgesia-status-card span,
+.analgesia-status-card strong {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* BOUTONS PROTOCOLES - TEXTES LONGS */
+button[data-action],
+button[data-acr-action],
+button[data-child-acr-action],
+button[data-dt-action],
+button[data-smoke-action],
+button[data-burn-action],
+button[data-seizure-action],
+button[data-anaphylaxis-action],
+button[data-hemo-action],
+button[data-hypo-action],
+button[data-asthma-action],
+button[data-analgesia-action] {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.25;
+}
+
+/* BOUTONS VALIDES - NE PAS DEBORDER */
+.action-done,
+.click-feedback,
+.undo-feedback,
+.long-press-pending {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* BADGES COMPTEURS - SECURITE */
+[data-count-badge],
+.count-action {
+  position: relative;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.count-badge,
+.action-count-badge,
+.badge-count {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 700px) {
+  .protocol-status-card,
+  .acr-status-card,
+  .child-acr-status-card,
+  .dt-status-card,
+  .smoke-status-card,
+  .burns-status-card,
+  .seizure-status-card,
+  .anaphylaxis-status-card,
+  .hemorrhage-status-card,
+  .hypoglycemia-status-card,
+  .asthma-status-card,
+  .analgesia-status-card {
+    padding: 7px 6px;
+  }
+
+  .protocol-status-card span,
+  .acr-status-card span,
+  .child-acr-status-card span,
+  .dt-status-card span,
+  .smoke-status-card span,
+  .burns-status-card span,
+  .seizure-status-card span,
+  .anaphylaxis-status-card span,
+  .hemorrhage-status-card span,
+  .hypoglycemia-status-card span,
+  .asthma-status-card span,
+  .analgesia-status-card span {
+    font-size: 0.52rem;
+  }
+
+  .protocol-status-card strong,
+  .acr-status-card strong,
+  .child-acr-status-card strong,
+  .dt-status-card strong,
+  .smoke-status-card strong,
+  .burns-status-card strong,
+  .seizure-status-card strong,
+  .anaphylaxis-status-card strong,
+  .hemorrhage-status-card strong,
+  .hypoglycemia-status-card strong,
+  .asthma-status-card strong,
+  .analgesia-status-card strong {
+    font-size: 0.78rem;
+  }
+}
+
+/* EQUIPAGE MISSION - VERSION SIMPLE ET COLOREE */
+.crew-content-v2 {
+  gap: 12px;
+}
+
+.crew-step-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.crew-step-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crew-step-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.crew-step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.crew-quick-roster,
+.crew-role-buttons,
+.crew-summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.crew-person-chip,
+.crew-role-btn,
+.crew-new-btn,
+.crew-add-mission-btn {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.crew-person-chip.selected {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.42);
+  color: #cffafe;
+}
+
+.crew-new-btn {
+  justify-self: start;
+  border-color: #475569;
+  color: #bfdbfe;
+}
+
+.selected-crew-preview {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px dashed #475569;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.crew-add-mission-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.crew-add-mission-btn:not(:disabled) {
+  border-color: var(--crew-accent, #38bdf8);
+  background: var(--crew-bg, rgba(14, 116, 144, 0.42));
+  color: var(--crew-text, #cffafe);
+}
+
+.crew-role-btn.selected {
+  border-color: var(--crew-accent, #38bdf8);
+  background: var(--crew-bg, rgba(14, 116, 144, 0.42));
+  color: var(--crew-text, #cffafe);
+}
+
+.crew-role-card {
+  --crew-accent: #94a3b8;
+  --crew-bg: rgba(148, 163, 184, 0.16);
+  --crew-text: #f8fafc;
+
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1.5px solid var(--crew-accent);
+  background: var(--crew-bg);
+}
+
+.crew-role-card-main {
+  color: var(--crew-text);
+  font-size: 0.96rem;
+  font-weight: 900;
+}
+
+.crew-role-card-meta {
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.crew-role-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.crew-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--crew-accent, #475569);
+  background: var(--crew-bg, rgba(71, 85, 105, 0.25));
+  color: var(--crew-text, #e2e8f0);
+  font-weight: 900;
+  font-size: 0.74rem;
+}
+
+.crew-mini-btn {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+  font-weight: 900;
+}
+
+.crew-mini-btn.danger {
+  border-color: #ef4444;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.35);
+}
+
+/* COULEURS PAR ROLE */
+.crew-role-conducteur {
+  --crew-accent: #38bdf8;
+  --crew-bg: rgba(14, 116, 144, 0.36);
+  --crew-text: #cffafe;
+}
+
+.crew-role-equipier {
+  --crew-accent: #94a3b8;
+  --crew-bg: rgba(71, 85, 105, 0.36);
+  --crew-text: #f8fafc;
+}
+
+.crew-role-ide {
+  --crew-accent: #22c55e;
+  --crew-bg: rgba(20, 83, 45, 0.42);
+  --crew-text: #dcfce7;
+}
+
+.crew-role-medecin {
+  --crew-accent: #a78bfa;
+  --crew-bg: rgba(88, 28, 135, 0.42);
+  --crew-text: #ede9fe;
+}
+
+.crew-role-ambulancier {
+  --crew-accent: #06b6d4;
+  --crew-bg: rgba(22, 78, 99, 0.42);
+  --crew-text: #cffafe;
+}
+
+.crew-role-observateur {
+  --crew-accent: #f59e0b;
+  --crew-bg: rgba(120, 53, 15, 0.42);
+  --crew-text: #ffedd5;
+}
+
+.crew-role-autre {
+  --crew-accent: #64748b;
+  --crew-bg: rgba(51, 65, 85, 0.42);
+  --crew-text: #e2e8f0;
+}
+
+/* IDENTITE PATIENT - ANTECEDENTS */
+.patient-subblock {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.78);
+}
+
+.patient-subblock summary {
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #e2e8f0;
+}
+
+.patient-antecedents-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.patient-antecedents-grid label {
+  display: grid;
+  gap: 5px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.patient-antecedents-grid textarea {
+  width: 100%;
+  min-height: 58px;
+  resize: vertical;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  padding: 9px 10px;
+  font-size: 0.92rem;
+}
+
+.antecedents-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.antecedent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.antecedent-chip:has(input:checked) {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.45);
+  color: #ffedd5;
+}
+
+.antecedent-chip input {
+  accent-color: #f59e0b;
+}
+
+.antecedents-summary {
+  display: block;
+  margin-top: 10px;
+  color: #fbbf24;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+/* CONSTANTES - TENSION BILATERALE */
+.vitals-bp-block {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.78);
+}
+
+.vitals-bp-title {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vitals-bp-line {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid #1e293b;
+  background: rgba(2, 6, 23, 0.55);
+}
+
+.vitals-bp-side {
+  color: #93c5fd;
+  font-size: 0.86rem;
+  font-weight: 900;
+  padding-bottom: 10px;
+}
+
+.vitals-bp-line label {
+  display: grid;
+  gap: 5px;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+@media (max-width: 520px) {
+  .vitals-bp-line {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .vitals-bp-side {
+    grid-column: 1 / -1;
+    padding-bottom: 0;
+  }
+}
+
+/* TITRE DYNAMIQUE PROTOCOLE */
+#appTitle {
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.protocol-mode #appTitle {
+  color: #bfdbfe;
+}
+
+@media (max-width: 520px) {
+  #appTitle {
+    font-size: 1.15rem;
+    line-height: 1.15;
+  }
 }

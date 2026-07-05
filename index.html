@@ -74,7 +74,7 @@
   <header class="app-header">
     <div>
       <p class="eyebrow">Prototype hors ligne</p>
-      <h1>Protocole PISU</h1>
+      <h1 id="appTitle">Protocole PISU</h1>
     </div>
     <button id="installBtn" class="ghost hidden">Installer</button>
   </header>
@@ -133,53 +133,69 @@
         </button>
       </div>
 
-      <small id="crewSummary" class="collapse-summary">Aucun équipage renseigné</small>
+      <small id="crewSummary" class="collapse-summary crew-summary">
+        Aucun équipage sélectionné
+      </small>
 
-      <div id="crewContent" class="collapsible-content">
-        <div class="crew-subsection">
-          <h3>Sélection rapide</h3>
-
-          <div class="crew-grid">
-            <label>
-              Collègue enregistré
-              <select id="crewRosterSelect">
-                <option value="">Sélectionner un collègue</option>
-              </select>
-            </label>
-
-            <label>
-              Rôle sur la mission
-              <select id="crewMissionRole">
-                <option value="Conducteur">Conducteur</option>
-                <option value="Équipier">Équipier</option>
-                <option value="IDE">IDE</option>
-                <option value="Médecin">Médecin</option>
-                <option value="Ambulancier">Ambulancier</option>
-                <option value="Observateur">Observateur</option>
-                <option value="Autre">Autre</option>
-              </select>
-            </label>
+      <div id="crewContent" class="collapsible-content crew-content-v2">
+        <div class="crew-step-card">
+          <div class="crew-step-header">
+            <span class="crew-step-number">1</span>
+            <h3>Choisir un collègue</h3>
           </div>
 
-          <button id="addCrewToMissionBtn" class="secondary" type="button">
-            Ajouter à l’équipage mission
+          <div id="crewQuickRoster" class="crew-quick-roster">
+            Aucun collègue enregistré.
+          </div>
+
+          <button id="openNewCrewMemberBtn" class="crew-new-btn" type="button">
+            + Nouveau collègue
           </button>
         </div>
 
-        <div class="crew-subsection">
-          <h3>Équipage actuel</h3>
-          <div id="missionCrewList" class="crew-list">
+        <div class="crew-step-card">
+          <div class="crew-step-header">
+            <span class="crew-step-number">2</span>
+            <h3>Choisir son rôle</h3>
+          </div>
+
+          <div id="crewRoleButtons" class="crew-role-buttons">
+            <button class="crew-role-btn crew-role-conducteur selected" type="button" data-crew-role="Conducteur">Conducteur</button>
+            <button class="crew-role-btn crew-role-equipier" type="button" data-crew-role="Équipier">Équipier</button>
+            <button class="crew-role-btn crew-role-ide" type="button" data-crew-role="IDE">IDE</button>
+            <button class="crew-role-btn crew-role-medecin" type="button" data-crew-role="Médecin">Médecin</button>
+            <button class="crew-role-btn crew-role-ambulancier" type="button" data-crew-role="Ambulancier">Ambulancier</button>
+            <button class="crew-role-btn crew-role-observateur" type="button" data-crew-role="Observateur">Observateur</button>
+            <button class="crew-role-btn crew-role-autre" type="button" data-crew-role="Autre">Autre</button>
+          </div>
+
+          <div id="selectedCrewPreview" class="selected-crew-preview">
+            Sélectionne un collègue, puis son rôle.
+          </div>
+
+          <button id="addCrewToMissionBtn" class="crew-add-mission-btn" type="button" disabled>
+            Ajouter à la mission
+          </button>
+        </div>
+
+        <div class="crew-step-card">
+          <div class="crew-step-header">
+            <span class="crew-step-number">3</span>
+            <h3>Équipage actuel</h3>
+          </div>
+
+          <div id="missionCrewList" class="crew-list crew-mission-list">
             Aucun équipage renseigné pour cette mission.
           </div>
         </div>
 
-        <details class="crew-details">
+        <details id="crewNewMemberDetails" class="crew-details">
           <summary>Ajouter un collègue au carnet</summary>
 
           <div class="crew-grid crew-form">
             <label>
               Nom / Prénom
-              <input id="crewMemberName" type="text" placeholder="Ex : Nicolas Martin">
+              <input id="crewMemberName" type="text" placeholder="Ex : Florian Guyet">
             </label>
 
             <label>
@@ -213,7 +229,7 @@
         </details>
 
         <details class="crew-details">
-          <summary>Carnet équipage</summary>
+          <summary>Gestion du carnet</summary>
           <div id="crewRosterList" class="crew-list">
             Aucun collègue enregistré.
           </div>
@@ -290,6 +306,68 @@
             <textarea id="patientNote" rows="2" placeholder="Ex : identité confirmée par famille, papiers absents, bracelet patient..."></textarea>
           </label>
         </div>
+
+        <details class="patient-subblock antecedents-subblock" open>
+          <summary>Antécédents / risques utiles</summary>
+
+          <div class="patient-antecedents-grid">
+            <label>
+              Allergies
+              <textarea id="patientAllergies" rows="2" placeholder="Ex : pénicilline, iode, latex..."></textarea>
+            </label>
+
+            <label>
+              Antécédents médicaux
+              <textarea id="patientMedicalHistory" rows="2" placeholder="Ex : cardiopathie, asthme, épilepsie..."></textarea>
+            </label>
+
+            <label>
+              Traitements habituels
+              <textarea id="patientCurrentTreatment" rows="2" placeholder="Ex : AVK, AOD, insuline, bêtabloquant..."></textarea>
+            </label>
+
+            <label>
+              Remarque utile
+              <textarea id="patientAntecedentsNote" rows="2" placeholder="Contexte, information famille, dossier, bracelet..."></textarea>
+            </label>
+          </div>
+
+          <div class="antecedents-flags">
+            <label class="antecedent-chip">
+              <input id="patientAnticoagulantCheck" type="checkbox">
+              <span>Anticoagulant / antiagrégant</span>
+            </label>
+
+            <label class="antecedent-chip">
+              <input id="patientDiabetesCheck" type="checkbox">
+              <span>Diabète</span>
+            </label>
+
+            <label class="antecedent-chip">
+              <input id="patientEpilepsyCheck" type="checkbox">
+              <span>Épilepsie</span>
+            </label>
+
+            <label class="antecedent-chip">
+              <input id="patientCardiacHistoryCheck" type="checkbox">
+              <span>Cardiaque</span>
+            </label>
+
+            <label class="antecedent-chip">
+              <input id="patientRespHistoryCheck" type="checkbox">
+              <span>Respiratoire</span>
+            </label>
+
+            <label class="antecedent-chip">
+              <input id="patientPregnancyCheck" type="checkbox">
+              <span>Grossesse possible</span>
+            </label>
+          </div>
+
+          <small id="patientAntecedentsSummary" class="antecedents-summary">
+            Aucun antécédent renseigné.
+          </small>
+        </details>
 
         <div class="timer-actions">
           <button id="saveIdentityBtn" class="primary">Enregistrer identité</button>
@@ -2539,22 +2617,44 @@
         </select>
       </label>
 
-      <div class="vitals-ta-group">
-        <div class="vitals-ta-title">Tension artérielle</div>
+      <div class="vitals-bp-block">
+        <div class="vitals-bp-title">Tension artérielle</div>
 
-        <label>
-          SYS
-          <select id="vitalsTas" data-vital-default="120">
-            <option value="">Non renseignée</option>
-          </select>
-        </label>
+        <div class="vitals-bp-line">
+          <div class="vitals-bp-side">Gauche</div>
 
-        <label>
-          DIA
-          <select id="vitalsTad" data-vital-default="70">
-            <option value="">Non renseignée</option>
-          </select>
-        </label>
+          <label>
+            SYS
+            <select id="vitalsTasLeft" data-vital-default="120">
+              <option value="">Non renseignée</option>
+            </select>
+          </label>
+
+          <label>
+            DIA
+            <select id="vitalsTadLeft" data-vital-default="70">
+              <option value="">Non renseignée</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="vitals-bp-line">
+          <div class="vitals-bp-side">Droite</div>
+
+          <label>
+            SYS
+            <select id="vitalsTasRight" data-vital-default="120">
+              <option value="">Non renseignée</option>
+            </select>
+          </label>
+
+          <label>
+            DIA
+            <select id="vitalsTadRight" data-vital-default="70">
+              <option value="">Non renseignée</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <label>
