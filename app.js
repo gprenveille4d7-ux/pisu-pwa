@@ -2603,14 +2603,16 @@ function populateOrderedRangeSelect(select, config) {
   const {
     min,
     max,
-    start,
+    anchor,
+    start = anchor,
     step = 1,
-    direction = "around",
+    direction = "centered",
     suffix = "",
     decimals = 0
   } = config;
 
   const currentValue = select.value;
+  const currentTouched = select.dataset.vitalsTouched === "true";
 
   select.innerHTML = "";
 
@@ -2621,8 +2623,12 @@ function populateOrderedRangeSelect(select, config) {
 
   const values = [];
 
+  function normalizeValue(value) {
+    return Number(value.toFixed(decimals));
+  }
+
   function addValue(value) {
-    const rounded = Number(value.toFixed(decimals));
+    const rounded = normalizeValue(value);
 
     if (rounded < min || rounded > max) return;
     if (values.includes(rounded)) return;
@@ -2638,40 +2644,44 @@ function populateOrderedRangeSelect(select, config) {
     for (let value = start; value <= max; value += step) {
       addValue(value);
     }
-  } else if (direction === "downThenUp") {
-    for (let value = start; value >= min; value -= step) {
-      addValue(value);
-    }
-
-    for (let value = start + step; value <= max; value += step) {
-      addValue(value);
-    }
   } else {
-    for (let value = start; value <= max; value += step) {
-      addValue(value);
-    }
-
-    for (let value = start - step; value >= min; value -= step) {
+    for (let value = min; value <= max + step / 2; value += step) {
       addValue(value);
     }
   }
 
   values.forEach(value => {
     const option = document.createElement("option");
+
+    const optionValue = decimals > 0
+      ? value.toFixed(decimals)
+      : String(value);
+
     const textValue = decimals > 0
       ? value.toFixed(decimals).replace(".", ",")
       : String(value);
 
-    option.value = decimals > 0
-      ? value.toFixed(decimals)
-      : String(value);
-
+    option.value = optionValue;
     option.textContent = `${textValue}${suffix}`;
+
     select.appendChild(option);
   });
 
+  const defaultValue = select.dataset.vitalDefault || (
+    decimals > 0
+      ? Number(start).toFixed(decimals)
+      : String(start)
+  );
+
   if (currentValue && Array.from(select.options).some(option => option.value === currentValue)) {
     select.value = currentValue;
+    select.dataset.vitalsTouched = currentTouched ? "true" : "false";
+  } else if (defaultValue && Array.from(select.options).some(option => option.value === defaultValue)) {
+    select.value = defaultValue;
+    select.dataset.vitalsTouched = "false";
+  } else {
+    select.value = "";
+    select.dataset.vitalsTouched = "false";
   }
 }
 
@@ -2690,7 +2700,7 @@ function populateVitalsSelects() {
     max: 250,
     start: 80,
     step: 1,
-    direction: "around",
+    direction: "centered",
     suffix: "/min"
   });
 
@@ -2699,7 +2709,7 @@ function populateVitalsSelects() {
     max: 80,
     start: 20,
     step: 1,
-    direction: "around",
+    direction: "centered",
     suffix: "/min"
   });
 
@@ -2708,7 +2718,7 @@ function populateVitalsSelects() {
     max: 280,
     start: 120,
     step: 1,
-    direction: "around"
+    direction: "centered"
   });
 
   populateOrderedRangeSelect(vitalsTadInput, {
@@ -2716,7 +2726,7 @@ function populateVitalsSelects() {
     max: 180,
     start: 70,
     step: 1,
-    direction: "around"
+    direction: "centered"
   });
 
   populateOrderedRangeSelect(vitalsOxygenFlowInput, {
@@ -2733,7 +2743,7 @@ function populateVitalsSelects() {
     max: 42,
     start: 37,
     step: 0.1,
-    direction: "around",
+    direction: "centered",
     suffix: " °C",
     decimals: 1
   });
@@ -2743,7 +2753,7 @@ function populateVitalsSelects() {
     max: 6,
     start: 1,
     step: 0.05,
-    direction: "downThenUp",
+    direction: "centered",
     suffix: " g/L",
     decimals: 2
   });
@@ -2753,7 +2763,7 @@ function populateVitalsSelects() {
     max: 15,
     start: 15,
     step: 1,
-    direction: "down"
+    direction: "centered"
   });
 
   populateOrderedRangeSelect(vitalsPainInput, {
@@ -2761,8 +2771,52 @@ function populateVitalsSelects() {
     max: 10,
     start: 0,
     step: 1,
-    direction: "up",
+    direction: "centered",
     suffix: "/10"
+  });
+}
+
+function getVitalsFieldValue(input) {
+  if (!input) return "";
+
+  const isSelect = input.tagName === "SELECT";
+  const isVitalDefaultSelect = Boolean(input.dataset.vitalDefault);
+
+  if (isSelect && isVitalDefaultSelect && input.dataset.vitalsTouched !== "true") {
+    return "";
+  }
+
+  return input.value?.trim() || "";
+}
+
+function markVitalsFieldTouched(event) {
+  const input = event.target;
+
+  if (!input?.dataset?.vitalDefault) return;
+
+  input.dataset.vitalsTouched = "true";
+}
+
+function setupVitalsTouchedTracking() {
+  const fields = [
+    vitalsFcInput,
+    vitalsTasInput,
+    vitalsTadInput,
+    vitalsSpo2Input,
+    vitalsOxygenFlowInput,
+    vitalsFrInput,
+    vitalsTempInput,
+    vitalsGcsInput,
+    vitalsPainInput,
+    vitalsGlycemiaInput
+  ];
+
+  fields.forEach(input => {
+    if (!input) return;
+
+    input.addEventListener("focus", markVitalsFieldTouched);
+    input.addEventListener("pointerdown", markVitalsFieldTouched);
+    input.addEventListener("change", markVitalsFieldTouched);
   });
 }
 
@@ -2806,17 +2860,17 @@ function buildVitalsEntry() {
     createdAt: now.toISOString(),
     time: formatVitalsTime(now),
     moment: getCleanValue(vitalsMomentInput) || "Non précisé",
-    fc: getCleanValue(vitalsFcInput),
-    tas: getCleanValue(vitalsTasInput),
-    tad: getCleanValue(vitalsTadInput),
-    spo2: getCleanValue(vitalsSpo2Input),
+    fc: getVitalsFieldValue(vitalsFcInput),
+    tas: getVitalsFieldValue(vitalsTasInput),
+    tad: getVitalsFieldValue(vitalsTadInput),
+    spo2: getVitalsFieldValue(vitalsSpo2Input),
     oxygenSupport: getCleanValue(vitalsOxygenSupportInput),
-    oxygenFlow: normalizeDecimalValue(getCleanValue(vitalsOxygenFlowInput)),
-    fr: getCleanValue(vitalsFrInput),
-    temperature: normalizeDecimalValue(getCleanValue(vitalsTempInput)),
-    gcs: getCleanValue(vitalsGcsInput),
-    pain: getCleanValue(vitalsPainInput),
-    glycemia: normalizeDecimalValue(getCleanValue(vitalsGlycemiaInput))
+    oxygenFlow: normalizeDecimalValue(getVitalsFieldValue(vitalsOxygenFlowInput)),
+    fr: getVitalsFieldValue(vitalsFrInput),
+    temperature: normalizeDecimalValue(getVitalsFieldValue(vitalsTempInput)),
+    gcs: getVitalsFieldValue(vitalsGcsInput),
+    pain: getVitalsFieldValue(vitalsPainInput),
+    glycemia: normalizeDecimalValue(getVitalsFieldValue(vitalsGlycemiaInput))
   };
 }
 
@@ -3163,6 +3217,19 @@ function applyCall15AlertDisplay() {
   currentButton.title = effectiveAlert.reasons.join(" ");
 }
 
+function resetVitalSelect(input) {
+  if (!input) return;
+
+  const defaultValue = input.dataset.vitalDefault || "";
+
+  if (defaultValue) {
+    input.value = defaultValue;
+    input.dataset.vitalsTouched = "false";
+  } else {
+    input.value = "";
+  }
+}
+
 function clearVitalsForm() {
   [
     vitalsFcInput,
@@ -3172,14 +3239,12 @@ function clearVitalsForm() {
     vitalsOxygenFlowInput,
     vitalsFrInput,
     vitalsTempInput,
+    vitalsGcsInput,
+    vitalsPainInput,
     vitalsGlycemiaInput
-  ].forEach(input => {
-    if (input) input.value = "";
-  });
+  ].forEach(resetVitalSelect);
 
   if (vitalsOxygenSupportInput) vitalsOxygenSupportInput.value = "";
-  if (vitalsGcsInput) vitalsGcsInput.value = "";
-  if (vitalsPainInput) vitalsPainInput.value = "";
 }
 
 function renderVitalsHistory() {
@@ -3359,6 +3424,7 @@ function getAllVitalsLines() {
 
 function setupVitalsFeature() {
   populateVitalsSelects();
+  setupVitalsTouchedTracking();
   renderVitalsHistory();
   renderVitalsAlertBanner();
   applyCall15AlertDisplay();
@@ -3821,8 +3887,10 @@ function hasAcceptedCurrentCharter() {
 }
 
 function showUserCharter() {
+  closeVitalsSheet?.();
+
   userCharterOverlay?.classList.remove("hidden");
-  document.body.classList.add("modal-open");
+  document.body.classList.add("modal-open", "charter-open");
 
   if (charterVersionText) {
     charterVersionText.textContent = `Version charte : ${CHARTER_VERSION}`;
@@ -3839,7 +3907,7 @@ function showUserCharter() {
 
 function hideUserCharter() {
   userCharterOverlay?.classList.add("hidden");
-  document.body.classList.remove("modal-open");
+  document.body.classList.remove("modal-open", "charter-open");
 }
 
 function acceptUserCharter() {

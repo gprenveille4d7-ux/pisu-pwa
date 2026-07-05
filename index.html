@@ -2534,28 +2534,32 @@
 
       <label>
         FC /min
-        <select id="vitalsFc">
+        <select id="vitalsFc" data-vital-default="80">
           <option value="">Non renseignée</option>
         </select>
       </label>
 
-      <label>
-        TA systolique
-        <select id="vitalsTas">
-          <option value="">Non renseignée</option>
-        </select>
-      </label>
+      <div class="vitals-ta-group">
+        <div class="vitals-ta-title">Tension artérielle</div>
 
-      <label>
-        TA diastolique
-        <select id="vitalsTad">
-          <option value="">Non renseignée</option>
-        </select>
-      </label>
+        <label>
+          SYS
+          <select id="vitalsTas" data-vital-default="120">
+            <option value="">Non renseignée</option>
+          </select>
+        </label>
+
+        <label>
+          DIA
+          <select id="vitalsTad" data-vital-default="70">
+            <option value="">Non renseignée</option>
+          </select>
+        </label>
+      </div>
 
       <label>
         SpO₂ %
-        <select id="vitalsSpo2">
+        <select id="vitalsSpo2" data-vital-default="100">
           <option value="">Non renseignée</option>
         </select>
       </label>
@@ -2576,42 +2580,42 @@
 
       <label>
         Débit O₂ L/min
-        <select id="vitalsOxygenFlow">
+        <select id="vitalsOxygenFlow" data-vital-default="15">
           <option value="">Non renseigné</option>
         </select>
       </label>
 
       <label>
         FR /min
-        <select id="vitalsFr">
+        <select id="vitalsFr" data-vital-default="20">
           <option value="">Non renseignée</option>
         </select>
       </label>
 
       <label>
         Température °C
-        <select id="vitalsTemp">
+        <select id="vitalsTemp" data-vital-default="37.0">
           <option value="">Non renseignée</option>
         </select>
       </label>
 
       <label>
         GCS
-        <select id="vitalsGcs">
+        <select id="vitalsGcs" data-vital-default="15">
           <option value="">Non renseigné</option>
         </select>
       </label>
 
       <label>
         Douleur EN
-        <select id="vitalsPain">
+        <select id="vitalsPain" data-vital-default="0">
           <option value="">Non renseignée</option>
         </select>
       </label>
 
       <label>
         Glycémie g/L
-        <select id="vitalsGlycemia">
+        <select id="vitalsGlycemia" data-vital-default="1.00">
           <option value="">Non renseignée</option>
         </select>
       </label>
