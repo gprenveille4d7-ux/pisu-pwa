@@ -3891,7 +3891,10 @@ function showUserCharter() {
 
   userCharterOverlay?.classList.remove("hidden");
   document.body.classList.remove("charter-pending");
+  document.body.classList.remove("vitals-floating-ready");
   document.body.classList.add("modal-open", "charter-open");
+
+  floatingVitalsBtn?.setAttribute("hidden", "");
 
   if (charterVersionText) {
     charterVersionText.textContent = `Version charte : ${CHARTER_VERSION}`;
@@ -3909,6 +3912,9 @@ function showUserCharter() {
 function hideUserCharter() {
   userCharterOverlay?.classList.add("hidden");
   document.body.classList.remove("modal-open", "charter-open", "charter-pending");
+  document.body.classList.add("vitals-floating-ready");
+
+  floatingVitalsBtn?.removeAttribute("hidden");
 }
 
 function acceptUserCharter() {
