@@ -4286,3 +4286,125 @@ button.validation-warning {
 .export-actions {
   margin-bottom: 14px;
 }
+
+/* OFFSET STICKY GLOBAL */
+:root {
+  --accordion-sticky-top: calc(var(--app-header-height, 112px) + 8px);
+}
+
+@media (max-width: 700px) {
+  :root {
+    --accordion-sticky-top: calc(var(--app-header-height, 104px) + 8px);
+  }
+}
+
+/* DEPLIANTS - TITRE STICKY PENDANT LE SCROLL */
+.collapsible-panel {
+  position: relative;
+  overflow: visible !important;
+}
+
+.collapsible-title {
+  position: sticky;
+  top: var(--accordion-sticky-top, var(--app-header-height, 112px));
+  z-index: 8200;
+  margin: -2px -2px 8px -2px;
+  padding: 2px;
+  border-radius: 18px;
+  background: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.collapse-toggle {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: 16px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 900;
+  text-align: left;
+}
+
+.collapsible-panel.collapsed .collapse-toggle {
+  border-color: #475569;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.collapsible-panel:not(.collapsed) .collapse-toggle {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.14);
+}
+
+.collapse-chevron {
+  flex: 0 0 auto;
+  transition: transform 0.18s ease;
+}
+
+.collapsible-panel.collapsed .collapse-chevron {
+  transform: rotate(-90deg);
+}
+
+/* SOUS-DEPLIANTS DETAILS - TITRE STICKY */
+details.patient-subblock,
+details.crew-details,
+details.mission-route-subblock,
+details.route-details,
+details.protocol-subblock {
+  position: relative;
+  overflow: visible !important;
+}
+
+details.patient-subblock > summary,
+details.crew-details > summary,
+details.mission-route-subblock > summary,
+details.route-details > summary,
+details.protocol-subblock > summary {
+  position: sticky;
+  top: calc(var(--accordion-sticky-top, var(--app-header-height, 112px)) + 48px);
+  z-index: 8100;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  border-radius: 14px;
+  padding: 9px 12px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #e2e8f0;
+  font-weight: 900;
+  cursor: pointer;
+  list-style: none;
+  backdrop-filter: blur(10px);
+}
+
+details.patient-subblock > summary::-webkit-details-marker,
+details.crew-details > summary::-webkit-details-marker,
+details.mission-route-subblock > summary::-webkit-details-marker,
+details.route-details > summary::-webkit-details-marker,
+details.protocol-subblock > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.patient-subblock > summary::after,
+details.crew-details > summary::after,
+details.mission-route-subblock > summary::after,
+details.route-details > summary::after,
+details.protocol-subblock > summary::after {
+  content: "▾";
+  margin-left: auto;
+  transition: transform 0.18s ease;
+}
+
+details.patient-subblock:not([open]) > summary::after,
+details.crew-details:not([open]) > summary::after,
+details.mission-route-subblock:not([open]) > summary::after,
+details.route-details:not([open]) > summary::after,
+details.protocol-subblock:not([open]) > summary::after {
+  transform: rotate(-90deg);
+}

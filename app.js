@@ -198,6 +198,9 @@ let protocolScrollPositions = {};
 
 const timerEl = document.getElementById("timer");
 const logEl = document.getElementById("log");
+const logPanel = document.querySelector(".log-block");
+const toggleLogBtn = document.getElementById("toggleLogBtn");
+const logContent = document.getElementById("logContent");
 const offlineStatus = document.getElementById("offlineStatus");
 const installBtn = document.getElementById("installBtn");
 const appTitle = document.getElementById("appTitle");
@@ -3631,8 +3634,39 @@ function setCollapsibleState(panel, toggleButton, content, storageKey, collapsed
   }
 }
 
-function setupCollapsiblePanel(panel, toggleButton, content, storageKey, options = {}) {
-  if (!panel || !toggleButton || !content || !storageKey) return;
+function getAccordionStickyOffset() {
+  const cssValue = getComputedStyle(document.documentElement)
+    .getPropertyValue("--accordion-sticky-top")
+    .trim();
+
+  const parsedValue = parseFloat(cssValue);
+
+  if (Number.isFinite(parsedValue)) {
+    return parsedValue + 8;
+  }
+
+  const header = document.querySelector(".app-header, header");
+  const headerHeight = header?.getBoundingClientRect?.().height || 112;
+
+  return headerHeight + 16;
+}
+
+function scrollToAccordionTitle(element) {
+  if (!element) return;
+
+  const offset = getAccordionStickyOffset();
+  const targetY = element.getBoundingClientRect().top + window.scrollY - offset;
+
+  window.requestAnimationFrame(() => {
+    window.scrollTo({
+      top: Math.max(targetY, 0),
+      behavior: "smooth"
+    });
+  });
+}
+
+function setupCollapsiblePanel(panel, toggleBtn, content, storageKey, options = {}) {
+  if (!panel || !toggleBtn || !content || !storageKey) return;
 
   const defaultExpanded = options.defaultExpanded ?? false;
   const savedState = localStorage.getItem(storageKey);
@@ -3641,16 +3675,30 @@ function setupCollapsiblePanel(panel, toggleButton, content, storageKey, options
     ? defaultExpanded
     : savedState === "open";
 
-  setCollapsibleState(panel, toggleButton, content, storageKey, !shouldBeExpanded);
+  function applyState(isExpanded) {
+    toggleBtn.setAttribute("aria-expanded", String(isExpanded));
+    content.classList.toggle("hidden", !isExpanded);
+    content.hidden = !isExpanded;
+    panel.classList.toggle("collapsed", !isExpanded);
+  }
 
-  toggleButton.addEventListener("click", () => {
-    const isExpanded = toggleButton.getAttribute("aria-expanded") === "true";
-    setCollapsibleState(panel, toggleButton, content, storageKey, isExpanded);
+  applyState(shouldBeExpanded);
+
+  toggleBtn.addEventListener("click", () => {
+    const isExpanded = toggleBtn.getAttribute("aria-expanded") === "true";
+    const nextState = !isExpanded;
+
+    applyState(nextState);
+    localStorage.setItem(storageKey, nextState ? "open" : "closed");
+
+    if (!nextState) {
+      scrollToAccordionTitle(toggleBtn);
+    }
   });
 }
 
 const COLLAPSE_DEFAULT_VERSION_KEY = "pisuCollapseDefaultVersion";
-const COLLAPSE_DEFAULT_VERSION = "2026-07-ergonomie-v1";
+const COLLAPSE_DEFAULT_VERSION = "2026-07-ergonomie-v2-sticky";
 
 function applyCollapsedPanelsMigration() {
   if (localStorage.getItem(COLLAPSE_DEFAULT_VERSION_KEY) === COLLAPSE_DEFAULT_VERSION) {
@@ -3671,6 +3719,27 @@ function applyCollapsedPanelsMigration() {
   });
 
   localStorage.setItem(COLLAPSE_DEFAULT_VERSION_KEY, COLLAPSE_DEFAULT_VERSION);
+}
+
+function setupStickyDetailsScrollBehavior() {
+  const detailsBlocks = document.querySelectorAll(
+    "details.patient-subblock, details.crew-details, details.mission-route-subblock, details.route-details, details.protocol-subblock"
+  );
+
+  detailsBlocks.forEach(details => {
+    if (details.dataset.stickyDetailsReady === "true") return;
+
+    const summary = details.querySelector("summary");
+
+    if (!summary) return;
+
+    details.dataset.stickyDetailsReady = "true";
+    details.addEventListener("toggle", () => {
+      if (!details.open) {
+        scrollToAccordionTitle(summary);
+      }
+    });
+  });
 }
 
 function updateResponderSummary() {
@@ -3807,6 +3876,11 @@ function updateMobileLayoutOffsets() {
     "--protocol-sticky-top",
     `${headerHeight + 10}px`
   );
+
+  document.documentElement.style.setProperty(
+    "--accordion-sticky-top",
+    `${headerHeight + 8}px`
+  );
 }
 
 function setupMobileLayoutOffsets() {
@@ -3837,7 +3911,15 @@ function setupCollapsiblePanels() {
     patientIdentityPanel,
     togglePatientIdentityBtn,
     patientIdentityContent,
-    "pisu-collapse-patient-identity",
+    "pisu-collapse-patient",
+    { defaultExpanded: false }
+  );
+
+  setupCollapsiblePanel(
+    logPanel,
+    toggleLogBtn,
+    logContent,
+    "pisu-collapse-log",
     { defaultExpanded: false }
   );
 
@@ -5460,6 +5542,7 @@ setupPatientAntecedentsFeature();
 setupMissionRouteFeature();
 applyCollapsedPanelsMigration?.();
 setupCollapsiblePanels();
+setupStickyDetailsScrollBehavior?.();
 invalidateHandoffWhenPatientChanges();
 setupMobileLayoutOffsets();
 setupVitalsFeature();

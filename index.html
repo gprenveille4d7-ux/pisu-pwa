@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=168">
+  <link rel="stylesheet" href="./style.css?v=176">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -2681,12 +2681,19 @@
       </button>
     </section>
 
-    <section class="panel">
-      <div class="panel-title">
-        <h2>Journal mission</h2>
+    <section class="panel log-block collapsible-panel">
+      <div class="panel-title collapsible-title">
+        <button id="toggleLogBtn" class="collapse-toggle" type="button" aria-expanded="false" aria-controls="logContent">
+          <span>Journal mission</span>
+          <span class="collapse-chevron">▾</span>
+        </button>
+
         <button id="clearLog" class="ghost">Effacer</button>
       </div>
-      <ol id="log"></ol>
+
+      <div id="logContent" class="collapsible-content">
+        <ol id="log"></ol>
+      </div>
     </section>
 
     <section class="export-actions">
@@ -2943,7 +2950,7 @@
     </section>
   </div>
 
-  <script src="app.js?v=168"></script>
+  <script src="./app.js?v=176"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>
