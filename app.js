@@ -227,13 +227,13 @@ const responderNameInput = document.getElementById("responderName");
 const responderRoleInput = document.getElementById("responderRole");
 const responderServiceInput = document.getElementById("responderService");
 const saveResponderBtn = document.getElementById("saveResponderBtn");
+const teamPanel = document.querySelector(".team-block");
+const toggleTeamBtn = document.getElementById("toggleTeamBtn");
+const teamContent = document.getElementById("teamContent");
+const teamSummary = document.getElementById("teamSummary");
 const responderPanel = document.querySelector(".responder-block");
-const toggleResponderBtn = document.getElementById("toggleResponderBtn");
-const responderContent = document.getElementById("responderContent");
 const responderSummary = document.getElementById("responderSummary");
 const crewPanel = document.querySelector(".crew-block");
-const toggleCrewBtn = document.getElementById("toggleCrewBtn");
-const crewContent = document.getElementById("crewContent");
 const crewSummary = document.getElementById("crewSummary");
 
 const crewQuickRoster = document.getElementById("crewQuickRoster");
@@ -259,9 +259,6 @@ const patientIdentityPanel = document.querySelector(".identity-block");
 const togglePatientIdentityBtn = document.getElementById("togglePatientIdentityBtn");
 const patientIdentityContent = document.getElementById("patientIdentityContent");
 const patientIdentitySummary = document.getElementById("patientIdentitySummary");
-const missionRoutePanel = document.querySelector(".mission-route-block");
-const toggleMissionRouteBtn = document.getElementById("toggleMissionRouteBtn");
-const missionRouteContent = document.getElementById("missionRouteContent");
 const missionRouteSummary = document.getElementById("missionRouteSummary");
 const routeDepartureCard = document.getElementById("routeDepartureCard");
 const routeDestinationCard = document.getElementById("routeDestinationCard");
@@ -2193,8 +2190,8 @@ function resetPatientIdentityFields() {
 }
 
 function resetAllVisualValidations() {
-  document.querySelectorAll(".action-done, .click-feedback, .attention-flash").forEach(element => {
-    element.classList.remove("action-done", "click-feedback", "attention-flash");
+  document.querySelectorAll(".action-done, .click-feedback, .attention-flash, .validation-done, .validation-warning").forEach(element => {
+    element.classList.remove("action-done", "click-feedback", "attention-flash", "validation-done", "validation-warning");
     delete element.dataset.clickCount;
   });
 }
@@ -2210,15 +2207,16 @@ function resetMissionCompletely() {
 
   localStorage.removeItem("pisuLog");
 
-  clearAllProtocolCounters();
-  clearStructuredEvents();
-  clearProtocolScrollMemory();
-  resetPatientIdentityFields();
-  resetMissionCrew();
-  resetMissionRoute();
-  resetAllVisualValidations();
+  clearStructuredEvents?.();
+  clearAllProtocolCounters?.();
+  resetPatientIdentityFields?.();
+  resetPatientAntecedentsFields?.();
+  resetMissionCrew?.();
+  resetMissionRoute?.();
+  resetAllVisualValidations?.();
+  clearVitalsHistory?.();
+  clearProtocolScrollMemory?.();
   resetMissionHandoffUi?.();
-  clearVitalsHistory();
 
   if (logEl) {
     logEl.innerHTML = "";
@@ -2230,11 +2228,13 @@ function resetMissionCompletely() {
     timerEl.textContent = "02:00";
   }
 
-  if (typeof showMainMenu === "function") {
-    showMainMenu();
-  }
+  showMainMenu?.();
 
-  addLog("Nouvelle mission créée — journal, SAED et parcours remis à zéro");
+  addLog("Nouvelle mission créée — journal, SAED, patient, constantes et parcours remis à zéro");
+
+  loadResponderIdentity?.();
+  updateResponderSummary?.();
+  updateTeamSummary?.();
 }
 
 document.getElementById("clearLog").addEventListener("click", () => {
@@ -2710,6 +2710,8 @@ function saveResponderIdentity() {
   }
 
   updateResponderSummary();
+  setButtonValidatedPersistent(saveResponderBtn, true, "Intervenant enregistré ✓");
+  updateTeamSummary?.();
 }
 
 function loadResponderIdentity() {
@@ -2816,6 +2818,7 @@ function saveMissionRoute(options = {}) {
 
   if (options.log) {
     addMissionRouteLog(options.logLabel || "Parcours mission mis à jour");
+    markButtonValidated(saveMissionRouteBtn, "Parcours enregistré ✓");
   }
 
   if (handoffCode?.value) {
@@ -3137,6 +3140,159 @@ window.pisuMissionRoute = {
   applySnapshot: applyMissionRouteSnapshot
 };
 
+function buildMiniSAEDText(protocolId = currentProtocolPageId || "") {
+  const protocolTitle = PROTOCOL_TITLES?.[protocolId] ||
+    (typeof getProtocolLabel === "function" ? getProtocolLabel(protocolId) : "") ||
+    "Protocole PISU";
+  const events = typeof getStructuredEvents === "function" ? getStructuredEvents() : [];
+  const protocolEvents = events.filter(event => {
+    return event.protocolId === protocolId || event.protocole === protocolTitle;
+  });
+
+  const usefulPhrases = typeof uniqueSAEDPhrases === "function"
+    ? uniqueSAEDPhrases(protocolEvents.filter(event => event.visibleSAED !== false))
+    : protocolEvents
+        .map(event => event.phraseSAED || event.libelleCourt)
+        .filter(Boolean);
+
+  const latestVitals = typeof buildLatestVitalsSAEDLine === "function"
+    ? buildLatestVitalsSAEDLine()
+    : "Constantes à compléter.";
+
+  const routeLines = window.pisuMissionRoute?.getSAEDLines
+    ? window.pisuMissionRoute.getSAEDLines()
+    : ["Devenir / transport à préciser."];
+
+  const patientLine = typeof buildPatientIdentitySAEDLine === "function"
+    ? buildPatientIdentitySAEDLine()
+    : "Identité patient à compléter.";
+
+  const lines = [
+    `MINI SAED — ${protocolTitle}`,
+    "----------------------------------------",
+    patientLine,
+    latestVitals,
+    "",
+    "Éléments PISU utiles :",
+    ...(usefulPhrases.length > 0
+      ? usefulPhrases.map(line => `- ${line}`)
+      : ["- Aucun élément structuré renseigné pour ce protocole."]),
+    "",
+    "Devenir / transport :",
+    ...routeLines.map(line => `- ${line}`),
+    "",
+    `Généré le ${new Date().toLocaleString("fr-FR")}`
+  ];
+
+  return lines.join("\n");
+}
+
+function downloadTextFile(filename, content) {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+function getProtocolMiniSAEDFilename(protocolId) {
+  const title = PROTOCOL_TITLES?.[protocolId] || "pisu";
+  const safeTitle = title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  const date = new Date().toISOString().slice(0, 10);
+
+  return `mini-saed-${safeTitle}-${date}.txt`;
+}
+
+function refreshProtocolMiniSAED(protocolId) {
+  const textarea = document.querySelector(`[data-mini-saed-output="${protocolId}"]`);
+
+  if (!textarea) return;
+
+  textarea.value = buildMiniSAEDText(protocolId);
+}
+
+function injectProtocolMiniSAEDBlocks() {
+  getProtocolPages().forEach(page => {
+    if (!page?.id) return;
+    if (page.querySelector(".mini-saed-block")) return;
+
+    const block = document.createElement("section");
+    block.className = "mini-saed-block";
+    block.innerHTML = `
+      <div class="mini-saed-title">
+        <strong>Mini SAED / rapport protocole</strong>
+        <small>Résumé concis exportable en .txt</small>
+      </div>
+
+      <textarea data-mini-saed-output="${page.id}" rows="8" readonly></textarea>
+
+      <div class="mini-saed-actions">
+        <button type="button" class="secondary validation-button" data-mini-saed-refresh="${page.id}">
+          Actualiser
+        </button>
+
+        <button type="button" class="secondary validation-button" data-mini-saed-copy="${page.id}">
+          Copier mini SAED
+        </button>
+
+        <button type="button" class="primary validation-button" data-mini-saed-export="${page.id}">
+          Exporter .txt
+        </button>
+      </div>
+    `;
+
+    page.appendChild(block);
+    refreshProtocolMiniSAED(page.id);
+  });
+
+  if (document.body.dataset.miniSaedListenerReady === "true") return;
+  document.body.dataset.miniSaedListenerReady = "true";
+
+  document.addEventListener("click", event => {
+    const refreshBtn = event.target.closest("[data-mini-saed-refresh]");
+    const copyBtn = event.target.closest("[data-mini-saed-copy]");
+    const exportBtn = event.target.closest("[data-mini-saed-export]");
+
+    if (refreshBtn) {
+      const protocolId = refreshBtn.dataset.miniSaedRefresh;
+      refreshProtocolMiniSAED(protocolId);
+      markButtonValidated?.(refreshBtn, "Actualisé ✓");
+      return;
+    }
+
+    if (copyBtn) {
+      const protocolId = copyBtn.dataset.miniSaedCopy;
+      const text = buildMiniSAEDText(protocolId);
+
+      navigator.clipboard?.writeText(text);
+      refreshProtocolMiniSAED(protocolId);
+      markButtonValidated?.(copyBtn, "Copié ✓");
+      return;
+    }
+
+    if (exportBtn) {
+      const protocolId = exportBtn.dataset.miniSaedExport;
+      const text = buildMiniSAEDText(protocolId);
+
+      refreshProtocolMiniSAED(protocolId);
+      downloadTextFile(getProtocolMiniSAEDFilename(protocolId), text);
+      markButtonValidated?.(exportBtn, "Exporté ✓");
+    }
+  });
+}
+
 function encodeMissionPayload(payload) {
   const json = JSON.stringify(payload);
   const bytes = new TextEncoder().encode(json);
@@ -3435,28 +3591,86 @@ confirmImportHandoffBtn?.addEventListener("click", () => {
   importMissionPayloadFromText(importHandoffCode?.value || "");
 });
 
+function markButtonValidated(button, label = "Enregistré ✓", duration = 1800) {
+  if (!button) return;
+
+  const originalText = button.dataset.originalText || button.textContent;
+  button.dataset.originalText = originalText;
+
+  button.classList.add("validation-done");
+  button.textContent = label;
+
+  window.clearTimeout(button._validationTimer);
+
+  button._validationTimer = window.setTimeout(() => {
+    button.classList.remove("validation-done");
+    button.textContent = button.dataset.originalText || originalText;
+  }, duration);
+}
+
+function setButtonValidatedPersistent(button, isValid, validLabel = "Enregistré ✓") {
+  if (!button) return;
+
+  const originalText = button.dataset.originalText || button.textContent;
+  button.dataset.originalText = originalText;
+
+  button.classList.toggle("validation-done", Boolean(isValid));
+  button.textContent = isValid ? validLabel : originalText;
+}
+
 function setCollapsibleState(panel, toggleButton, content, storageKey, collapsed) {
   if (!panel || !toggleButton || !content) return;
 
   panel.classList.toggle("collapsed", collapsed);
+  content.classList.toggle("hidden", collapsed);
   content.hidden = collapsed;
   toggleButton.setAttribute("aria-expanded", String(!collapsed));
 
-  localStorage.setItem(storageKey, collapsed ? "collapsed" : "open");
+  if (storageKey) {
+    localStorage.setItem(storageKey, collapsed ? "closed" : "open");
+  }
 }
 
-function setupCollapsiblePanel(panel, toggleButton, content, storageKey) {
-  if (!panel || !toggleButton || !content) return;
+function setupCollapsiblePanel(panel, toggleButton, content, storageKey, options = {}) {
+  if (!panel || !toggleButton || !content || !storageKey) return;
 
+  const defaultExpanded = options.defaultExpanded ?? false;
   const savedState = localStorage.getItem(storageKey);
-  const shouldStartCollapsed = savedState === "collapsed";
 
-  setCollapsibleState(panel, toggleButton, content, storageKey, shouldStartCollapsed);
+  const shouldBeExpanded = savedState === null
+    ? defaultExpanded
+    : savedState === "open";
+
+  setCollapsibleState(panel, toggleButton, content, storageKey, !shouldBeExpanded);
 
   toggleButton.addEventListener("click", () => {
-    const isCollapsed = panel.classList.contains("collapsed");
-    setCollapsibleState(panel, toggleButton, content, storageKey, !isCollapsed);
+    const isExpanded = toggleButton.getAttribute("aria-expanded") === "true";
+    setCollapsibleState(panel, toggleButton, content, storageKey, isExpanded);
   });
+}
+
+const COLLAPSE_DEFAULT_VERSION_KEY = "pisuCollapseDefaultVersion";
+const COLLAPSE_DEFAULT_VERSION = "2026-07-ergonomie-v1";
+
+function applyCollapsedPanelsMigration() {
+  if (localStorage.getItem(COLLAPSE_DEFAULT_VERSION_KEY) === COLLAPSE_DEFAULT_VERSION) {
+    return;
+  }
+
+  [
+    "pisu-collapse-team",
+    "pisu-collapse-patient",
+    "pisu-collapse-patient-identity",
+    "pisu-collapse-log",
+    "pisu-collapse-handoff",
+    "pisu-collapse-responder",
+    "pisu-collapse-crew",
+    "pisu-collapse-mission-route"
+  ].forEach(key => {
+    localStorage.setItem(key, "closed");
+  });
+
+  localStorage.setItem(COLLAPSE_DEFAULT_VERSION_KEY, COLLAPSE_DEFAULT_VERSION);
 }
 
 function updateResponderSummary() {
@@ -3471,6 +3685,36 @@ function updateResponderSummary() {
   responderSummary.textContent = hasResponder
     ? formatResponderIdentity(responder)
     : "Intervenant non renseigné";
+
+  updateTeamSummary?.();
+}
+
+function updateTeamSummary() {
+  if (!teamSummary) return;
+
+  const responder = typeof getResponderIdentity === "function"
+    ? getResponderIdentity()
+    : {};
+
+  const crew = typeof getMissionCrew === "function"
+    ? getMissionCrew()
+    : [];
+
+  const parts = [];
+
+  if (responder?.name || responder?.role || responder?.service) {
+    parts.push(formatResponderIdentity?.(responder) || "Intervenant renseigné");
+  } else {
+    parts.push("Intervenant non renseigné");
+  }
+
+  if (Array.isArray(crew) && crew.length > 0) {
+    parts.push(`${crew.length} membre(s) équipage`);
+  } else {
+    parts.push("Aucun équipage mission");
+  }
+
+  teamSummary.textContent = parts.join(" · ");
 }
 
 function updatePatientIdentitySummary() {
@@ -3508,6 +3752,9 @@ function setupIdentitySummaries() {
   ].forEach(input => {
     input?.addEventListener("input", updateResponderSummary);
     input?.addEventListener("change", updateResponderSummary);
+    input?.addEventListener("input", () => {
+      setButtonValidatedPersistent(saveResponderBtn, false);
+    });
   });
 
   [
@@ -3579,38 +3826,27 @@ function setupMobileLayoutOffsets() {
 
 function setupCollapsiblePanels() {
   setupCollapsiblePanel(
-    responderPanel,
-    toggleResponderBtn,
-    responderContent,
-    "pisu-collapse-responder"
-  );
-
-  setupCollapsiblePanel(
-    crewPanel,
-    toggleCrewBtn,
-    crewContent,
-    "pisu-collapse-crew"
+    teamPanel,
+    toggleTeamBtn,
+    teamContent,
+    "pisu-collapse-team",
+    { defaultExpanded: false }
   );
 
   setupCollapsiblePanel(
     patientIdentityPanel,
     togglePatientIdentityBtn,
     patientIdentityContent,
-    "pisu-collapse-patient-identity"
-  );
-
-  setupCollapsiblePanel(
-    missionRoutePanel,
-    toggleMissionRouteBtn,
-    missionRouteContent,
-    "pisu-collapse-mission-route"
+    "pisu-collapse-patient-identity",
+    { defaultExpanded: false }
   );
 
   setupCollapsiblePanel(
     handoffPanel,
     toggleHandoffBtn,
     handoffContent,
-    "pisu-collapse-handoff"
+    "pisu-collapse-handoff",
+    { defaultExpanded: false }
   );
 
   setupIdentitySummaries();
@@ -3618,6 +3854,7 @@ function setupCollapsiblePanels() {
   updatePatientIdentitySummary();
   updateHandoffSummary();
   updateCrewSummary();
+  updateTeamSummary();
 }
 
 const VITALS_STORAGE_KEY = "pisuVitals";
@@ -4607,6 +4844,7 @@ function updateCrewSummary() {
 
   if (crew.length === 0) {
     crewSummary.textContent = "Aucun équipage sélectionné";
+    updateTeamSummary?.();
     return;
   }
 
@@ -4623,6 +4861,7 @@ function updateCrewSummary() {
   });
 
   crewSummary.appendChild(wrapper);
+  updateTeamSummary?.();
 }
 
 function updateSelectedCrewPreview() {
@@ -4634,14 +4873,14 @@ function updateSelectedCrewPreview() {
   if (!member) {
     selectedCrewPreview.textContent = "Sélectionne un collègue, puis son rôle.";
     addCrewToMissionBtn.disabled = true;
-    addCrewToMissionBtn.className = "crew-add-mission-btn";
+    addCrewToMissionBtn.className = "crew-add-mission-btn validation-button";
     return;
   }
 
   selectedCrewPreview.textContent = `${member.name} sera ajouté comme ${selectedCrewMissionRole}.`;
 
   addCrewToMissionBtn.disabled = false;
-  addCrewToMissionBtn.className = `crew-add-mission-btn ${getCrewRoleClass(selectedCrewMissionRole)}`;
+  addCrewToMissionBtn.className = `crew-add-mission-btn validation-button ${getCrewRoleClass(selectedCrewMissionRole)}`;
 }
 
 function selectCrewMember(memberId) {
@@ -4853,6 +5092,8 @@ function saveCrewMemberToRoster() {
   }
 
   renderCrewFeature();
+  markButtonValidated(saveCrewMemberBtn, "Collègue enregistré ✓");
+  updateTeamSummary?.();
 
   if (typeof addLog === "function") {
     addLog(`Carnet équipage : collègue ajouté — ${formatCrewRosterMember(member)}`);
@@ -4900,6 +5141,8 @@ function addSelectedCrewToMission() {
   }
 
   renderCrewFeature();
+  markButtonValidated(addCrewToMissionBtn, "Ajouté ✓");
+  updateTeamSummary?.();
 
   if (handoffCode?.value) {
     resetMissionHandoffUi?.();
@@ -5211,16 +5454,22 @@ restoreCounterBadges();
 loadProtocolScrollPositions();
 loadResponderIdentity();
 loadPatientAntecedents();
+loadMissionRoute();
 setupCrewFeature();
 setupPatientAntecedentsFeature();
 setupMissionRouteFeature();
+applyCollapsedPanelsMigration?.();
 setupCollapsiblePanels();
 invalidateHandoffWhenPatientChanges();
 setupMobileLayoutOffsets();
 setupVitalsFeature();
 setupUserCharterFeature();
-checkMissionHashImport();
 installStructuredSAEDEngine();
+injectProtocolMiniSAEDBlocks?.();
+checkMissionHashImport();
 
 loadLog();
 updateOnlineStatus();
+updateResponderSummary?.();
+updateCrewSummary?.();
+updateTeamSummary?.();

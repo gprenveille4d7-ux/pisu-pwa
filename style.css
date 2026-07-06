@@ -4057,3 +4057,232 @@ body.protocol-mode #appTitle {
     justify-self: start;
   }
 }
+
+/* CORRECTION CELLULE FLOTTANTE / BARRES STICKY PROTOCOLES */
+.protocol-sticky,
+.acr-sticky,
+.child-acr-sticky,
+.dt-sticky,
+.smoke-sticky,
+.burns-sticky,
+.seizure-sticky,
+.anaphylaxis-sticky,
+.hemorrhage-sticky,
+.hypoglycemia-sticky,
+.asthma-sticky,
+.analgesia-sticky,
+.acr-sticky-tools,
+.child-acr-sticky-tools,
+.dt-sticky-tools,
+.smoke-sticky-tools,
+.burns-sticky-tools,
+.seizure-sticky-tools,
+.anaphylaxis-sticky-tools,
+.hemorrhage-sticky-tools,
+.hypoglycemia-sticky-tools,
+.asthma-sticky-tools,
+.analgesia-sticky-tools,
+.protocol-status-row,
+.acr-status-row,
+.child-acr-status-row,
+.dt-status-row,
+.smoke-status-row,
+.burns-status-row,
+.seizure-status-row,
+.anaphylaxis-status-row,
+.hemorrhage-status-row,
+.hypoglycemia-status-row,
+.asthma-status-row,
+.analgesia-status-row {
+  position: sticky;
+  top: var(--protocol-sticky-top, 112px);
+  left: auto;
+  right: auto;
+  width: 100%;
+  max-width: 100%;
+  z-index: 8500;
+  transform: none !important;
+  margin-left: 0;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
+.protocol-page,
+#acrAdultProtocol,
+#childAcrProtocol,
+#chestPainProtocol,
+#smokeExposureProtocol,
+#burnsProtocol,
+#seizureProtocol,
+#anaphylaxisProtocol,
+#hemorrhageProtocol,
+#hypoglycemiaProtocol,
+#asthmaBpcoProtocol,
+#analgesiaProtocol {
+  overflow: visible !important;
+}
+
+@media (max-width: 700px) {
+  .protocol-sticky,
+  .acr-sticky,
+  .child-acr-sticky,
+  .dt-sticky,
+  .smoke-sticky,
+  .burns-sticky,
+  .seizure-sticky,
+  .anaphylaxis-sticky,
+  .hemorrhage-sticky,
+  .hypoglycemia-sticky,
+  .asthma-sticky,
+  .analgesia-sticky,
+  .acr-sticky-tools,
+  .child-acr-sticky-tools,
+  .dt-sticky-tools,
+  .smoke-sticky-tools,
+  .burns-sticky-tools,
+  .seizure-sticky-tools,
+  .anaphylaxis-sticky-tools,
+  .hemorrhage-sticky-tools,
+  .hypoglycemia-sticky-tools,
+  .asthma-sticky-tools,
+  .analgesia-sticky-tools,
+  .protocol-status-row,
+  .acr-status-row,
+  .child-acr-status-row,
+  .dt-status-row,
+  .smoke-status-row,
+  .burns-status-row,
+  .seizure-status-row,
+  .anaphylaxis-status-row,
+  .hemorrhage-status-row,
+  .hypoglycemia-status-row,
+  .asthma-status-row,
+  .analgesia-status-row {
+    top: var(--protocol-sticky-top, 104px);
+    border-radius: 14px;
+  }
+}
+
+/* EQUIPE INTERVENTION */
+.team-content {
+  display: grid;
+  gap: 12px;
+}
+
+.team-subcard {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.team-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e2e8f0;
+  font-size: 0.98rem;
+}
+
+.team-subicon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #1e293b;
+}
+
+#teamSummary {
+  display: block;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+.mission-route-subblock {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.mission-route-subblock summary {
+  cursor: pointer;
+  color: #e2e8f0;
+  font-weight: 900;
+}
+
+/* MINI SAED EN FIN DE PROTOCOLE */
+.mini-saed-block {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.88);
+}
+
+.mini-saed-title {
+  display: grid;
+  gap: 2px;
+  color: #e2e8f0;
+}
+
+.mini-saed-title small {
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.mini-saed-block textarea {
+  width: 100%;
+  min-height: 150px;
+  border-radius: 14px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  padding: 10px;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.mini-saed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* VALIDATION VISUELLE DES BOUTONS */
+.validation-button.validation-done,
+button.validation-done {
+  border-color: #22c55e !important;
+  background: rgba(20, 83, 45, 0.72) !important;
+  color: #dcfce7 !important;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.18);
+}
+
+.validation-button.validation-warning,
+button.validation-warning {
+  border-color: #f59e0b !important;
+  background: rgba(120, 53, 15, 0.72) !important;
+  color: #ffedd5 !important;
+}
+
+/* ESPACE AVANT TRANSFERT MISSION QR */
+.handoff-block,
+.mission-handoff-block,
+.qr-transfer-block {
+  margin-top: 18px;
+}
+
+.log-actions,
+.journal-actions,
+.export-actions {
+  margin-bottom: 14px;
+}
