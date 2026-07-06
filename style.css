@@ -4408,3 +4408,151 @@ details.route-details:not([open]) > summary::after,
 details.protocol-subblock:not([open]) > summary::after {
   transform: rotate(-90deg);
 }
+
+/* MODALES AU-DESSUS DU HEADER STICKY */
+.charter-overlay,
+.legal-overlay {
+  z-index: 13000 !important;
+}
+
+.charter-modal,
+.legal-modal {
+  z-index: 13001 !important;
+}
+
+/* =========================================================
+   HEADER PRINCIPAL AU-DESSUS DE TOUS LES DEPLIANTS
+   ========================================================= */
+
+.app-header,
+header.app-header,
+body > header {
+  position: sticky;
+  top: 0;
+  z-index: 12000 !important;
+  background: rgba(2, 6, 23, 0.98);
+  backdrop-filter: blur(12px);
+  isolation: isolate;
+}
+
+#appTitle {
+  position: relative;
+  z-index: 12001;
+}
+
+/* =========================================================
+   DEPLIANTS - TITRE STICKY MAIS SOUS LE HEADER
+   ========================================================= */
+
+.collapsible-panel {
+  position: relative;
+  overflow: visible !important;
+}
+
+.collapsible-title {
+  position: sticky;
+  top: var(--accordion-sticky-top, 118px);
+  z-index: 2500 !important;
+  margin: -2px -2px 8px -2px;
+  padding: 2px;
+  border-radius: 18px;
+  background: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.collapse-toggle {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: 16px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 900;
+  text-align: left;
+}
+
+.collapsible-panel:not(.collapsed) .collapse-toggle {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.14);
+}
+
+.collapsible-panel.collapsed .collapse-toggle {
+  border-color: #475569;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.collapse-chevron {
+  flex: 0 0 auto;
+  transition: transform 0.18s ease;
+}
+
+.collapsible-panel.collapsed .collapse-chevron {
+  transform: rotate(-90deg);
+}
+
+/* =========================================================
+   SOUS-DEPLIANTS DETAILS - STICKY SOUS LE TITRE DU PANNEAU
+   ========================================================= */
+
+details.patient-subblock,
+details.crew-details,
+details.mission-route-subblock,
+details.route-details,
+details.protocol-subblock {
+  position: relative;
+  overflow: visible !important;
+}
+
+details.patient-subblock > summary,
+details.crew-details > summary,
+details.mission-route-subblock > summary,
+details.route-details > summary,
+details.protocol-subblock > summary {
+  position: sticky;
+  top: var(--accordion-nested-sticky-top, 172px);
+  z-index: 2300 !important;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  border-radius: 14px;
+  padding: 9px 12px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #e2e8f0;
+  font-weight: 900;
+  cursor: pointer;
+  list-style: none;
+  backdrop-filter: blur(10px);
+}
+
+details.patient-subblock > summary::-webkit-details-marker,
+details.crew-details > summary::-webkit-details-marker,
+details.mission-route-subblock > summary::-webkit-details-marker,
+details.route-details > summary::-webkit-details-marker,
+details.protocol-subblock > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.patient-subblock > summary::after,
+details.crew-details > summary::after,
+details.mission-route-subblock > summary::after,
+details.route-details > summary::after,
+details.protocol-subblock > summary::after {
+  content: "▾";
+  margin-left: auto;
+  transition: transform 0.18s ease;
+}
+
+details.patient-subblock:not([open]) > summary::after,
+details.crew-details:not([open]) > summary::after,
+details.mission-route-subblock:not([open]) > summary::after,
+details.route-details:not([open]) > summary::after,
+details.protocol-subblock:not([open]) > summary::after {
+  transform: rotate(-90deg);
+}

@@ -3651,6 +3651,43 @@ function getAccordionStickyOffset() {
   return headerHeight + 16;
 }
 
+function updateAccordionStickyOffsets() {
+  const header = document.querySelector(".app-header, header.app-header, body > header");
+  const headerRect = header?.getBoundingClientRect?.();
+
+  const headerBottom = headerRect
+    ? Math.ceil(headerRect.bottom)
+    : 112;
+
+  document.documentElement.style.setProperty(
+    "--accordion-sticky-top",
+    `${headerBottom + 8}px`
+  );
+
+  document.documentElement.style.setProperty(
+    "--accordion-nested-sticky-top",
+    `${headerBottom + 58}px`
+  );
+}
+
+function setupAccordionStickyOffsets() {
+  updateAccordionStickyOffsets();
+
+  window.addEventListener("resize", updateAccordionStickyOffsets);
+  window.visualViewport?.addEventListener("resize", updateAccordionStickyOffsets);
+  window.visualViewport?.addEventListener("scroll", updateAccordionStickyOffsets);
+
+  const header = document.querySelector(".app-header, header.app-header, body > header");
+
+  if (header && window.ResizeObserver) {
+    const observer = new ResizeObserver(() => {
+      updateAccordionStickyOffsets();
+    });
+
+    observer.observe(header);
+  }
+}
+
 function scrollToAccordionTitle(element) {
   if (!element) return;
 
@@ -3663,6 +3700,27 @@ function scrollToAccordionTitle(element) {
       behavior: "smooth"
     });
   });
+}
+
+function keepElementAtSameViewportPosition(element, previousTop) {
+  if (!element || typeof previousTop !== "number") return;
+
+  window.requestAnimationFrame(() => {
+    const newTop = element.getBoundingClientRect().top;
+    const delta = newTop - previousTop;
+
+    if (Math.abs(delta) < 2) return;
+
+    window.scrollBy({
+      top: delta,
+      behavior: "auto"
+    });
+  });
+}
+
+function getElementViewportTop(element) {
+  if (!element?.getBoundingClientRect) return 0;
+  return element.getBoundingClientRect().top;
 }
 
 function setupCollapsiblePanel(panel, toggleBtn, content, storageKey, options = {}) {
@@ -3687,13 +3745,16 @@ function setupCollapsiblePanel(panel, toggleBtn, content, storageKey, options = 
   toggleBtn.addEventListener("click", () => {
     const isExpanded = toggleBtn.getAttribute("aria-expanded") === "true";
     const nextState = !isExpanded;
+    const titleTopBeforeClose = getElementViewportTop(toggleBtn);
 
     applyState(nextState);
     localStorage.setItem(storageKey, nextState ? "open" : "closed");
 
     if (!nextState) {
-      scrollToAccordionTitle(toggleBtn);
+      keepElementAtSameViewportPosition(toggleBtn, titleTopBeforeClose);
     }
+
+    updateAccordionStickyOffsets?.();
   });
 }
 
@@ -3734,9 +3795,23 @@ function setupStickyDetailsScrollBehavior() {
     if (!summary) return;
 
     details.dataset.stickyDetailsReady = "true";
+    summary.addEventListener("click", () => {
+      if (details.open) {
+        details.dataset.closeTop = String(getElementViewportTop(summary));
+      }
+    });
+
     details.addEventListener("toggle", () => {
+      updateAccordionStickyOffsets?.();
+
       if (!details.open) {
-        scrollToAccordionTitle(summary);
+        const previousTop = Number(details.dataset.closeTop);
+
+        if (Number.isFinite(previousTop)) {
+          keepElementAtSameViewportPosition(summary, previousTop);
+        }
+
+        delete details.dataset.closeTop;
       }
     });
   });
@@ -5540,6 +5615,7 @@ loadMissionRoute();
 setupCrewFeature();
 setupPatientAntecedentsFeature();
 setupMissionRouteFeature();
+setupAccordionStickyOffsets?.();
 applyCollapsedPanelsMigration?.();
 setupCollapsiblePanels();
 setupStickyDetailsScrollBehavior?.();
