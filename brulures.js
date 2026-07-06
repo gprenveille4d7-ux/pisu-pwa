@@ -147,7 +147,8 @@
 
   burnConstantsBtn?.addEventListener("click", () => {
     gravityStatus.textContent = "Constantes";
-    logBurn("constantes réalisées");
+    logBurn("ouverture du module constantes demandée");
+    openVitalsSheet?.();
   });
 
   burnSeverityBtn?.addEventListener("click", () => {

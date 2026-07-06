@@ -149,7 +149,8 @@
 
   smokeConstantsBtn?.addEventListener("click", () => {
     gravityStatus.textContent = "Constantes";
-    logSmoke("constantes réalisées ; attention SpO2 faussement rassurante");
+    logSmoke("ouverture du module constantes demandée ; attention SpO2 faussement rassurante");
+    openVitalsSheet?.();
   });
 
   smokeSeverityBtn?.addEventListener("click", () => {

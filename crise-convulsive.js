@@ -191,7 +191,8 @@
 
   constantsBtn?.addEventListener("click", () => {
     gravityStatus.textContent = "Constantes";
-    logSeizure("constantes réalisées");
+    logSeizure("ouverture du module constantes demandée");
+    openVitalsSheet?.();
   });
 
   severityBtn?.addEventListener("click", () => {

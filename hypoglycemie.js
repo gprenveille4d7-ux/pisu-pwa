@@ -33,6 +33,10 @@
   const report15Btn = document.getElementById("hypoglycemiaReport15Btn");
   const resetBtn = document.getElementById("resetHypoglycemiaProtocolBtn");
 
+  function logHypoglycemia(action, overrides = {}) {
+    return window.logPisuAction?.("hypoglycemiaProtocol", action, overrides);
+  }
+
   function logHypo(text) {
     if (typeof addLog === "function") {
       addLog(`Hypoglycémie : ${text}`);
@@ -183,23 +187,34 @@
   closeBtn?.addEventListener("click", closeProtocol);
 
   call15Btn?.addEventListener("click", () => {
-    logHypo("appel au 15 déclenché depuis l’application");
+    logHypoglycemia("call15", {
+      journal: "Hypoglycémie : appel au 15 déclenché depuis l’application."
+    }) || logHypo("appel au 15 déclenché depuis l’application");
     setCall15State("done");
   });
 
   constantsBtn?.addEventListener("click", () => {
     gravityStatus.textContent = "Constantes";
-    logHypo("constantes réalisées avec glycémie capillaire");
+    logHypoglycemia("constants_request", {
+      journal: "Hypoglycémie : ouverture du module constantes demandée."
+    }) || logHypo("ouverture du module constantes demandée");
+    openVitalsSheet?.();
   });
 
   confirmedBtn?.addEventListener("click", () => {
     glycemiaStatus.textContent = "< seuil";
-    logHypo("hypoglycémie confirmée : glycémie capillaire < 0,6 g/L ou < 3,3 mmol/L");
+    logHypoglycemia("glycemia_confirmed", {
+      detail: "Glycémie capillaire < 0,6 g/L ou < 3,3 mmol/L",
+      journal: "Hypoglycémie : hypoglycémie confirmée par glycémie capillaire."
+    }) || logHypo("hypoglycémie confirmée : glycémie capillaire < 0,6 g/L ou < 3,3 mmol/L");
   });
 
   correctedBtn?.addEventListener("click", () => {
     glycemiaStatus.textContent = "Corrigée";
-    logHypo("glycémie corrigée : > 0,6 g/L ou > 3,3 mmol/L");
+    logHypoglycemia("reevaluation", {
+      detail: "Glycémie corrigée : > 0,6 g/L ou > 3,3 mmol/L",
+      journal: "Hypoglycémie : glycémie corrigée."
+    }) || logHypo("glycémie corrigée : > 0,6 g/L ou > 3,3 mmol/L");
   });
 
   severityBtn?.addEventListener("click", () => {
@@ -214,12 +229,16 @@
   });
 
   pumpBtn?.addEventListener("click", () => {
-    logHypo("pompe à insuline présente : pompe éteinte");
+    logHypoglycemia("pump_off", {
+      journal: "Hypoglycémie : pompe à insuline présente, pompe éteinte."
+    }) || logHypo("pompe à insuline présente : pompe éteinte");
   });
 
   oralRouteBtn?.addEventListener("click", () => {
     routeStatus.textContent = "Per os";
-    logHypo("patient conscient et capable de déglutir : resucrage per os débuté");
+    logHypoglycemia("oral_sugar", {
+      journal: "Hypoglycémie : patient conscient et capable de déglutir, resucrage per os débuté."
+    }) || logHypo("patient conscient et capable de déglutir : resucrage per os débuté");
   });
 
   parenteralRouteBtn?.addEventListener("click", () => {
@@ -239,7 +258,11 @@
 
   glucagonBtn?.addEventListener("click", () => {
     const doses = updateHypoglycemiaDoses();
-    logHypo(`Glucagon sélectionné — dose rappel : ${doses.glucagonDose}`);
+    logHypoglycemia("glucagon", {
+      dose: doses.glucagonDose,
+      detail: `Dose rappel : ${doses.glucagonDose}`,
+      journal: `Hypoglycémie : Glucagon sélectionné — dose rappel : ${doses.glucagonDose}.`
+    }) || logHypo(`Glucagon sélectionné — dose rappel : ${doses.glucagonDose}`);
   });
 
   vvpBtn?.addEventListener("click", () => {
@@ -248,17 +271,27 @@
 
   g10Btn?.addEventListener("click", () => {
     const doses = updateHypoglycemiaDoses();
-    logHypo(`G10% sélectionné — dose pédiatrique rappel : ${doses.g10Dose}`);
+    logHypoglycemia("g10", {
+      dose: doses.g10Dose,
+      detail: `Dose pédiatrique rappel : ${doses.g10Dose}`,
+      journal: `Hypoglycémie : G10% sélectionné — dose pédiatrique rappel : ${doses.g10Dose}.`
+    }) || logHypo(`G10% sélectionné — dose pédiatrique rappel : ${doses.g10Dose}`);
   });
 
   g30Btn?.addEventListener("click", () => {
     const doses = updateHypoglycemiaDoses();
-    logHypo(`G30% sélectionné — adulte 20 ml IVL à répéter 4 fois si besoin ; pédiatrique : ${doses.g30Dose}`);
+    logHypoglycemia("g30", {
+      dose: doses.g30Dose,
+      detail: `Adulte 20 ml IVL à répéter 4 fois si besoin ; pédiatrique : ${doses.g30Dose}`,
+      journal: `Hypoglycémie : G30 administré — adulte 20 ml IVL à répéter 4 fois si besoin ; pédiatrique : ${doses.g30Dose}.`
+    }) || logHypo(`G30% sélectionné — adulte 20 ml IVL à répéter 4 fois si besoin ; pédiatrique : ${doses.g30Dose}`);
   });
 
   report15Btn?.addEventListener("click", () => {
     reportStatus.textContent = "Bilan prêt";
-    logHypo("bilan hypoglycémie prêt pour appel au 15");
+    logHypoglycemia("call15", {
+      journal: "Hypoglycémie : bilan hypoglycémie prêt pour appel au 15."
+    }) || logHypo("bilan hypoglycémie prêt pour appel au 15");
     setCall15State("report");
   });
 

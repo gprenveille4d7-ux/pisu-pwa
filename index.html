@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=164">
+  <link rel="stylesheet" href="style.css?v=167">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -2494,6 +2494,183 @@
       </button>
     </section>
 
+    <section class="panel mission-route-block collapsible-panel">
+      <div class="panel-title collapsible-title">
+        <button id="toggleMissionRouteBtn" class="collapse-toggle" type="button" aria-expanded="true" aria-controls="missionRouteContent">
+          <span>Parcours / Transport</span>
+          <span class="collapse-chevron">▾</span>
+        </button>
+      </div>
+
+      <small id="missionRouteSummary" class="collapse-summary">
+        Départ, destination et arrivée à renseigner.
+      </small>
+
+      <div id="missionRouteContent" class="collapsible-content mission-route-content">
+        <div id="routeDepartureCard" class="route-card">
+          <div class="route-card-title">
+            <span class="route-step">1</span>
+            <strong>Départ des lieux</strong>
+          </div>
+
+          <div class="route-grid">
+            <label>
+              Heure départ lieux
+              <input id="routeDepartureTime" type="time">
+            </label>
+
+            <button class="route-now-btn" type="button" data-route-stamp="departure">
+              Maintenant
+            </button>
+          </div>
+        </div>
+
+        <div id="routeDestinationCard" class="route-card">
+          <div class="route-card-title">
+            <span class="route-step">2</span>
+            <strong>Destination</strong>
+          </div>
+
+          <div class="route-grid route-grid-two">
+            <label>
+              Destination
+              <input id="routeDestinationName" type="text" placeholder="Ex : CH Falaise, CHU Caen, domicile...">
+            </label>
+
+            <label>
+              Service / lieu d’accueil
+              <input id="routeDestinationService" type="text" placeholder="Ex : SAU, déchocage, réanimation...">
+            </label>
+          </div>
+        </div>
+
+        <div id="routeTransportCard" class="route-card">
+          <div class="route-card-title">
+            <span class="route-step">3</span>
+            <strong>Transport</strong>
+          </div>
+
+          <div class="route-grid route-grid-two">
+            <label>
+              Vecteur
+              <select id="routeTransportVector">
+                <option value="">Non renseigné</option>
+                <option value="SMUR">SMUR</option>
+                <option value="VSAV">VSAV</option>
+                <option value="VSAV + SMUR">VSAV + SMUR</option>
+                <option value="Ambulance privée">Ambulance privée</option>
+                <option value="HéliSMUR">HéliSMUR</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </label>
+
+            <label>
+              Modalité
+              <select id="routeTransportMode">
+                <option value="">Non renseignée</option>
+                <option value="Transport médicalisé">Transport médicalisé</option>
+                <option value="Transport paramédicalisé">Transport paramédicalisé</option>
+                <option value="Transport non médicalisé">Transport non médicalisé</option>
+                <option value="Couché brancardisé">Couché brancardisé</option>
+                <option value="Assis">Assis</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </label>
+
+            <label>
+              Surveillance pendant transport
+              <select id="routeTransportMonitoring">
+                <option value="">Non renseignée</option>
+                <option value="Stable">Stable</option>
+                <option value="Surveillance rapprochée">Surveillance rapprochée</option>
+                <option value="Instable / réévaluations fréquentes">Instable / réévaluations fréquentes</option>
+              </select>
+            </label>
+
+            <label>
+              Accompagnant / équipe
+              <input id="routeTransportTeam" type="text" placeholder="Ex : IDE + médecin, IDE seul, VSAV...">
+            </label>
+          </div>
+        </div>
+
+        <div id="routeJunctionCard" class="route-card route-junction-card">
+          <div class="route-card-title">
+            <span class="route-step">J</span>
+            <strong>Jonction</strong>
+          </div>
+
+          <label class="route-check">
+            <input id="routeJunctionEnabled" type="checkbox">
+            <span>Jonction réalisée ou prévue</span>
+          </label>
+
+          <div class="route-grid route-grid-two">
+            <label>
+              Heure jonction
+              <input id="routeJunctionTime" type="time">
+            </label>
+
+            <button class="route-now-btn" type="button" data-route-stamp="junction">
+              Maintenant
+            </button>
+
+            <label>
+              Lieu de jonction
+              <input id="routeJunctionPlace" type="text" placeholder="Ex : péage, aire, commune...">
+            </label>
+
+            <label>
+              Jonction avec
+              <input id="routeJunctionWith" type="text" placeholder="Ex : UMH Caen, VSAV, ambulance...">
+            </label>
+          </div>
+        </div>
+
+        <div id="routeArrivalCard" class="route-card">
+          <div class="route-card-title">
+            <span class="route-step">4</span>
+            <strong>Arrivée destination</strong>
+          </div>
+
+          <div class="route-grid">
+            <label>
+              Heure arrivée destination
+              <input id="routeArrivalTime" type="time">
+            </label>
+
+            <button class="route-now-btn" type="button" data-route-stamp="arrival">
+              Maintenant
+            </button>
+          </div>
+
+          <label class="route-check">
+            <input id="routeTransmissionDone" type="checkbox">
+            <span>Transmission réalisée à l’équipe receveuse</span>
+          </label>
+        </div>
+
+        <div class="route-card">
+          <div class="route-card-title">
+            <span class="route-step">+</span>
+            <strong>Note transport</strong>
+          </div>
+
+          <textarea id="routeTransportNote" rows="2" placeholder="Ex : patient stable pendant transport, aggravation, réévaluation, difficulté d’accès..."></textarea>
+        </div>
+
+        <div class="route-actions">
+          <button id="saveMissionRouteBtn" class="primary" type="button">
+            Enregistrer parcours
+          </button>
+
+          <button id="clearMissionRouteBtn" class="secondary danger" type="button">
+            Effacer parcours
+          </button>
+        </div>
+      </div>
+    </section>
+
     <section class="panel">
       <div class="panel-title">
         <h2>Journal mission</h2>
@@ -2756,7 +2933,7 @@
     </section>
   </div>
 
-  <script src="app.js?v=164"></script>
+  <script src="app.js?v=167"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>

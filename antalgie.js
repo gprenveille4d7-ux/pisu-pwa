@@ -224,7 +224,8 @@
 
   constantsBtn?.addEventListener("click", () => {
     gravityStatus.textContent = "Constantes";
-    logAnalgesia("constantes réalisées avec EN ou EVS");
+    logAnalgesia("ouverture du module constantes demandée avec EN ou EVS");
+    openVitalsSheet?.();
   });
 
   severityBtn?.addEventListener("click", () => {

@@ -228,7 +228,8 @@
 
   constantsBtn?.addEventListener("click", () => {
     gravityStatus.textContent = "Constantes";
-    logAsthma("constantes réalisées avec DEP si asthme disponible");
+    logAsthma("ouverture du module constantes demandée avec DEP si asthme disponible");
+    openVitalsSheet?.();
   });
 
   typeAsthmaBtn?.addEventListener("click", () => {

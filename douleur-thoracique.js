@@ -104,7 +104,9 @@
   });
 
   constantsBtn?.addEventListener("click", () => {
-    gravityStatus.textContent = "Constantes faites";
+    gravityStatus.textContent = "Constantes";
+    logDt("ouverture du module constantes demandée");
+    openVitalsSheet?.();
   });
 
   severityBtn?.addEventListener("click", () => {

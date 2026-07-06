@@ -3906,3 +3906,154 @@ body.protocol-mode #appTitle {
     line-height: 1.15;
   }
 }
+
+/* PARCOURS / TRANSPORT */
+.mission-route-content {
+  gap: 12px;
+}
+
+.route-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.route-card.complete {
+  border-color: #22c55e;
+  background: rgba(20, 83, 45, 0.28);
+}
+
+.route-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e2e8f0;
+}
+
+.route-step {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #bfdbfe;
+  font-size: 0.82rem;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.route-card.complete .route-step {
+  background: #14532d;
+  color: #dcfce7;
+}
+
+.route-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.route-grid-two {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.route-grid label,
+.route-card label {
+  display: grid;
+  gap: 5px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 900;
+  min-width: 0;
+}
+
+.route-card input,
+.route-card select,
+.route-card textarea {
+  width: 100%;
+  min-width: 0;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  padding: 9px 10px;
+  font-size: 0.92rem;
+}
+
+.route-card textarea {
+  resize: vertical;
+}
+
+.route-now-btn {
+  min-height: 41px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #38bdf8;
+  background: rgba(14, 116, 144, 0.35);
+  color: #cffafe;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.route-check {
+  display: inline-flex !important;
+  align-items: center;
+  grid-template-columns: auto 1fr;
+  gap: 8px !important;
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.route-check input {
+  width: auto;
+  accent-color: #22c55e;
+}
+
+.route-check:has(input:checked) {
+  border-color: #22c55e;
+  background: rgba(20, 83, 45, 0.38);
+  color: #dcfce7;
+}
+
+.route-junction-card:not(.junction-enabled) .route-grid {
+  opacity: 0.45;
+}
+
+.route-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.route-actions button {
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 14px;
+  font-weight: 900;
+}
+
+.route-actions .danger {
+  border-color: #ef4444;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.35);
+}
+
+@media (max-width: 620px) {
+  .route-grid,
+  .route-grid-two {
+    grid-template-columns: 1fr;
+  }
+
+  .route-now-btn {
+    justify-self: start;
+  }
+}

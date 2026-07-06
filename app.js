@@ -1,10 +1,12 @@
 ﻿const CACHE_NAME = "pisu-acr-cache-v1";
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
-const PISU_EVENTS_STORAGE_KEY = "pisuStructuredEvents";
-const SAED_STRUCTURED_EXPORT_VERSION = "saed-structured-v1";
+const PISU_SAED_EVENT_STORAGE_KEY = "pisuStructuredEventsV2";
+const PISU_EVENTS_STORAGE_KEY = PISU_SAED_EVENT_STORAGE_KEY;
+const SAED_STRUCTURED_EXPORT_VERSION = "saed-structured-v2";
 const VITALS_ALERT_STORAGE_KEY = "pisuLatestVitalsAlert";
 const PATIENT_ANTECEDENTS_STORAGE_KEY = "pisuPatientAntecedents";
+const MISSION_ROUTE_STORAGE_KEY = "pisuMissionRoute";
 const APP_DEFAULT_TITLE = "Protocole PISU";
 const PROTOCOL_TITLES = {
   acrAdultProtocol: "Arrêt cardiaque adulte",
@@ -18,6 +20,174 @@ const PROTOCOL_TITLES = {
   hypoglycemiaProtocol: "Hypoglycémie",
   asthmaBpcoProtocol: "Asthme / BPCO",
   analgesiaProtocol: "Antalgie"
+};
+
+const PISU_PROTOCOLS = {
+  acrAdultProtocol: {
+    label: "Arrêt cardiaque adulte",
+    aliases: ["arret cardiaque adulte", "acr adulte", "arrêt cardiaque adulte"],
+    intro: "Patient pris en charge dans le cadre d’un arrêt cardiaque adulte.",
+    demand: "Demande de poursuite de la régulation médicale et orientation selon évolution de la réanimation."
+  },
+  childAcrProtocol: {
+    label: "Arrêt cardiaque enfant",
+    aliases: ["arret cardiaque enfant", "acr enfant", "arrêt cardiaque enfant"],
+    intro: "Enfant pris en charge dans le cadre d’un arrêt cardiaque pédiatrique.",
+    demand: "Demande de poursuite de la régulation médicale spécialisée et orientation selon évolution de la réanimation."
+  },
+  chestPainProtocol: {
+    label: "Douleur thoracique",
+    aliases: ["douleur thoracique"],
+    intro: "Patient pris en charge pour douleur thoracique ou symptôme évocateur nécessitant évaluation cardiovasculaire.",
+    demand: "Demande d’avis médical régulateur pour stratégie diagnostique, thérapeutique et orientation adaptée."
+  },
+  smokeExposureProtocol: {
+    label: "Exposition aux fumées",
+    aliases: ["exposition aux fumees", "exposition aux fumées", "fumee", "fumées"],
+    intro: "Patient pris en charge après exposition aux fumées d’incendie.",
+    demand: "Demande d’avis médical régulateur pour surveillance, traitement spécifique éventuel et orientation."
+  },
+  burnsProtocol: {
+    label: "Brûlures",
+    aliases: ["brulures", "brûlures", "brulure", "brûlure"],
+    intro: "Patient pris en charge pour brûlures avec évaluation de la gravité locale et générale.",
+    demand: "Demande d’avis médical régulateur pour analgésie, remplissage éventuel, surveillance et orientation spécialisée si nécessaire."
+  },
+  seizureProtocol: {
+    label: "Crise convulsive",
+    aliases: ["crise convulsive", "convulsion"],
+    intro: "Patient pris en charge pour crise convulsive ou état post-critique.",
+    demand: "Demande d’avis médical régulateur pour poursuite de la surveillance, traitement éventuel et orientation."
+  },
+  anaphylaxisProtocol: {
+    label: "Anaphylaxie",
+    aliases: ["anaphylaxie", "allergie grave", "choc anaphylactique"],
+    intro: "Patient pris en charge pour suspicion d’anaphylaxie.",
+    demand: "Demande d’avis médical régulateur pour poursuite du traitement, surveillance rapprochée et orientation."
+  },
+  hemorrhageProtocol: {
+    label: "Hémorragie sévère",
+    aliases: ["hemorragie", "hémorragie", "hemorragie severe", "hémorragie sévère"],
+    intro: "Patient pris en charge pour hémorragie sévère ou suspicion de choc hémorragique.",
+    demand: "Demande d’avis médical régulateur pour stratégie hémostatique, remplissage éventuel, transfusion éventuelle et orientation."
+  },
+  hypoglycemiaProtocol: {
+    label: "Hypoglycémie",
+    aliases: ["hypoglycemie", "hypoglycémie"],
+    intro: "Patient pris en charge pour hypoglycémie suspectée ou confirmée.",
+    demand: "Demande d’avis médical régulateur selon correction glycémique, récupération clinique et contexte."
+  },
+  asthmaBpcoProtocol: {
+    label: "Asthme / BPCO",
+    aliases: ["asthme", "bpco", "asthme bpco", "asthme / bpco"],
+    intro: "Patient pris en charge pour détresse ou gêne respiratoire dans un contexte d’asthme ou de BPCO.",
+    demand: "Demande d’avis médical régulateur pour stratégie respiratoire, traitement, surveillance et orientation."
+  },
+  analgesiaProtocol: {
+    label: "Antalgie",
+    aliases: ["antalgie", "douleur", "prise en charge de la douleur"],
+    intro: "Patient pris en charge pour douleur nécessitant évaluation et traitement antalgique.",
+    demand: "Demande d’avis médical régulateur selon intensité douloureuse, traitement réalisé et réévaluation."
+  }
+};
+
+function createSAEDAction(sectionSAED, categorie, priorite, libelleCourt, phraseSAED, aliases = []) {
+  return {
+    aliases,
+    sectionSAED,
+    categorie,
+    priorite,
+    libelleCourt,
+    phraseSAED,
+    visibleSynthese: Boolean(phraseSAED),
+    visibleSAED: Boolean(phraseSAED),
+    visibleChrono: Boolean(phraseSAED)
+  };
+}
+
+const PISU_SAED_ACTIONS = {
+  common: {
+    call15: createSAEDAction("D", "demande", "haute", "Régulation médicale contactée", "Régulation médicale contactée ou avis médical demandé.", ["appel 15", "appel au 15", "bilan 15", "regulation", "régulation", "samu"]),
+    constants_request: createSAEDAction("journal", "technique", "basse", "Constantes à renseigner", "", ["constantes", "module constantes"]),
+    reevaluation: createSAEDAction("E", "evolution", "moyenne", "Réévaluation en cours", "Réévaluation clinique en cours ou à poursuivre.", ["reevaluation", "réévaluation", "surveillance", "controle", "contrôle"])
+  },
+  acrAdultProtocol: {
+    rcp: createSAEDAction("E", "geste", "haute", "RCP en cours", "Réanimation cardio-pulmonaire spécialisée en cours.", ["rcp", "massage", "compression"]),
+    shockable: createSAEDAction("S", "signe_clinique", "haute", "Rythme choquable identifié", "Rythme choquable identifié au cours de la prise en charge.", ["rythme choquable", "fv", "tv", "choc indiqué"]),
+    no_shock: createSAEDAction("S", "signe_clinique", "haute", "Rythme non choquable", "Rythme non choquable identifié au cours de la prise en charge.", ["choc non indiqué", "non choquable", "asystolie", "aesp"]),
+    cee: createSAEDAction("E", "geste", "haute", "CEE réalisé", "Choc électrique externe réalisé selon protocole devant un rythme choquable.", ["cee", "choc électrique", "défibrillation"]),
+    adrenaline: createSAEDAction("E", "therapeutique", "haute", "Adrénaline administrée", "Adrénaline administrée selon protocole d’arrêt cardiaque.", ["adrenaline", "adrénaline"]),
+    cordarone: createSAEDAction("E", "therapeutique", "haute", "Amiodarone administrée", "Amiodarone administrée selon protocole devant rythme choquable persistant ou récidivant.", ["cordarone", "amiodarone"]),
+    rosc: createSAEDAction("E", "evolution", "haute", "RACS obtenue", "Reprise d’activité circulatoire spontanée rapportée au cours de la prise en charge.", ["racs", "rosc", "reprise activité"])
+  },
+  childAcrProtocol: {
+    rcp: createSAEDAction("E", "geste", "haute", "RCP pédiatrique en cours", "Réanimation cardio-pulmonaire pédiatrique en cours.", ["rcp", "massage", "compression"]),
+    cee: createSAEDAction("E", "geste", "haute", "CEE pédiatrique réalisé", "Choc électrique externe réalisé selon protocole pédiatrique devant rythme choquable.", ["cee", "choc", "défibrillation"]),
+    adrenaline: createSAEDAction("E", "therapeutique", "haute", "Adrénaline pédiatrique administrée", "Adrénaline administrée selon protocole pédiatrique, avec dose adaptée au poids estimé.", ["adrenaline", "adrénaline"]),
+    cordarone: createSAEDAction("E", "therapeutique", "haute", "Amiodarone pédiatrique administrée", "Amiodarone administrée selon protocole pédiatrique devant rythme choquable persistant ou récidivant.", ["cordarone", "amiodarone"]),
+    rosc: createSAEDAction("E", "evolution", "haute", "RACS pédiatrique obtenue", "Reprise d’activité circulatoire spontanée rapportée chez l’enfant.", ["racs", "rosc", "reprise activité"])
+  },
+  chestPainProtocol: {
+    pain_assessment: createSAEDAction("S", "signe_clinique", "haute", "Douleur évaluée", "Douleur thoracique évaluée avec surveillance clinique en cours.", ["douleur", "eva", "en"]),
+    ecg: createSAEDAction("E", "examen", "haute", "ECG réalisé", "ECG réalisé ou en cours de réalisation dans le cadre de la douleur thoracique.", ["ecg", "électrocardiogramme", "d2"]),
+    aspirin: createSAEDAction("E", "therapeutique", "haute", "Antiagrégant administré selon protocole", "Traitement antiagrégant administré selon protocole local si indication retenue et absence de contre-indication identifiée.", ["aspirine", "kardégic"]),
+    nitrate: createSAEDAction("E", "therapeutique", "moyenne", "Dérivé nitré utilisé selon protocole", "Dérivé nitré utilisé selon protocole local si indication retenue et conditions de sécurité réunies.", ["trinitrine", "nitrate", "natispray"])
+  },
+  smokeExposureProtocol: {
+    extraction: createSAEDAction("E", "geste", "haute", "Mise en sécurité réalisée", "Patient soustrait à l’exposition et mis en sécurité.", ["extraction", "mise en sécurité"]),
+    oxygen: createSAEDAction("E", "therapeutique", "haute", "Oxygénothérapie mise en place", "Oxygénothérapie mise en place dans le contexte d’exposition aux fumées.", ["oxygène", "o2", "15 l"]),
+    co_assessment: createSAEDAction("E", "examen", "haute", "Évaluation CO réalisée", "Évaluation de l’intoxication au monoxyde de carbone réalisée ou recherchée selon matériel disponible.", ["co", "monoxyde", "spco"]),
+    neurologic_signs: createSAEDAction("S", "signe_clinique", "haute", "Signes neurologiques recherchés", "Recherche de signes neurologiques ou de gravité réalisée dans le contexte d’exposition aux fumées.", ["trouble neurologique", "confusion", "coma", "gcs", "cyanures"])
+  },
+  burnsProtocol: {
+    burn_surface: createSAEDAction("S", "evaluation", "haute", "Surface brûlée évaluée", "Surface brûlée et localisation évaluées afin d’apprécier la gravité.", ["surface", "scb", "surface brûlée"]),
+    cooling: createSAEDAction("E", "geste", "moyenne", "Refroidissement réalisé", "Refroidissement de la brûlure réalisé selon délai, contexte et protocole local.", ["refroidissement", "eau"]),
+    dressing: createSAEDAction("E", "geste", "moyenne", "Protection de brûlure réalisée", "Protection de la zone brûlée réalisée selon protocole local.", ["pansement", "protection"]),
+    analgesia: createSAEDAction("E", "therapeutique", "haute", "Antalgie mise en œuvre", "Antalgie mise en œuvre ou demandée devant la douleur liée aux brûlures.", ["antalgie", "analgésie", "douleur"])
+  },
+  seizureProtocol: {
+    seizure_active: createSAEDAction("S", "signe_clinique", "haute", "Crise convulsive en cours", "Crise convulsive en cours ou répétée rapportée au moment de la prise en charge.", ["crise en cours", "convulsion", "état de mal"]),
+    pls_security: createSAEDAction("E", "geste", "haute", "Protection patient réalisée", "Mesures de protection du patient et surveillance des voies aériennes mises en place.", ["pls", "protection", "voies aériennes"]),
+    glycemia: createSAEDAction("E", "examen", "haute", "Glycémie contrôlée", "Glycémie capillaire contrôlée dans le cadre de la crise convulsive.", ["glycémie", "dextro"]),
+    benzodiazepine: createSAEDAction("E", "therapeutique", "haute", "Benzodiazépine administrée", "Traitement anticonvulsivant par benzodiazépine administré selon protocole et dose adaptée.", ["clonazépam", "midazolam", "buccolam", "benzodiazépine"]),
+    post_critical: createSAEDAction("E", "evolution", "moyenne", "Phase post-critique surveillée", "Surveillance de la phase post-critique en cours.", ["post critique", "récupération"])
+  },
+  anaphylaxisProtocol: {
+    trigger: createSAEDAction("S", "contexte", "haute", "Déclencheur recherché", "Contexte allergique ou déclencheur potentiel recherché.", ["allergène", "piqûre", "aliment", "médicament"]),
+    adrenaline: createSAEDAction("E", "therapeutique", "haute", "Adrénaline IM administrée", "Adrénaline intramusculaire administrée selon protocole devant suspicion d’anaphylaxie.", ["adrenaline", "adrénaline", "im"]),
+    oxygen: createSAEDAction("E", "therapeutique", "haute", "Oxygénothérapie mise en place", "Oxygénothérapie mise en place devant suspicion d’anaphylaxie avec surveillance respiratoire.", ["oxygène", "o2"]),
+    filling: createSAEDAction("E", "therapeutique", "haute", "Remplissage vasculaire engagé", "Remplissage vasculaire engagé ou préparé selon état hémodynamique et protocole local.", ["remplissage"]),
+    antihistamine_corticoid: createSAEDAction("E", "therapeutique", "moyenne", "Traitement complémentaire administré", "Traitement complémentaire antihistaminique ou corticoïde réalisé selon protocole local.", ["antihistaminique", "corticoïde", "solumédrol"])
+  },
+  hemorrhageProtocol: {
+    external_bleeding: createSAEDAction("S", "signe_clinique", "haute", "Hémorragie sévère évaluée", "Hémorragie sévère ou suspicion de choc hémorragique évaluée.", ["saignement", "hémorragie", "choc"]),
+    compression: createSAEDAction("E", "geste", "haute", "Compression hémostatique réalisée", "Compression hémostatique directe ou pansement compressif réalisé selon situation.", ["compression", "pansement compressif"]),
+    tourniquet: createSAEDAction("E", "geste", "haute", "Garrot posé", "Garrot posé ou contrôlé devant hémorragie de membre selon protocole.", ["garrot", "tourniquet"]),
+    txa: createSAEDAction("E", "therapeutique", "haute", "Acide tranexamique administré", "Acide tranexamique administré selon protocole devant hémorragie sévère.", ["txa", "exacyl", "tranexamique"]),
+    filling: createSAEDAction("E", "therapeutique", "haute", "Remplissage ou abord vasculaire engagé", "Abord vasculaire et remplissage discutés ou engagés selon état hémodynamique.", ["remplissage", "vvp", "ktio"])
+  },
+  hypoglycemiaProtocol: {
+    glycemia_confirmed: createSAEDAction("S", "signe_clinique", "haute", "Hypoglycémie confirmée", "Hypoglycémie confirmée ou fortement suspectée devant les éléments cliniques et/ou glycémie capillaire.", ["hypoglycémie confirmée", "glycémie capillaire", "< 0,6", "< 3,3"]),
+    oral_sugar: createSAEDAction("E", "therapeutique", "haute", "Resucrage oral réalisé", "Resucrage per os réalisé si patient conscient et capable de déglutir.", ["resucrage", "per os", "déglutir"]),
+    g30: createSAEDAction("E", "therapeutique", "haute", "G30 administré", "Administration de G30 réalisée selon protocole hypoglycémie, avec réévaluation clinique et glycémique à poursuivre.", ["g30", "g30%"]),
+    g10: createSAEDAction("E", "therapeutique", "haute", "G10 administré", "Administration de G10 réalisée selon protocole hypoglycémie, avec réévaluation clinique et glycémique à poursuivre.", ["g10", "g10%"]),
+    glucagon: createSAEDAction("E", "therapeutique", "haute", "Glucagon administré", "Glucagon administré selon protocole hypoglycémie, avec surveillance de la récupération clinique.", ["glucagon"]),
+    pump_off: createSAEDAction("E", "geste", "moyenne", "Pompe à insuline arrêtée", "Pompe à insuline arrêtée ou sécurisée dans le contexte d’hypoglycémie.", ["pompe", "pompe à insuline"])
+  },
+  asthmaBpcoProtocol: {
+    dyspnea: createSAEDAction("S", "signe_clinique", "haute", "Dyspnée évaluée", "Dyspnée ou gêne respiratoire évaluée avec recherche de signes de gravité.", ["dyspnée", "détresse"]),
+    oxygen: createSAEDAction("E", "therapeutique", "haute", "Oxygénothérapie adaptée", "Oxygénothérapie adaptée à la cible de saturation et à la tolérance clinique.", ["oxygène", "o2", "spo2"]),
+    terbutaline: createSAEDAction("E", "therapeutique", "haute", "Terbutaline administrée", "Bronchodilatateur bêta-2 mimétique administré selon protocole respiratoire.", ["terbutaline", "bricanyl"]),
+    ipratropium: createSAEDAction("E", "therapeutique", "haute", "Ipratropium administré", "Ipratropium administré selon protocole respiratoire si indication retenue.", ["ipratropium", "atrovent"]),
+    corticosteroid: createSAEDAction("E", "therapeutique", "moyenne", "Corticothérapie administrée", "Corticothérapie administrée selon protocole respiratoire si indication retenue.", ["corticoïde", "methylprednisolone", "solumédrol"])
+  },
+  analgesiaProtocol: {
+    pain_score: createSAEDAction("S", "evaluation", "haute", "Douleur évaluée", "Douleur évaluée avec score ou appréciation clinique et surveillance de l’efficacité antalgique.", ["douleur", "score", "eva", "en"]),
+    paracetamol: createSAEDAction("E", "therapeutique", "moyenne", "Paracétamol administré", "Paracétamol administré selon protocole antalgique et absence de contre-indication identifiée.", ["paracétamol"]),
+    meopa: createSAEDAction("E", "therapeutique", "moyenne", "MEOPA utilisé", "MEOPA utilisé selon protocole antalgique avec surveillance de la tolérance.", ["meopa"]),
+    morphine: createSAEDAction("E", "therapeutique", "haute", "Morphine titrée", "Morphine titrée selon protocole antalgique avec surveillance clinique rapprochée.", ["morphine", "titration"]),
+    pain_reevaluation: createSAEDAction("E", "evolution", "moyenne", "Douleur réévaluée", "Douleur réévaluée après traitement antalgique.", ["réévaluation douleur"])
+  }
 };
 let timerInterval = null;
 let remaining = 120;
@@ -89,6 +259,31 @@ const patientIdentityPanel = document.querySelector(".identity-block");
 const togglePatientIdentityBtn = document.getElementById("togglePatientIdentityBtn");
 const patientIdentityContent = document.getElementById("patientIdentityContent");
 const patientIdentitySummary = document.getElementById("patientIdentitySummary");
+const missionRoutePanel = document.querySelector(".mission-route-block");
+const toggleMissionRouteBtn = document.getElementById("toggleMissionRouteBtn");
+const missionRouteContent = document.getElementById("missionRouteContent");
+const missionRouteSummary = document.getElementById("missionRouteSummary");
+const routeDepartureCard = document.getElementById("routeDepartureCard");
+const routeDestinationCard = document.getElementById("routeDestinationCard");
+const routeTransportCard = document.getElementById("routeTransportCard");
+const routeJunctionCard = document.getElementById("routeJunctionCard");
+const routeArrivalCard = document.getElementById("routeArrivalCard");
+const routeDepartureTimeInput = document.getElementById("routeDepartureTime");
+const routeDestinationNameInput = document.getElementById("routeDestinationName");
+const routeDestinationServiceInput = document.getElementById("routeDestinationService");
+const routeTransportVectorInput = document.getElementById("routeTransportVector");
+const routeTransportModeInput = document.getElementById("routeTransportMode");
+const routeTransportMonitoringInput = document.getElementById("routeTransportMonitoring");
+const routeTransportTeamInput = document.getElementById("routeTransportTeam");
+const routeJunctionEnabledInput = document.getElementById("routeJunctionEnabled");
+const routeJunctionTimeInput = document.getElementById("routeJunctionTime");
+const routeJunctionPlaceInput = document.getElementById("routeJunctionPlace");
+const routeJunctionWithInput = document.getElementById("routeJunctionWith");
+const routeArrivalTimeInput = document.getElementById("routeArrivalTime");
+const routeTransmissionDoneInput = document.getElementById("routeTransmissionDone");
+const routeTransportNoteInput = document.getElementById("routeTransportNote");
+const saveMissionRouteBtn = document.getElementById("saveMissionRouteBtn");
+const clearMissionRouteBtn = document.getElementById("clearMissionRouteBtn");
 const createHandoffBtn = document.getElementById("createHandoffBtn");
 const showImportHandoffBtn = document.getElementById("showImportHandoffBtn");
 const handoffPanel = document.querySelector(".handoff-block");
@@ -230,11 +425,19 @@ function addLog(text, structuredOptions = {}) {
   items.push(item);
   saveLog(items);
   addLogToDom(item.time, item.text);
-  addStructuredEvent(inferStructuredEvent(text, {
-    ...structuredOptions,
-    heure: item.time,
-    iso: new Date().toISOString()
-  }));
+
+  if (!structuredOptions?.skipStructuredSAED) {
+    const eventOptions = {
+      ...structuredOptions,
+      heure: item.time,
+      iso: new Date().toISOString()
+    };
+
+    addStructuredEvent(
+      inferStructuredEventFromLog(text, eventOptions) ||
+      inferStructuredEvent(text, eventOptions)
+    );
+  }
 }
 
 function addLogToDom(time, text) {
@@ -258,6 +461,10 @@ function normalizeForSearch(value) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function normalizeSAEDText(value) {
+  return normalizeForSearch(value).replace(/[’']/g, " ");
+}
+
 function getStructuredEvents() {
   try {
     const events = JSON.parse(localStorage.getItem(PISU_EVENTS_STORAGE_KEY) || "[]");
@@ -277,9 +484,142 @@ function clearStructuredEvents() {
 }
 
 function addStructuredEvent(event) {
+  if (!event) return null;
+
   const events = getStructuredEvents();
-  events.push(event);
+  const now = new Date();
+
+  events.push({
+    ...event,
+    id: event.id || createStructuredEventId(),
+    iso: event.iso || now.toISOString(),
+    heure: event.heure || nowLabel(),
+    version: "saed-v2"
+  });
+
   saveStructuredEvents(events);
+  return event;
+}
+
+function saveStructuredEvent(event) {
+  return addStructuredEvent(event);
+}
+
+function getProtocolIdFromText(value) {
+  const normalized = normalizeSAEDText(value);
+
+  if (!normalized) return "";
+
+  for (const [protocolId, protocol] of Object.entries(PISU_PROTOCOLS)) {
+    const aliases = [protocol.label, ...(protocol.aliases || [])].map(normalizeSAEDText);
+
+    if (aliases.some(alias => alias && normalized.includes(alias))) {
+      return protocolId;
+    }
+  }
+
+  return "";
+}
+
+function getProtocolLabel(protocolId) {
+  return PISU_PROTOCOLS[protocolId]?.label || PROTOCOL_TITLES[protocolId] || "Mission PISU";
+}
+
+function getActionTemplate(protocolId, actionKey) {
+  return PISU_SAED_ACTIONS[protocolId]?.[actionKey] ||
+    PISU_SAED_ACTIONS.common?.[actionKey] ||
+    null;
+}
+
+function inferSAEDActionFromText(protocolId, message) {
+  const normalized = normalizeSAEDText(message);
+  const protocolActions = {
+    ...(PISU_SAED_ACTIONS.common || {}),
+    ...(PISU_SAED_ACTIONS[protocolId] || {})
+  };
+
+  for (const [actionKey, action] of Object.entries(protocolActions)) {
+    const aliases = [actionKey, action.libelleCourt, ...(action.aliases || [])].map(normalizeSAEDText);
+
+    if (aliases.some(alias => alias && normalized.includes(alias))) {
+      return { actionKey, action };
+    }
+  }
+
+  return null;
+}
+
+function buildStructuredEvent(protocolId, actionKey, overrides = {}) {
+  const now = new Date();
+  const protocolLabel = getProtocolLabel(protocolId);
+  const template = getActionTemplate(protocolId, actionKey) || {};
+
+  return {
+    id: createStructuredEventId(),
+    iso: overrides.iso || now.toISOString(),
+    heure: overrides.heure || nowLabel(),
+    version: "saed-v2",
+    protocolId,
+    protocole: protocolLabel,
+    action: actionKey,
+    sectionSAED: overrides.sectionSAED || template.sectionSAED || "journal",
+    categorie: overrides.categorie || template.categorie || "journal",
+    sousCategorie: overrides.sousCategorie || actionKey,
+    priorite: overrides.priorite || template.priorite || "basse",
+    statut: overrides.statut || template.statut || "realise",
+    type: overrides.type || (template.phraseSAED ? "clinique" : "technique"),
+    libelleCourt: overrides.libelleCourt || template.libelleCourt || `${protocolLabel} : action réalisée`,
+    libelleLong: overrides.libelleLong || overrides.libelleCourt || template.libelleCourt || `${protocolLabel} : action réalisée`,
+    phraseSAED: overrides.phraseSAED ?? template.phraseSAED ?? "",
+    detail: overrides.detail || "",
+    dose: overrides.dose || "",
+    voie: overrides.voie || "",
+    commentaire: overrides.commentaire || "",
+    visibleSynthese: overrides.visibleSynthese ?? template.visibleSynthese ?? false,
+    visibleSAED: overrides.visibleSAED ?? template.visibleSAED ?? false,
+    visibleChrono: overrides.visibleChrono ?? template.visibleChrono ?? true,
+    visibleJournal: overrides.visibleJournal ?? true
+  };
+}
+
+function logPisuAction(protocolId, actionKey, overrides = {}) {
+  const event = buildStructuredEvent(protocolId, actionKey, overrides);
+  const protocolLabel = getProtocolLabel(protocolId);
+  const journalMessage = overrides.journal ||
+    `${protocolLabel} : ${event.libelleCourt}${event.detail ? ` — ${event.detail}` : ""}.`;
+
+  saveStructuredEvent(event);
+
+  if (typeof addLog === "function") {
+    addLog(journalMessage, { skipStructuredSAED: true });
+  }
+
+  return event;
+}
+
+function inferStructuredEventFromLog(message, options = {}) {
+  if (options?.skipStructuredSAED) return null;
+
+  const protocolId = options.protocolId || getProtocolIdFromText(message);
+  if (!protocolId) return null;
+
+  const inferred = inferSAEDActionFromText(protocolId, message);
+  if (!inferred) return null;
+
+  return buildStructuredEvent(protocolId, inferred.actionKey, {
+    ...inferred.action,
+    heure: options.heure,
+    iso: options.iso,
+    libelleLong: message
+  });
+}
+
+function installStructuredSAEDEngine() {
+  window.__pisuStructuredSAEDEngineInstalled = true;
+  window.logPisuAction = logPisuAction;
+  window.getStructuredEvents = getStructuredEvents;
+  window.clearStructuredEvents = clearStructuredEvents;
+  window.saveStructuredEvent = saveStructuredEvent;
 }
 
 function normalizeProtocolName(value) {
@@ -1535,151 +1875,154 @@ function exportTextLegacy() {
   return lines.join("\n");
 }
 
+function uniqueSAEDPhrases(events) {
+  const seen = new Set();
+  const phrases = [];
+
+  events.forEach(event => {
+    const phrase = String(event.phraseSAED || "").trim();
+    if (!phrase) return;
+
+    const key = normalizeSAEDText(phrase);
+    if (seen.has(key)) return;
+
+    seen.add(key);
+    phrases.push(phrase);
+  });
+
+  return phrases;
+}
+
+function getMainProtocolIdFromEvents(events) {
+  const firstProtocolEvent = events.find(event => event.protocolId);
+  return firstProtocolEvent?.protocolId || "";
+}
+
+function buildPatientIdentitySAEDLine() {
+  const patient = typeof getPatientSnapshot === "function" ? getPatientSnapshot() : {};
+  const parts = [];
+
+  if (patient.name) parts.push(patient.name);
+  if (patient.age) parts.push(`${patient.age}`);
+  if (patient.sex) parts.push(patient.sex);
+  if (patient.weight) parts.push(`${patient.weight} kg`);
+
+  return parts.length > 0
+    ? `Patient : ${parts.join(" — ")}.`
+    : "Identité patient à compléter.";
+}
+
+function buildAntecedentsSAEDLines() {
+  return typeof getPatientAntecedentsLines === "function"
+    ? getPatientAntecedentsLines()
+    : ["Antécédents non renseignés."];
+}
+
+function buildLatestVitalsSAEDLine() {
+  if (typeof getVitalsEntries !== "function") {
+    return "Constantes à compléter.";
+  }
+
+  const vitals = getVitalsEntries();
+  if (!Array.isArray(vitals) || vitals.length === 0) {
+    return "Constantes à compléter.";
+  }
+
+  const latest = vitals[vitals.length - 1];
+  return typeof formatVitalsEntry === "function"
+    ? `Dernières constantes : ${formatVitalsEntry(latest, { withNumber: false })}.`
+    : "Dernières constantes renseignées dans le module constantes.";
+}
+
+function buildCrewSAEDLines() {
+  if (window.pisuCrew?.getMissionCrewLines) {
+    return window.pisuCrew.getMissionCrewLines();
+  }
+
+  return typeof getMissionCrewLines === "function"
+    ? getMissionCrewLines()
+    : ["Équipage associé non renseigné."];
+}
+
+function buildStructuredSAEDLines() {
+  const events = getActiveEventsForSaed(getStructuredEvents());
+  const mainProtocolId = getMainProtocolIdFromEvents(events);
+  const protocol = PISU_PROTOCOLS[mainProtocolId];
+  const saedEvents = events.filter(event => event.visibleSAED !== false);
+
+  const situationEvents = saedEvents.filter(event => event.sectionSAED === "S");
+  const antecedentEvents = saedEvents.filter(event => event.sectionSAED === "A");
+  const evaluationEvents = saedEvents.filter(event => event.sectionSAED === "E");
+  const demandEvents = saedEvents.filter(event => event.sectionSAED === "D");
+
+  const situationLines = [
+    protocol?.intro || "Patient pris en charge dans le cadre d’un protocole PISU.",
+    buildPatientIdentitySAEDLine(),
+    ...uniqueSAEDPhrases(situationEvents),
+    buildLatestVitalsSAEDLine()
+  ];
+
+  const antecedentLines = [
+    ...buildAntecedentsSAEDLines(),
+    ...uniqueSAEDPhrases(antecedentEvents)
+  ];
+
+  const evaluationLines = uniqueSAEDPhrases(evaluationEvents);
+  if (evaluationLines.length === 0) {
+    evaluationLines.push("Évaluation et actions réalisées à reprendre dans la chronologie clinique.");
+  }
+
+  const demandLines = uniqueSAEDPhrases(demandEvents);
+  if (demandLines.length === 0) {
+    demandLines.push(protocol?.demand || "Demande d’avis médical régulateur selon contexte clinique et évolution.");
+  }
+
+  return [
+    "========================================",
+    "SAED STRUCTURÉ",
+    "========================================",
+    "",
+    "S — SITUATION",
+    "----------------------------------------",
+    ...situationLines,
+    "",
+    "A — ANTÉCÉDENTS",
+    "----------------------------------------",
+    ...antecedentLines,
+    "",
+    "E — ÉVALUATION / ACTIONS RÉALISÉES",
+    "----------------------------------------",
+    ...evaluationLines,
+    "",
+    "D — DEMANDE / DEVENIR",
+    "----------------------------------------",
+    ...demandLines,
+    ...getMissionRouteSAEDLines(),
+    "",
+    "ÉQUIPAGE MISSION",
+    "----------------------------------------",
+    ...buildCrewSAEDLines(),
+    ""
+  ];
+}
+
+function buildUsefulClinicalChronologyLines() {
+  const events = getActiveEventsForSaed(getStructuredEvents())
+    .filter(event => event.visibleChrono !== false)
+    .sort((a, b) => String(a.iso || "").localeCompare(String(b.iso || "")));
+
+  if (events.length === 0) {
+    return ["Aucune chronologie clinique structurée disponible."];
+  }
+
+  return events.map(event => {
+    const detail = event.detail ? ` — ${event.detail}` : "";
+    return `${event.heure || "Heure ?"} — ${event.protocole || "Mission PISU"} — ${event.libelleCourt || "Événement"}${detail}`;
+  });
+}
+
 function exportText() {
   const rawLogItems = getLog();
-  const model = buildStructuredSaedModel(rawLogItems);
-
-  const responder = typeof getResponderIdentity === "function"
-    ? getResponderIdentity()
-    : {};
-
-  const responderLine = typeof formatResponderIdentity === "function"
-    ? formatResponderIdentity(responder)
-    : "Intervenant à compléter";
-
-  const crewLines = typeof getMissionCrewLines === "function"
-    ? getMissionCrewLines()
-    : ["Aucun équipage associé renseigné."];
-
-  const patientName = patientNameInput?.value?.trim() || "Identité non renseignée";
-  const patientAge = patientAgeInput?.value?.trim() || "À compléter";
-  const patientSex = patientSexInput?.value?.trim() || "À compléter";
-  const patientCategory = patientCategoryInput?.value?.trim() || "À compléter";
-  const patientWeight = patientWeightInput?.value?.trim() || "À compléter";
-  const patientNote = patientNoteInput?.value?.trim() || "";
-  const antecedentLines = getPatientAntecedentsLines();
-
-  const initialVitals = window.pisuVitals?.getInitialLine?.() || "";
-  const latestVitals = window.pisuVitals?.getLatestLine?.() || "";
-
-  const protocolLine = model.protocolNames.length > 0
-    ? model.protocolNames.join(" / ")
-    : "À préciser";
-
-  function bulletLines(lines) {
-    return uniqueLines(lines)
-      .filter(Boolean)
-      .map(line => `- ${line}`);
-  }
-
-  function eventBullets(events, limit = 10) {
-    return bulletLines(
-      events
-        .map(eventLine)
-        .filter(Boolean)
-    ).slice(0, limit);
-  }
-
-  function addBlock(lines, title, contentLines) {
-    const cleanLines = contentLines.filter(Boolean);
-
-    if (cleanLines.length === 0) return;
-
-    lines.push(title);
-    lines.push(...cleanLines);
-    lines.push("");
-  }
-
-  function latestRawLogContaining(patterns) {
-    const normalizedPatterns = patterns.map(normalizeForSearch);
-
-    const found = rawLogItems
-      .slice()
-      .reverse()
-      .find(item => {
-        const text = typeof item === "string" ? item : formatLogLine(item);
-        const normalizedLine = normalizeForSearch(text);
-        return normalizedPatterns.some(pattern => normalizedLine.includes(pattern));
-      });
-
-    if (!found) return "";
-
-    return typeof found === "string" ? found : formatLogLine(found);
-  }
-
-  const departLine = latestRawLogContaining(["Départ intervention"]);
-  const arriveeLine = latestRawLogContaining(["Arrivée sur les lieux"]);
-  const gpsDepartLine = latestRawLogContaining(["GPS Départ intervention"]);
-  const gpsArriveeLine = latestRawLogContaining(["GPS Arrivée sur les lieux"]);
-
-  const situationEvents = model.clinicalEvents.filter(event => {
-    return [
-      "situation",
-      "signe_clinique",
-      "rythme",
-      "evolution"
-    ].includes(event.categorie);
-  });
-
-  const evaluationEvents = model.clinicalEvents.filter(event => {
-    return [
-      "geste",
-      "medicament",
-      "materiel",
-      "surveillance",
-      "constante"
-    ].includes(event.categorie);
-  });
-
-  const appelEvents = model.clinicalEvents.filter(event => {
-    return ["appel", "decision", "demande", "transport"].includes(event.categorie);
-  });
-
-  const priorityEvents = model.clinicalEvents.filter(event => {
-    if (event.categorie === "constante") return false;
-    if (event.visibleSynthese === false) return false;
-    if (!["realise", "a_confirmer", "selectionne"].includes(event.statut)) return false;
-
-    return event.priorite === "haute" || event.priorite === "moyenne";
-  });
-
-  const syntheseClinique = eventBullets(priorityEvents, 8);
-  const saedLines = [];
-
-  addBlock(saedLines, "S — SITUATION", [
-    `- Patient : ${patientName}`,
-    `- Âge / naissance : ${patientAge} ; sexe : ${patientSex} ; poids : ${patientWeight}`,
-    `- Protocole engagé : ${protocolLine}`,
-    latestVitals ? `- Dernières constantes : ${latestVitals}` : "",
-    ...eventBullets(situationEvents, 8)
-  ]);
-
-  addBlock(saedLines, "A — ANTÉCÉDENTS", [
-    ...antecedentLines.map(line => `- ${line}`),
-    patientNote ? `- Remarque identité / contexte : ${patientNote}` : ""
-  ]);
-
-  addBlock(saedLines, "E — ÉVALUATION / ACTIONS", [
-    ...eventBullets(evaluationEvents, 12)
-  ]);
-
-  if (appelEvents.length > 0) {
-    addBlock(saedLines, "D — DEMANDE / DÉCISION", [
-      ...eventBullets(appelEvents, 8),
-      "- Décision / consignes reçues : À compléter"
-    ]);
-  } else {
-    addBlock(saedLines, "D — DEMANDE / DÉCISION", [
-      "- Appel / bilan régulateur non tracé dans l’application",
-      "- Demande : avis médical, conduite à tenir, renfort, destination ou consignes",
-      "- Décision / consignes reçues : À compléter"
-    ]);
-  }
-
-  const clinicalChronologyLines = model.clinicalChronology.length > 0
-    ? model.clinicalChronology
-    : ["Aucune chronologie clinique utile structurée."];
-
   const journalCompleteLines = rawLogItems.length > 0
     ? rawLogItems.map(item => typeof item === "string" ? item : formatLogLine(item))
     : ["Journal vide."];
@@ -1693,67 +2036,20 @@ function exportText() {
     `Version export : ${SAED_STRUCTURED_EXPORT_VERSION}`,
     "Version application : prototype à valider",
     "",
+    ...buildStructuredSAEDLines(),
     "========================================",
-    "1. SYNTHÈSE RAPIDE",
+    "CHRONOLOGIE CLINIQUE UTILE",
     "========================================",
-    "",
-    responderLine,
-    "",
-    "Équipage :",
-    ...crewLines.map(line => `- ${line}`),
-    "",
-    `Patient : ${patientName}`,
-    `Âge / naissance : ${patientAge}`,
-    `Sexe : ${patientSex}`,
-    `Catégorie : ${patientCategory}`,
-    `Poids estimé : ${patientWeight}`,
-    "",
-    "----------------------------------------",
-    "ANTÉCÉDENTS / RISQUES UTILES",
-    "----------------------------------------",
-    ...antecedentLines,
-    "",
-    `Motif / protocole : ${protocolLine}`,
-    "",
-    "Constantes :",
-    initialVitals && latestVitals && initialVitals !== latestVitals
-      ? `- Initiales : ${initialVitals}`
-      : "",
-    latestVitals
-      ? `- Dernières : ${latestVitals}`
-      : "- Non renseignées",
-    "",
-    "Résumé clinique :",
-    ...(syntheseClinique.length > 0
-      ? syntheseClinique
-      : ["- Aucun élément clinique prioritaire structuré."]),
-    "",
-    "Demande :",
-    appelEvents.length > 0
-      ? "- Appel / bilan régulateur tracé dans la chronologie."
-      : "- Avis médical / conduite à tenir à demander ou à tracer.",
+    ...buildUsefulClinicalChronologyLines(),
     "",
     "========================================",
-    "2. SAED",
+    "PARCOURS / TRANSPORT",
     "========================================",
-    "",
-    ...saedLines,
-    "Repères intervention :",
-    departLine ? `- ${departLine}` : "- Départ intervention : À compléter",
-    arriveeLine ? `- ${arriveeLine}` : "- Arrivée sur les lieux : À compléter",
-    gpsDepartLine ? `- ${gpsDepartLine}` : "",
-    gpsArriveeLine ? `- ${gpsArriveeLine}` : "",
+    ...getMissionRouteLines(),
     "",
     "========================================",
-    "3. CHRONOLOGIE CLINIQUE UTILE",
+    "JOURNAL COMPLET",
     "========================================",
-    "",
-    ...clinicalChronologyLines,
-    "",
-    "========================================",
-    "4. JOURNAL COMPLET",
-    "========================================",
-    "",
     ...journalCompleteLines,
     "",
     "========================================",
@@ -1762,9 +2058,7 @@ function exportText() {
   ];
 
   return lines
-    .filter((line, index, allLines) => {
-      return line !== "" || allLines[index - 1] !== "";
-    })
+    .filter((line, index, allLines) => line !== "" || allLines[index - 1] !== "")
     .join("\n");
 }
 
@@ -1921,6 +2215,7 @@ function resetMissionCompletely() {
   clearProtocolScrollMemory();
   resetPatientIdentityFields();
   resetMissionCrew();
+  resetMissionRoute();
   resetAllVisualValidations();
   resetMissionHandoffUi?.();
   clearVitalsHistory();
@@ -1939,7 +2234,7 @@ function resetMissionCompletely() {
     showMainMenu();
   }
 
-  addLog("Nouvelle mission créée — journal remis à zéro");
+  addLog("Nouvelle mission créée — journal, SAED et parcours remis à zéro");
 }
 
 document.getElementById("clearLog").addEventListener("click", () => {
@@ -1948,6 +2243,7 @@ document.getElementById("clearLog").addEventListener("click", () => {
 
     clearAllProtocolCounters();
     clearStructuredEvents();
+    resetMissionRoute();
     resetMissionHandoffUi?.();
     resetAllVisualValidations();
     clearVitalsHistory();
@@ -2450,6 +2746,397 @@ function applyPatientSnapshot(patient = {}) {
   updatePatientIdentitySummary();
 }
 
+function getRouteValue(input) {
+  return input?.value?.trim() || "";
+}
+
+function setRouteValue(input, value) {
+  if (input) {
+    input.value = value || "";
+  }
+}
+
+function setRouteChecked(input, value) {
+  if (input) {
+    input.checked = Boolean(value);
+  }
+}
+
+function getCurrentTimeValue() {
+  const now = new Date();
+  return now.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function getMissionRouteSnapshot() {
+  return {
+    departureTime: getRouteValue(routeDepartureTimeInput),
+    destinationName: getRouteValue(routeDestinationNameInput),
+    destinationService: getRouteValue(routeDestinationServiceInput),
+    transportVector: getRouteValue(routeTransportVectorInput),
+    transportMode: getRouteValue(routeTransportModeInput),
+    transportMonitoring: getRouteValue(routeTransportMonitoringInput),
+    transportTeam: getRouteValue(routeTransportTeamInput),
+    junctionEnabled: Boolean(routeJunctionEnabledInput?.checked),
+    junctionTime: getRouteValue(routeJunctionTimeInput),
+    junctionPlace: getRouteValue(routeJunctionPlaceInput),
+    junctionWith: getRouteValue(routeJunctionWithInput),
+    arrivalTime: getRouteValue(routeArrivalTimeInput),
+    transmissionDone: Boolean(routeTransmissionDoneInput?.checked),
+    note: getRouteValue(routeTransportNoteInput)
+  };
+}
+
+function hasMissionRouteData(route = getMissionRouteSnapshot()) {
+  return Boolean(
+    route.departureTime ||
+    route.destinationName ||
+    route.destinationService ||
+    route.transportVector ||
+    route.transportMode ||
+    route.transportMonitoring ||
+    route.transportTeam ||
+    route.junctionEnabled ||
+    route.junctionTime ||
+    route.junctionPlace ||
+    route.junctionWith ||
+    route.arrivalTime ||
+    route.transmissionDone ||
+    route.note
+  );
+}
+
+function saveMissionRoute(options = {}) {
+  const route = getMissionRouteSnapshot();
+
+  localStorage.setItem(MISSION_ROUTE_STORAGE_KEY, JSON.stringify(route));
+  updateMissionRouteUi(route);
+
+  if (options.log) {
+    addMissionRouteLog(options.logLabel || "Parcours mission mis à jour");
+  }
+
+  if (handoffCode?.value) {
+    resetMissionHandoffUi?.();
+  }
+
+  return route;
+}
+
+function loadMissionRoute() {
+  try {
+    const route = JSON.parse(localStorage.getItem(MISSION_ROUTE_STORAGE_KEY) || "{}");
+    applyMissionRouteSnapshot(route, { skipSave: true });
+  } catch {
+    localStorage.removeItem(MISSION_ROUTE_STORAGE_KEY);
+    applyMissionRouteSnapshot({}, { skipSave: true });
+  }
+}
+
+function applyMissionRouteSnapshot(route = {}, options = {}) {
+  setRouteValue(routeDepartureTimeInput, route.departureTime);
+  setRouteValue(routeDestinationNameInput, route.destinationName);
+  setRouteValue(routeDestinationServiceInput, route.destinationService);
+  setRouteValue(routeTransportVectorInput, route.transportVector);
+  setRouteValue(routeTransportModeInput, route.transportMode);
+  setRouteValue(routeTransportMonitoringInput, route.transportMonitoring);
+  setRouteValue(routeTransportTeamInput, route.transportTeam);
+  setRouteChecked(routeJunctionEnabledInput, route.junctionEnabled);
+  setRouteValue(routeJunctionTimeInput, route.junctionTime);
+  setRouteValue(routeJunctionPlaceInput, route.junctionPlace);
+  setRouteValue(routeJunctionWithInput, route.junctionWith);
+  setRouteValue(routeArrivalTimeInput, route.arrivalTime);
+  setRouteChecked(routeTransmissionDoneInput, route.transmissionDone);
+  setRouteValue(routeTransportNoteInput, route.note);
+
+  if (!options.skipSave) {
+    localStorage.setItem(MISSION_ROUTE_STORAGE_KEY, JSON.stringify(getMissionRouteSnapshot()));
+  }
+
+  updateMissionRouteUi();
+}
+
+function resetMissionRoute() {
+  localStorage.removeItem(MISSION_ROUTE_STORAGE_KEY);
+  applyMissionRouteSnapshot({}, { skipSave: true });
+}
+
+function updateMissionRouteUi(route = getMissionRouteSnapshot()) {
+  updateMissionRouteSummary(route);
+  updateMissionRouteCards(route);
+  updateMissionRouteJunctionState(route);
+}
+
+function updateMissionRouteSummary(route = getMissionRouteSnapshot()) {
+  if (!missionRouteSummary) return;
+
+  if (!hasMissionRouteData(route)) {
+    missionRouteSummary.textContent = "Départ, destination et arrivée à renseigner.";
+    return;
+  }
+
+  const parts = [];
+
+  if (route.departureTime) parts.push(`Départ ${route.departureTime}`);
+  if (route.destinationName) parts.push(`Destination ${route.destinationName}`);
+  if (route.junctionEnabled) parts.push(route.junctionTime ? `Jonction ${route.junctionTime}` : "Jonction prévue");
+  if (route.arrivalTime) parts.push(`Arrivée ${route.arrivalTime}`);
+
+  missionRouteSummary.textContent = parts.join(" · ") || "Parcours mission en cours.";
+}
+
+function updateMissionRouteCards(route = getMissionRouteSnapshot()) {
+  routeDepartureCard?.classList.toggle("complete", Boolean(route.departureTime));
+
+  routeDestinationCard?.classList.toggle(
+    "complete",
+    Boolean(route.destinationName || route.destinationService)
+  );
+
+  routeTransportCard?.classList.toggle(
+    "complete",
+    Boolean(route.transportVector || route.transportMode || route.transportMonitoring || route.transportTeam)
+  );
+
+  routeJunctionCard?.classList.toggle(
+    "complete",
+    Boolean(route.junctionEnabled && (route.junctionTime || route.junctionPlace || route.junctionWith))
+  );
+
+  routeArrivalCard?.classList.toggle(
+    "complete",
+    Boolean(route.arrivalTime || route.transmissionDone)
+  );
+}
+
+function updateMissionRouteJunctionState(route = getMissionRouteSnapshot()) {
+  const enabled = Boolean(route.junctionEnabled);
+
+  routeJunctionCard?.classList.toggle("junction-enabled", enabled);
+
+  [
+    routeJunctionTimeInput,
+    routeJunctionPlaceInput,
+    routeJunctionWithInput
+  ].forEach(input => {
+    if (!input) return;
+    input.disabled = !enabled;
+  });
+}
+
+function getMissionRouteLines(route = getMissionRouteSnapshot()) {
+  const lines = [];
+
+  if (!hasMissionRouteData(route)) {
+    return ["Parcours / transport non renseigné."];
+  }
+
+  lines.push(`Départ des lieux : ${route.departureTime || "À compléter"}`);
+
+  const destination = [
+    route.destinationName,
+    route.destinationService
+  ].filter(Boolean).join(" — ");
+
+  lines.push(`Destination : ${destination || "À compléter"}`);
+
+  const transport = [
+    route.transportVector,
+    route.transportMode,
+    route.transportMonitoring,
+    route.transportTeam ? `Équipe : ${route.transportTeam}` : ""
+  ].filter(Boolean).join(" — ");
+
+  lines.push(`Transport : ${transport || "À compléter"}`);
+
+  if (route.junctionEnabled) {
+    const junction = [
+      route.junctionTime ? `heure ${route.junctionTime}` : "",
+      route.junctionPlace ? `lieu ${route.junctionPlace}` : "",
+      route.junctionWith ? `avec ${route.junctionWith}` : ""
+    ].filter(Boolean).join(" — ");
+
+    lines.push(`Jonction : ${junction || "Oui, détails à compléter"}`);
+  } else {
+    lines.push("Jonction : non renseignée / non réalisée");
+  }
+
+  lines.push(`Arrivée destination : ${route.arrivalTime || "À compléter"}`);
+  lines.push(route.transmissionDone
+    ? "Transmission arrivée : réalisée à l’équipe receveuse."
+    : "Transmission arrivée : à compléter.");
+
+  if (route.note) {
+    lines.push(`Note transport : ${route.note}`);
+  }
+
+  return lines;
+}
+
+function getMissionRouteSAEDLines(route = getMissionRouteSnapshot()) {
+  if (!hasMissionRouteData(route)) {
+    return ["Devenir / transport à préciser."];
+  }
+
+  const lines = [];
+  const destination = [
+    route.destinationName,
+    route.destinationService
+  ].filter(Boolean).join(" — ");
+
+  if (destination) {
+    lines.push(`Destination prévue ou réalisée : ${destination}.`);
+  }
+
+  const transport = [
+    route.transportVector,
+    route.transportMode,
+    route.transportMonitoring
+  ].filter(Boolean).join(" — ");
+
+  if (transport) {
+    lines.push(`Transport : ${transport}.`);
+  }
+
+  if (route.departureTime) {
+    lines.push(`Départ des lieux à ${route.departureTime}.`);
+  }
+
+  if (route.junctionEnabled) {
+    const junctionDetails = [
+      route.junctionTime ? `à ${route.junctionTime}` : "",
+      route.junctionPlace ? `lieu : ${route.junctionPlace}` : "",
+      route.junctionWith ? `avec ${route.junctionWith}` : ""
+    ].filter(Boolean).join(" — ");
+
+    lines.push(`Jonction ${junctionDetails || "réalisée ou prévue"}.`);
+  }
+
+  if (route.arrivalTime) {
+    lines.push(`Arrivée à destination à ${route.arrivalTime}.`);
+  }
+
+  if (route.transmissionDone) {
+    lines.push("Transmission réalisée à l’équipe receveuse.");
+  }
+
+  return lines.length > 0 ? lines : ["Devenir / transport à préciser."];
+}
+
+function addMissionRouteLog(label) {
+  const route = getMissionRouteSnapshot();
+  const summary = getMissionRouteLines(route).join(" | ");
+
+  if (typeof addLog === "function") {
+    addLog(`Parcours / Transport : ${label} — ${summary}`, {
+      protocole: "Mission PISU",
+      categorie: "transport",
+      sousCategorie: "parcours",
+      libelleCourt: label,
+      libelleLong: summary,
+      phraseSAED: summary,
+      sectionSAED: "D",
+      priorite: "moyenne",
+      type: "transport",
+      visibleSynthese: true,
+      visibleSAED: true,
+      visibleChrono: true,
+      visibleJournal: true
+    });
+  }
+}
+
+function stampMissionRouteTime(kind) {
+  const time = getCurrentTimeValue();
+
+  if (kind === "departure") {
+    setRouteValue(routeDepartureTimeInput, time);
+    saveMissionRoute({ log: true, logLabel: "Départ des lieux horodaté" });
+    return;
+  }
+
+  if (kind === "junction") {
+    setRouteChecked(routeJunctionEnabledInput, true);
+    setRouteValue(routeJunctionTimeInput, time);
+    saveMissionRoute({ log: true, logLabel: "Jonction horodatée" });
+    return;
+  }
+
+  if (kind === "arrival") {
+    setRouteValue(routeArrivalTimeInput, time);
+    saveMissionRoute({ log: true, logLabel: "Arrivée destination horodatée" });
+  }
+}
+
+function setupMissionRouteFeature() {
+  loadMissionRoute();
+
+  const routeFields = [
+    routeDepartureTimeInput,
+    routeDestinationNameInput,
+    routeDestinationServiceInput,
+    routeTransportVectorInput,
+    routeTransportModeInput,
+    routeTransportMonitoringInput,
+    routeTransportTeamInput,
+    routeJunctionEnabledInput,
+    routeJunctionTimeInput,
+    routeJunctionPlaceInput,
+    routeJunctionWithInput,
+    routeArrivalTimeInput,
+    routeTransmissionDoneInput,
+    routeTransportNoteInput
+  ];
+
+  routeFields.forEach(field => {
+    if (!field) return;
+
+    field.addEventListener("input", () => saveMissionRoute());
+    field.addEventListener("change", () => saveMissionRoute());
+  });
+
+  document.querySelectorAll("[data-route-stamp]").forEach(button => {
+    button.addEventListener("click", () => {
+      stampMissionRouteTime(button.dataset.routeStamp);
+    });
+  });
+
+  saveMissionRouteBtn?.addEventListener("click", () => {
+    saveMissionRoute({
+      log: true,
+      logLabel: "Parcours mission enregistré"
+    });
+  });
+
+  clearMissionRouteBtn?.addEventListener("click", () => {
+    const confirmation = window.confirm("Effacer le parcours / transport de cette mission ?");
+
+    if (!confirmation) return;
+
+    resetMissionRoute();
+
+    if (typeof addLog === "function") {
+      addLog("Correction parcours / transport : bloc effacé");
+    }
+
+    if (handoffCode?.value) {
+      resetMissionHandoffUi?.();
+    }
+  });
+
+  updateMissionRouteUi();
+}
+
+window.pisuMissionRoute = {
+  getSnapshot: getMissionRouteSnapshot,
+  getLines: getMissionRouteLines,
+  getSAEDLines: getMissionRouteSAEDLines,
+  reset: resetMissionRoute,
+  applySnapshot: applyMissionRouteSnapshot
+};
+
 function encodeMissionPayload(payload) {
   const json = JSON.stringify(payload);
   const bytes = new TextEncoder().encode(json);
@@ -2498,12 +3185,13 @@ function decodeMissionPayload(codeOrUrl) {
 function buildMissionPayload() {
   return {
     type: "pisu-mission-transfer",
-    version: 6,
+    version: 7,
     createdAt: new Date().toISOString(),
     responder: getResponderIdentity(),
     patient: getPatientSnapshot(),
     antecedents: getPatientAntecedentsSnapshot(),
     crew: getMissionCrew(),
+    route: getMissionRouteSnapshot(),
     vitals: getVitalsEntries(),
     vitalsAlert: getLatestVitalsAlert(),
     events: getStructuredEvents(),
@@ -2671,6 +3359,8 @@ function importMissionPayloadFromText(text) {
   } else {
     resetMissionCrew();
   }
+
+  applyMissionRouteSnapshot(payload.route || {}, { skipSave: false });
 
   if (Array.isArray(payload.events)) {
     saveStructuredEvents(payload.events);
@@ -2907,6 +3597,13 @@ function setupCollapsiblePanels() {
     togglePatientIdentityBtn,
     patientIdentityContent,
     "pisu-collapse-patient-identity"
+  );
+
+  setupCollapsiblePanel(
+    missionRoutePanel,
+    toggleMissionRouteBtn,
+    missionRouteContent,
+    "pisu-collapse-mission-route"
   );
 
   setupCollapsiblePanel(
@@ -4516,12 +5213,14 @@ loadResponderIdentity();
 loadPatientAntecedents();
 setupCrewFeature();
 setupPatientAntecedentsFeature();
+setupMissionRouteFeature();
 setupCollapsiblePanels();
 invalidateHandoffWhenPatientChanges();
 setupMobileLayoutOffsets();
 setupVitalsFeature();
 setupUserCharterFeature();
 checkMissionHashImport();
+installStructuredSAEDEngine();
 
 loadLog();
 updateOnlineStatus();
