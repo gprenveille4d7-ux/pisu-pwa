@@ -4409,6 +4409,8 @@ details.protocol-subblock:not([open]) > summary::after {
   transform: rotate(-90deg);
 }
 
+
+
 /* MODALES AU-DESSUS DU HEADER STICKY */
 .charter-overlay,
 .legal-overlay {
@@ -4555,4 +4557,95 @@ details.mission-route-subblock:not([open]) > summary::after,
 details.route-details:not([open]) > summary::after,
 details.protocol-subblock:not([open]) > summary::after {
   transform: rotate(-90deg);
+}
+/* =========================================================
+   PRIORITE AFFICHAGE - CONSTANTES AU-DESSUS DES DEPLIANTS
+   ========================================================= */
+
+/* Les titres deroulants restent sous les constantes */
+.collapsible-title,
+details.patient-subblock > summary,
+details.crew-details > summary,
+details.mission-route-subblock > summary,
+details.route-details > summary,
+details.protocol-subblock > summary {
+  z-index: 2500 !important;
+}
+
+/* Les barres sticky de protocoles restent aussi sous les constantes */
+.protocol-sticky,
+.acr-sticky,
+.child-acr-sticky,
+.dt-sticky,
+.smoke-sticky,
+.burns-sticky,
+.seizure-sticky,
+.anaphylaxis-sticky,
+.hemorrhage-sticky,
+.hypoglycemia-sticky,
+.asthma-sticky,
+.analgesia-sticky,
+.protocol-status-row,
+.acr-status-row,
+.child-acr-status-row,
+.dt-status-row,
+.smoke-status-row,
+.burns-status-row,
+.seizure-status-row,
+.anaphylaxis-status-row,
+.hemorrhage-status-row,
+.hypoglycemia-status-row,
+.asthma-status-row,
+.analgesia-status-row {
+  z-index: 3000 !important;
+}
+
+/* Le voile des constantes passe devant les panneaux */
+.vitals-overlay {
+  z-index: 10000 !important;
+}
+
+/* Le panneau constantes passe devant tous les titres deroulants */
+.vitals-sheet {
+  z-index: 10010 !important;
+}
+
+/* Le bouton constantes reste au-dessus de son propre panneau */
+.floating-vitals-button {
+  z-index: 10020 !important;
+}
+
+/* Quand les constantes sont ouvertes, les titres sticky du fond ne doivent plus gener */
+body.vitals-sheet-open .collapsible-title,
+body.vitals-sheet-open details.patient-subblock > summary,
+body.vitals-sheet-open details.crew-details > summary,
+body.vitals-sheet-open details.mission-route-subblock > summary,
+body.vitals-sheet-open details.route-details > summary,
+body.vitals-sheet-open details.protocol-subblock > summary,
+body.vitals-sheet-open .protocol-sticky,
+body.vitals-sheet-open .acr-sticky,
+body.vitals-sheet-open .child-acr-sticky,
+body.vitals-sheet-open .dt-sticky,
+body.vitals-sheet-open .smoke-sticky,
+body.vitals-sheet-open .burns-sticky,
+body.vitals-sheet-open .seizure-sticky,
+body.vitals-sheet-open .anaphylaxis-sticky,
+body.vitals-sheet-open .hemorrhage-sticky,
+body.vitals-sheet-open .hypoglycemia-sticky,
+body.vitals-sheet-open .asthma-sticky,
+body.vitals-sheet-open .analgesia-sticky,
+body.vitals-sheet-open .protocol-status-row,
+body.vitals-sheet-open .acr-status-row,
+body.vitals-sheet-open .child-acr-status-row,
+body.vitals-sheet-open .dt-status-row,
+body.vitals-sheet-open .smoke-status-row,
+body.vitals-sheet-open .burns-status-row,
+body.vitals-sheet-open .seizure-status-row,
+body.vitals-sheet-open .anaphylaxis-status-row,
+body.vitals-sheet-open .hemorrhage-status-row,
+body.vitals-sheet-open .hypoglycemia-status-row,
+body.vitals-sheet-open .asthma-status-row,
+body.vitals-sheet-open .analgesia-status-row {
+  z-index: 1 !important;
+  pointer-events: none;
 }
