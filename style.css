@@ -4650,35 +4650,269 @@ body.vitals-sheet-open .analgesia-status-row {
   pointer-events: none;
 }
 
-/* SONS PISU */
+/* TITRE APPLICATION + BOUTON SON */
+.app-title-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+#appTitle {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sound-toggle-button {
-  position: fixed;
-  right: calc(12px + env(safe-area-inset-right, 0px));
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  z-index: 9800;
-  min-height: 42px;
-  padding: 0 12px;
+  position: static !important;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
   border-radius: 999px;
   border: 1px solid #475569;
-  background: #0f172a;
+  background: rgba(15, 23, 42, 0.96);
   color: #e2e8f0;
-  font-size: 0.8rem;
+  font-size: 1.1rem;
   font-weight: 900;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42);
+  line-height: 1;
+  box-shadow: none;
 }
 
 .sound-toggle-button.sound-on {
   border-color: #22c55e;
-  background: #052e16;
+  background: rgba(20, 83, 45, 0.72);
   color: #dcfce7;
-}
-
-body.vitals-sheet-open .sound-toggle-button,
-body.charter-open .sound-toggle-button {
-  display: none !important;
 }
 
 body.rcp-metronome-on .sound-toggle-button {
   border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18), 0 12px 28px rgba(0, 0, 0, 0.42);
+  background: rgba(14, 116, 144, 0.72);
+  color: #cffafe;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+/* Le bouton son reste dans le titre, mais ne doit pas gêner les modales */
+body.charter-open .sound-toggle-button {
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+@media (max-width: 520px) {
+  .sound-toggle-button {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    font-size: 1rem;
+  }
+}
+
+/* =========================================================
+   MENU PRINCIPAL — PROTOCOLES EN SWIPE HORIZONTAL
+   ========================================================= */
+
+.protocol-swipe-panel {
+  overflow: hidden;
+}
+
+.protocol-swipe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.protocol-swipe-header h2 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.protocol-swipe-header small {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.protocol-swipe-shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.protocol-swipe-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 14px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding: 4px 4px 12px;
+}
+
+.protocol-swipe-track::-webkit-scrollbar {
+  height: 0;
+}
+
+.protocol-swipe-card {
+  flex: 0 0 min(82%, 330px);
+  min-height: 128px;
+  scroll-snap-align: center;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1.5px solid var(--protocol-card-border, #334155);
+  background: linear-gradient(
+    135deg,
+    var(--protocol-card-bg-1, rgba(15, 23, 42, 0.96)),
+    var(--protocol-card-bg-2, rgba(30, 41, 59, 0.88))
+  );
+  color: #f8fafc;
+  text-align: left;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+.protocol-swipe-card:active {
+  transform: scale(0.985);
+}
+
+.protocol-swipe-card strong {
+  font-size: 1.15rem;
+  line-height: 1.12;
+}
+
+.protocol-swipe-card small {
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.protocol-card-kicker {
+  justify-self: start;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.42);
+  color: var(--protocol-card-kicker, #bfdbfe);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.protocol-swipe-nav {
+  width: 36px;
+  height: 72px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.86);
+  color: #e2e8f0;
+  font-size: 1.8rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.protocol-swipe-nav:disabled {
+  opacity: 0.28;
+}
+
+.protocol-swipe-dots {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.protocol-swipe-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  border: 0;
+  padding: 0;
+  background: #475569;
+}
+
+.protocol-swipe-dot.active {
+  width: 18px;
+  background: #38bdf8;
+}
+
+.protocol-card-red {
+  --protocol-card-border: #ef4444;
+  --protocol-card-bg-1: rgba(127, 29, 29, 0.7);
+  --protocol-card-bg-2: rgba(15, 23, 42, 0.95);
+  --protocol-card-kicker: #fecaca;
+}
+
+.protocol-card-orange {
+  --protocol-card-border: #f59e0b;
+  --protocol-card-bg-1: rgba(120, 53, 15, 0.7);
+  --protocol-card-bg-2: rgba(15, 23, 42, 0.95);
+  --protocol-card-kicker: #ffedd5;
+}
+
+.protocol-card-purple {
+  --protocol-card-border: #a78bfa;
+  --protocol-card-bg-1: rgba(88, 28, 135, 0.7);
+  --protocol-card-bg-2: rgba(15, 23, 42, 0.95);
+  --protocol-card-kicker: #ede9fe;
+}
+
+.protocol-card-blue {
+  --protocol-card-border: #60a5fa;
+  --protocol-card-bg-1: rgba(30, 64, 175, 0.68);
+  --protocol-card-bg-2: rgba(15, 23, 42, 0.95);
+  --protocol-card-kicker: #dbeafe;
+}
+
+.protocol-card-cyan {
+  --protocol-card-border: #22d3ee;
+  --protocol-card-bg-1: rgba(21, 94, 117, 0.7);
+  --protocol-card-bg-2: rgba(15, 23, 42, 0.95);
+  --protocol-card-kicker: #cffafe;
+}
+
+.protocol-card-green {
+  --protocol-card-border: #22c55e;
+  --protocol-card-bg-1: rgba(20, 83, 45, 0.7);
+  --protocol-card-bg-2: rgba(15, 23, 42, 0.95);
+  --protocol-card-kicker: #dcfce7;
+}
+
+.protocol-card-slate {
+  --protocol-card-border: #94a3b8;
+  --protocol-card-bg-1: rgba(51, 65, 85, 0.7);
+  --protocol-card-bg-2: rgba(15, 23, 42, 0.95);
+  --protocol-card-kicker: #e2e8f0;
+}
+
+@media (max-width: 620px) {
+  .protocol-swipe-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .protocol-swipe-nav {
+    display: none;
+  }
+
+  .protocol-swipe-card {
+    flex-basis: 84%;
+    min-height: 122px;
+  }
 }

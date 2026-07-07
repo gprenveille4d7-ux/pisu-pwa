@@ -194,7 +194,16 @@ function updateSoundToggleButton() {
 
   soundToggleBtn.classList.toggle("sound-on", pisuSoundsEnabled);
   soundToggleBtn.setAttribute("aria-pressed", String(pisuSoundsEnabled));
-  soundToggleBtn.textContent = pisuSoundsEnabled ? "🔊 Sons ON" : "🔇 Sons OFF";
+
+  if (pisuSoundsEnabled) {
+    soundToggleBtn.textContent = "🔊";
+    soundToggleBtn.setAttribute("aria-label", "Désactiver les sons PISU");
+    soundToggleBtn.title = "Sons PISU activés";
+  } else {
+    soundToggleBtn.textContent = "🔇";
+    soundToggleBtn.setAttribute("aria-label", "Activer les sons PISU");
+    soundToggleBtn.title = "Sons PISU désactivés";
+  }
 }
 
 async function enablePisuSounds() {
@@ -209,6 +218,10 @@ async function enablePisuSounds() {
   localStorage.setItem(PISU_SOUND_STORAGE_KEY, "true");
   updateSoundToggleButton();
   playPisuSound("test", { force: true });
+
+  window.setTimeout(() => {
+    notifyCall15IfImmediateVisible?.();
+  }, 350);
 }
 
 function disablePisuSounds() {
@@ -325,6 +338,16 @@ function notifyAdrenalineDue(label = "Adrénaline à réévaluer") {
 }
 
 function notifyCall15Required(reason = "Appel 15 exigé") {
+  /*
+    Important :
+    Si les sons sont OFF, on ne mémorise pas l’alerte.
+    Sinon, quand l’utilisateur active les sons après coup,
+    le bip ne partirait jamais.
+  */
+  if (!pisuSoundsEnabled) {
+    return;
+  }
+
   const key = normalizeSAEDText
     ? normalizeSAEDText(reason)
     : String(reason || "").toLowerCase();
@@ -334,10 +357,11 @@ function notifyCall15Required(reason = "Appel 15 exigé") {
   }
 
   lastCall15SoundKey = key;
+
   playPisuSound("call15Required");
 
   if (typeof addLog === "function") {
-    addLog(`Alerte sonore : appel 15 exigé — ${reason}`, {
+    addLog(`Alerte sonore : appel 15 immédiat — ${reason}`, {
       protocole: currentProtocolPageId || "Mission PISU",
       categorie: "journal_technique",
       sousCategorie: "alerte_appel_15",
@@ -347,6 +371,83 @@ function notifyCall15Required(reason = "Appel 15 exigé") {
       visibleJournal: true
     });
   }
+}
+
+let lastCall15UiAlertSignature = "";
+
+function getCurrentCall15ImmediateReason() {
+  /*
+    Source prioritaire : l’alerte constantes structurée.
+  */
+  const latestAlert = typeof getLatestVitalsAlert === "function"
+    ? getLatestVitalsAlert()
+    : null;
+
+  if (
+    latestAlert &&
+    (
+      latestAlert.level === "red" ||
+      latestAlert.call15Level === "red" ||
+      latestAlert.call15Required === true
+    )
+  ) {
+    return (
+      latestAlert.reasons?.join(" ; ") ||
+      latestAlert.message ||
+      "Appel 15 immédiat indiqué par les constantes"
+    );
+  }
+
+  /*
+    Sécurité visuelle :
+    si un bouton / logo Appel 15 porte une classe d’alerte,
+    on le détecte aussi.
+  */
+  const activeCall15Element = document.querySelector(
+    [
+      ".call15-alert",
+      ".call15-alert-red",
+      ".call15-alert-orange",
+      ".call15-required",
+      ".call15-immediate",
+      ".call15-blink",
+      ".blink-call15",
+      "[data-call15-alert]",
+      "[data-call15-alert='true']",
+      "[data-call15-required='true']"
+    ].join(", ")
+  );
+
+  if (activeCall15Element) {
+    return activeCall15Element.textContent?.trim() || "Appel 15 immédiat affiché";
+  }
+
+  return "";
+}
+
+function notifyCall15IfImmediateVisible() {
+  const reason = getCurrentCall15ImmediateReason();
+
+  if (!reason) {
+    lastCall15UiAlertSignature = "";
+    return;
+  }
+
+  if (!pisuSoundsEnabled) {
+    return;
+  }
+
+  const signature = normalizeSAEDText
+    ? normalizeSAEDText(reason)
+    : String(reason).toLowerCase();
+
+  if (signature && signature === lastCall15UiAlertSignature) {
+    return;
+  }
+
+  lastCall15UiAlertSignature = signature;
+
+  window.pisuSounds?.notifyCall15Required(reason);
 }
 
 function notifyVitalsOrange(reason = "Alerte constantes orange") {
@@ -366,6 +467,7 @@ function resetSoundAlertMemory() {
   lastCall15SoundKey = "";
   lastVitalsOrangeSoundKey = "";
   lastAdrenalineDueSoundAt = 0;
+  lastCall15UiAlertSignature = "";
 }
 
 function setupPisuSoundFeature() {
@@ -565,6 +667,7 @@ let remaining = 120;
 let deferredPrompt = null;
 let mainMenuScrollY = 0;
 let currentProtocolPageId = "";
+let lastSelectedProtocolId = "";
 let protocolScrollPositions = {};
 
 const timerEl = document.getElementById("timer");
@@ -577,6 +680,10 @@ const installBtn = document.getElementById("installBtn");
 const appTitle = document.getElementById("appTitle");
 const appHeader = document.querySelector("body > header, header.app-header, .app-header");
 const floatingBackMenuBtn = document.getElementById("floatingBackMenuBtn");
+const protocolSwipeTrack = document.getElementById("protocolSwipeTrack");
+const protocolSwipePrev = document.getElementById("protocolSwipePrev");
+const protocolSwipeNext = document.getElementById("protocolSwipeNext");
+const protocolSwipeDots = document.getElementById("protocolSwipeDots");
 const newMissionResetBtn = document.getElementById("newMissionResetBtn");
 const patientNameInput = document.getElementById("patientName");
 const patientAgeInput = document.getElementById("patientAge");
@@ -2997,6 +3104,157 @@ function setAppTitle(protocolId = "") {
     : APP_DEFAULT_TITLE;
 }
 
+function getProtocolSwipeCards() {
+  if (!protocolSwipeTrack) return [];
+  return Array.from(protocolSwipeTrack.querySelectorAll("[data-open-protocol]"));
+}
+
+function getCurrentProtocolSwipeIndex() {
+  const cards = getProtocolSwipeCards();
+
+  if (cards.length === 0 || !protocolSwipeTrack) return 0;
+
+  const trackRect = protocolSwipeTrack.getBoundingClientRect();
+  const trackCenter = trackRect.left + trackRect.width / 2;
+
+  let closestIndex = 0;
+  let closestDistance = Infinity;
+
+  cards.forEach((card, index) => {
+    const cardRect = card.getBoundingClientRect();
+    const cardCenter = cardRect.left + cardRect.width / 2;
+    const distance = Math.abs(cardCenter - trackCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
+}
+
+function scrollToProtocolSwipeIndex(index) {
+  const cards = getProtocolSwipeCards();
+
+  if (!protocolSwipeTrack || cards.length === 0) return;
+
+  const safeIndex = Math.max(0, Math.min(index, cards.length - 1));
+  const card = cards[safeIndex];
+
+  card.scrollIntoView({
+    behavior: "smooth",
+    inline: "center",
+    block: "nearest"
+  });
+}
+
+function updateProtocolSwipeUi() {
+  const cards = getProtocolSwipeCards();
+  const index = getCurrentProtocolSwipeIndex();
+
+  if (protocolSwipePrev) {
+    protocolSwipePrev.disabled = index <= 0;
+  }
+
+  if (protocolSwipeNext) {
+    protocolSwipeNext.disabled = index >= cards.length - 1;
+  }
+
+  protocolSwipeDots?.querySelectorAll(".protocol-swipe-dot").forEach((dot, dotIndex) => {
+    dot.classList.toggle("active", dotIndex === index);
+  });
+}
+
+function setupProtocolSwipeMenu() {
+  if (!protocolSwipeTrack) return;
+
+  const cards = getProtocolSwipeCards();
+
+  if (protocolSwipeDots) {
+    protocolSwipeDots.innerHTML = "";
+
+    cards.forEach((card, index) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "protocol-swipe-dot";
+      dot.setAttribute("aria-label", `Afficher protocole ${index + 1}`);
+      dot.addEventListener("click", () => {
+        scrollToProtocolSwipeIndex(index);
+      });
+
+      protocolSwipeDots.appendChild(dot);
+    });
+  }
+
+  protocolSwipePrev?.addEventListener("click", () => {
+    scrollToProtocolSwipeIndex(getCurrentProtocolSwipeIndex() - 1);
+  });
+
+  protocolSwipeNext?.addEventListener("click", () => {
+    scrollToProtocolSwipeIndex(getCurrentProtocolSwipeIndex() + 1);
+  });
+
+  let scrollTimer = null;
+
+  protocolSwipeTrack.addEventListener("scroll", () => {
+    window.clearTimeout(scrollTimer);
+
+    scrollTimer = window.setTimeout(() => {
+      updateProtocolSwipeUi();
+    }, 80);
+  });
+
+  protocolSwipeTrack.addEventListener("keydown", event => {
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      scrollToProtocolSwipeIndex(getCurrentProtocolSwipeIndex() + 1);
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      scrollToProtocolSwipeIndex(getCurrentProtocolSwipeIndex() - 1);
+    }
+  });
+
+  updateProtocolSwipeUi();
+}
+
+function setupProtocolOpeners() {
+  document.addEventListener("click", event => {
+    const opener = event.target.closest("[data-open-protocol]");
+
+    if (!opener) return;
+
+    const protocolId = opener.dataset.openProtocol;
+
+    if (!protocolId) return;
+
+    const protocolTitle =
+      PROTOCOL_TITLES?.[protocolId] ||
+      getProtocolLabel?.(protocolId) ||
+      protocolId;
+
+    if (currentProtocolPageId !== protocolId || !document.body.classList.contains("protocol-mode")) {
+      showProtocolPage(protocolId);
+    }
+
+    if (typeof addLog === "function") {
+      addLog(`Sélection protocole PISU : ${protocolTitle}`, {
+        protocole: protocolTitle,
+        categorie: "navigation",
+        sousCategorie: "selection_protocole",
+        libelleCourt: `Sélection protocole : ${protocolTitle}`,
+        sectionSAED: "journal",
+        priorite: "basse",
+        visibleSAED: false,
+        visibleChrono: false,
+        visibleJournal: true
+      });
+    }
+  });
+}
+
 function showMainMenu() {
   saveCurrentProtocolScrollPosition();
 
@@ -3015,12 +3273,26 @@ function showMainMenu() {
 
   window.requestAnimationFrame(() => {
     window.scrollTo(0, Math.max(mainMenuScrollY - 20, 0));
+
+    if (!lastSelectedProtocolId) return;
+
+    const card = document.querySelector(`[data-open-protocol="${lastSelectedProtocolId}"]`);
+
+    card?.scrollIntoView({
+      behavior: "auto",
+      inline: "center",
+      block: "nearest"
+    });
+
+    updateProtocolSwipeUi?.();
   });
 
   window.requestAnimationFrame(applyCall15AlertDisplay);
 }
 
 function showProtocolPage(protocolId) {
+  lastSelectedProtocolId = protocolId;
+
   if (!document.body.classList.contains("protocol-mode")) {
     mainMenuScrollY = window.scrollY || window.pageYOffset || 0;
   } else {
@@ -5031,22 +5303,22 @@ function applyCall15AlertDisplay() {
 
   const currentButton = getCurrentProtocolCall15Button();
 
-  if (!currentButton) return;
+  if (currentButton && !currentButton.classList.contains("action-done")) {
+    const effectiveAlert = getEffectiveCall15Alert();
 
-  if (currentButton.classList.contains("action-done")) return;
+    if (effectiveAlert && effectiveAlert.level !== "none") {
+      currentButton.classList.add(
+        effectiveAlert.level === "red"
+          ? "call15-alert-red"
+          : "call15-alert-orange"
+      );
 
-  const effectiveAlert = getEffectiveCall15Alert();
+      currentButton.dataset.call15Alert = effectiveAlert.level;
+      currentButton.title = effectiveAlert.reasons.join(" ");
+    }
+  }
 
-  if (!effectiveAlert || effectiveAlert.level === "none") return;
-
-  currentButton.classList.add(
-    effectiveAlert.level === "red"
-      ? "call15-alert-red"
-      : "call15-alert-orange"
-  );
-
-  currentButton.dataset.call15Alert = effectiveAlert.level;
-  currentButton.title = effectiveAlert.reasons.join(" ");
+  notifyCall15IfImmediateVisible?.();
 }
 
 function resetVitalSelect(input) {
@@ -6014,6 +6286,8 @@ setupCollapsiblePanels();
 setupStickyDetailsScrollBehavior?.();
 invalidateHandoffWhenPatientChanges();
 setupMobileLayoutOffsets();
+setupProtocolSwipeMenu?.();
+setupProtocolOpeners?.();
 setupPisuSoundFeature();
 setupVitalsFeature();
 setupUserCharterFeature();

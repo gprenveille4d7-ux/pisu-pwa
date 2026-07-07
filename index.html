@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=179">
+  <link rel="stylesheet" href="./style.css?v=182">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -74,7 +74,13 @@
   <header class="app-header">
     <div>
       <p class="eyebrow">Prototype hors ligne</p>
-      <h1 id="appTitle">Protocole PISU</h1>
+      <div class="app-title-row">
+        <h1 id="appTitle">Protocole PISU</h1>
+
+        <button id="soundToggleBtn" class="sound-toggle-button" type="button" aria-pressed="false" aria-label="Activer les sons">
+          🔇
+        </button>
+      </div>
     </div>
     <button id="installBtn" class="ghost hidden">Installer</button>
   </header>
@@ -576,60 +582,93 @@
       </div>
     </section>
 
-    <section class="panel protocols-block">
-      <div class="panel-title">
-        <h2>Protocole PISU</h2>
+    <section class="panel main-section protocols-block protocol-swipe-panel">
+      <div class="protocol-swipe-header">
+        <div>
+          <h2>Protocoles PISU</h2>
+          <small>Glisse à gauche ou à droite, puis touche le protocole.</small>
+        </div>
       </div>
 
-      <div class="grid">
-        <button id="openAcrAdultBtn" data-action="Sélection protocole PISU : Arrêt cardiaque adulte" class="action danger">
-          Arrêt cardiaque Adulte
+      <div class="protocol-swipe-shell">
+        <button id="protocolSwipePrev" class="protocol-swipe-nav" type="button" aria-label="Protocole précédent">
+          ‹
         </button>
 
-        <button id="openChildAcrBtn" data-action="Sélection protocole PISU : Arrêt cardiaque enfant" class="action danger">
-          Arrêt Cardiaque Enfant
-        </button>
+        <div id="protocolSwipeTrack" class="protocol-swipe-track" aria-label="Liste des protocoles PISU" tabindex="0">
+          <button id="openAcrAdultBtn" class="protocol-swipe-card protocol-card-red" type="button" data-open-protocol="acrAdultProtocol">
+            <span class="protocol-card-kicker">ACR</span>
+            <strong>Arrêt cardiaque adulte</strong>
+            <small>RCP · CEE · Adrénaline</small>
+          </button>
 
-        <button id="openChestPainBtn" data-action="Sélection protocole PISU : Douleur thoracique" class="action protocol-chest">
-          Douleur Thoracique
-        </button>
+          <button id="openChildAcrBtn" class="protocol-swipe-card protocol-card-red" type="button" data-open-protocol="childAcrProtocol">
+            <span class="protocol-card-kicker">Pédiatrie</span>
+            <strong>Arrêt cardiaque enfant</strong>
+            <small>Doses poids · RCP · CEE</small>
+          </button>
 
-        <button id="openSmokeExposureBtn" data-action="Sélection protocole PISU : Exposition aux fumées adulte et enfant" class="action protocol-smoke">
-          Exposition aux fumées Adulte & Enfant
-        </button>
+          <button id="openChestPainBtn" class="protocol-swipe-card protocol-card-orange" type="button" data-open-protocol="chestPainProtocol">
+            <span class="protocol-card-kicker">Cardio</span>
+            <strong>Douleur thoracique</strong>
+            <small>ECG · douleur · orientation</small>
+          </button>
 
-        <button id="openBurnsBtn" data-action="Sélection protocole PISU : Brûlure adulte et enfant" class="action protocol-burn">
-          Brûlure Adulte & Enfant
-        </button>
+          <button id="openSmokeExposureBtn" class="protocol-swipe-card protocol-card-slate" type="button" data-open-protocol="smokeExposureProtocol">
+            <span class="protocol-card-kicker">Toxique</span>
+            <strong>Exposition aux fumées</strong>
+            <small>O₂ · CO · neurologique</small>
+          </button>
 
-        <button id="openSeizureBtn" data-action="Sélection protocole PISU : Convulsion adulte et enfant" class="action protocol-neuro">
-          Convulsion Adulte & Enfant
-        </button>
+          <button id="openBurnsBtn" class="protocol-swipe-card protocol-card-orange" type="button" data-open-protocol="burnsProtocol">
+            <span class="protocol-card-kicker">Trauma</span>
+            <strong>Brûlures</strong>
+            <small>Surface · douleur · protection</small>
+          </button>
 
-        <button id="openAnaphylaxisBtn" data-action="Sélection protocole PISU : Anaphylaxie adulte et enfant" class="action protocol-allergy">
-          Anaphylaxie Adulte & Enfant
-        </button>
+          <button id="openSeizureBtn" class="protocol-swipe-card protocol-card-purple" type="button" data-open-protocol="seizureProtocol">
+            <span class="protocol-card-kicker">Neuro</span>
+            <strong>Crise convulsive</strong>
+            <small>Glycémie · protection · traitement</small>
+          </button>
 
-        <button id="openHemorrhageBtn" data-action="Sélection protocole PISU : Hémorragie sévère adulte et enfant" class="action protocol-bleed">
-          Hémorragie sévère Adulte & Enfant
-        </button>
+          <button id="openAnaphylaxisBtn" class="protocol-swipe-card protocol-card-red" type="button" data-open-protocol="anaphylaxisProtocol">
+            <span class="protocol-card-kicker">Urgence vitale</span>
+            <strong>Anaphylaxie</strong>
+            <small>Adrénaline IM · O₂ · remplissage</small>
+          </button>
 
-        <button id="openHypoglycemiaBtn" data-action="Sélection protocole PISU : Hypoglycémie adulte et enfant" class="action protocol-glucose">
-          Hypoglycémie Adulte & Enfant
-        </button>
+          <button id="openHemorrhageBtn" class="protocol-swipe-card protocol-card-red" type="button" data-open-protocol="hemorrhageProtocol">
+            <span class="protocol-card-kicker">Trauma</span>
+            <strong>Hémorragie sévère</strong>
+            <small>Compression · garrot · TXA</small>
+          </button>
 
-        <button id="openAsthmaBpcoBtn" data-action="Sélection protocole PISU : Exacerbation d’asthme ou BPCO adulte et enfant" class="action protocol-respiratory">
-          Exacerbation d’asthme | BPCO Adulte & Enfant
-        </button>
+          <button id="openHypoglycemiaBtn" class="protocol-swipe-card protocol-card-blue" type="button" data-open-protocol="hypoglycemiaProtocol">
+            <span class="protocol-card-kicker">Métabolique</span>
+            <strong>Hypoglycémie</strong>
+            <small>Glycémie · G30 · glucagon</small>
+          </button>
 
-        <button id="openAnalgesiaBtn" data-action="Sélection protocole PISU : Antalgie adulte et enfant" class="action protocol-pain">
-          Antalgie Adulte & Enfant
+          <button id="openAsthmaBpcoBtn" class="protocol-swipe-card protocol-card-cyan" type="button" data-open-protocol="asthmaBpcoProtocol">
+            <span class="protocol-card-kicker">Respiratoire</span>
+            <strong>Asthme / BPCO</strong>
+            <small>O₂ · aérosols · surveillance</small>
+          </button>
+
+          <button id="openAnalgesiaBtn" class="protocol-swipe-card protocol-card-green" type="button" data-open-protocol="analgesiaProtocol">
+            <span class="protocol-card-kicker">Douleur</span>
+            <strong>Antalgie</strong>
+            <small>EN · morphine · réévaluation</small>
+          </button>
+        </div>
+
+        <button id="protocolSwipeNext" class="protocol-swipe-nav" type="button" aria-label="Protocole suivant">
+          ›
         </button>
       </div>
 
-      <div class="protocol-footer">
-        SAMU | SMUR Calvados.
-      </div>
+      <div id="protocolSwipeDots" class="protocol-swipe-dots" aria-hidden="true"></div>
     </section>
 
     <section id="acrAdultProtocol" class="panel acr-protocol hidden">
@@ -2784,10 +2823,6 @@
     📊 Constantes
   </button>
 
-  <button id="soundToggleBtn" class="sound-toggle-button" type="button" aria-pressed="false">
-    🔇 Sons OFF
-  </button>
-
   <div id="vitalsOverlay" class="vitals-overlay hidden"></div>
 
   <section id="vitalsSheet" class="vitals-sheet hidden" aria-label="Saisie des constantes">
@@ -2967,7 +3002,7 @@
     </section>
   </div>
 
-  <script src="./app.js?v=180"></script>
+  <script src="./app.js?v=182"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>
