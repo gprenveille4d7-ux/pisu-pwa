@@ -97,6 +97,8 @@
   }
 
   function startAcrTimer() {
+    window.pisuSounds?.startRcpMetronome("acrAdultProtocol");
+
     clearInterval(acrTimerInterval);
 
     if (acrRemaining <= 0) {
@@ -124,6 +126,8 @@
   }
 
   function resetAcrTimer() {
+    window.pisuSounds?.stopRcpMetronome();
+
     clearInterval(acrTimerInterval);
     acrRemaining = 120;
     updateAcrTimer();
@@ -315,6 +319,7 @@
 
       if (adrenalineRemaining <= 0) {
         clearInterval(adrenalineInterval);
+        window.pisuSounds?.notifyAdrenalineDue("Adrénaline ACR adulte : délai terminé");
         logAcr("Adrénaline : délai de 4 minutes écoulé — réévaluer selon protocole");
 
         if ("vibrate" in navigator) {
@@ -373,6 +378,7 @@
   });
 
   showRacsBranchBtn?.addEventListener("click", () => {
+    window.pisuSounds?.stopRcpMetronome();
     showBranch("racs");
     flashAttention(racsCall15Btn, 4);
   });
@@ -417,6 +423,7 @@
     }
 
     clearInterval(acrTimerInterval);
+    window.pisuSounds?.stopRcpMetronome();
     acrRemaining = 120;
     updateAcrTimer();
 

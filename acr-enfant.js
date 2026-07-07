@@ -160,6 +160,8 @@
   }
 
   function startCycleTimer() {
+    window.pisuSounds?.startRcpMetronome("childAcrProtocol");
+
     clearInterval(cycleInterval);
     cycleRemaining = 120;
     updateCycleTimer();
@@ -179,6 +181,8 @@
   }
 
   function resetCycleTimer() {
+    window.pisuSounds?.stopRcpMetronome();
+
     clearInterval(cycleInterval);
     cycleRemaining = 120;
     updateCycleTimer();
@@ -216,6 +220,7 @@
 
       if (adrenalineRemaining <= 0) {
         clearInterval(adrenalineInterval);
+        window.pisuSounds?.notifyAdrenalineDue("Adrénaline ACR enfant : délai terminé");
         logChildAcr("rappel Adrénaline : délai 4 minutes atteint");
         flashMany([shockAdrenalineBtn, noShockAdrenalineBtn, adrenalineStatus], 4);
       }
@@ -331,6 +336,7 @@
     }
 
     clearInterval(cycleInterval);
+    window.pisuSounds?.stopRcpMetronome();
     cycleRemaining = 120;
     updateCycleTimer();
 
@@ -402,6 +408,7 @@
   });
 
   racsBtn?.addEventListener("click", () => {
+    window.pisuSounds?.stopRcpMetronome();
     racsBranch?.classList.remove("hidden");
     shockBranch?.classList.add("hidden");
     noShockBranch?.classList.add("hidden");

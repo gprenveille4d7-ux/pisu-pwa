@@ -4649,3 +4649,36 @@ body.vitals-sheet-open .analgesia-status-row {
   z-index: 1 !important;
   pointer-events: none;
 }
+
+/* SONS PISU */
+.sound-toggle-button {
+  position: fixed;
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  z-index: 9800;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 900;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42);
+}
+
+.sound-toggle-button.sound-on {
+  border-color: #22c55e;
+  background: #052e16;
+  color: #dcfce7;
+}
+
+body.vitals-sheet-open .sound-toggle-button,
+body.charter-open .sound-toggle-button {
+  display: none !important;
+}
+
+body.rcp-metronome-on .sound-toggle-button {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18), 0 12px 28px rgba(0, 0, 0, 0.42);
+}

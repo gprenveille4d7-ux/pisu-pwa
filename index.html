@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=178">
+  <link rel="stylesheet" href="./style.css?v=179">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -320,14 +320,27 @@
 
             <div class="route-grid route-grid-two">
               <label>
+                Type de transport
+                <select id="routeTransportType">
+                  <option value="">Non renseigné</option>
+                  <option value="Primaire">Primaire</option>
+                  <option value="Secondaire">Secondaire</option>
+                  <option value="Jonction">Jonction</option>
+                  <option value="Renfort / relève">Renfort / relève</option>
+                  <option value="Retour base">Retour base</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </label>
+
+              <label>
                 Vecteur
                 <select id="routeTransportVector">
                   <option value="">Non renseigné</option>
-                  <option value="SMUR">SMUR</option>
+                  <option value="UMH">UMH</option>
                   <option value="VSAV">VSAV</option>
-                  <option value="VSAV + SMUR">VSAV + SMUR</option>
                   <option value="Ambulance privée">Ambulance privée</option>
                   <option value="HéliSMUR">HéliSMUR</option>
+                  <option value="Véhicule léger médical">Véhicule léger médical</option>
                   <option value="Autre">Autre</option>
                 </select>
               </label>
@@ -2771,6 +2784,10 @@
     📊 Constantes
   </button>
 
+  <button id="soundToggleBtn" class="sound-toggle-button" type="button" aria-pressed="false">
+    🔇 Sons OFF
+  </button>
+
   <div id="vitalsOverlay" class="vitals-overlay hidden"></div>
 
   <section id="vitalsSheet" class="vitals-sheet hidden" aria-label="Saisie des constantes">
@@ -2950,7 +2967,7 @@
     </section>
   </div>
 
-  <script src="./app.js?v=178"></script>
+  <script src="./app.js?v=180"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>

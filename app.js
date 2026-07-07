@@ -22,6 +22,377 @@ const PROTOCOL_TITLES = {
   analgesiaProtocol: "Antalgie"
 };
 
+const PISU_SOUND_STORAGE_KEY = "pisuSoundsEnabled";
+const PISU_RCP_BPM_STORAGE_KEY = "pisuRcpBpm";
+
+const DEFAULT_RCP_BPM = 110;
+const RCP_CYCLE_MS = 120000;
+
+const soundToggleBtn = document.getElementById("soundToggleBtn");
+
+let pisuAudioContext = null;
+let pisuSoundsEnabled = localStorage.getItem(PISU_SOUND_STORAGE_KEY) === "true";
+
+let rcpMetronomeInterval = null;
+let rcpCycleInterval = null;
+let rcpMetronomeBeatCount = 0;
+
+let lastAdrenalineDueSoundAt = 0;
+let lastCall15SoundKey = "";
+let lastVitalsOrangeSoundKey = "";
+
+function getPisuAudioContext() {
+  if (!pisuAudioContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) {
+      return null;
+    }
+
+    pisuAudioContext = new AudioContextClass();
+  }
+
+  return pisuAudioContext;
+}
+
+async function resumePisuAudioContext() {
+  const audioContext = getPisuAudioContext();
+
+  if (!audioContext) return false;
+
+  if (audioContext.state === "suspended") {
+    try {
+      await audioContext.resume();
+    } catch {
+      return false;
+    }
+  }
+
+  return audioContext.state === "running";
+}
+
+function getRcpBpm() {
+  const saved = Number(localStorage.getItem(PISU_RCP_BPM_STORAGE_KEY));
+
+  if (Number.isFinite(saved) && saved >= 90 && saved <= 130) {
+    return saved;
+  }
+
+  return DEFAULT_RCP_BPM;
+}
+
+function playTone(frequency, duration = 0.08, options = {}) {
+  if (!pisuSoundsEnabled && !options.force) return;
+
+  const audioContext = getPisuAudioContext();
+
+  if (!audioContext || audioContext.state !== "running") return;
+
+  const startAt = audioContext.currentTime + (options.delay || 0);
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+
+  oscillator.type = options.type || "sine";
+  oscillator.frequency.setValueAtTime(frequency, startAt);
+
+  const volume = options.volume ?? 0.12;
+
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+
+  oscillator.start(startAt);
+  oscillator.stop(startAt + duration + 0.03);
+}
+
+function vibratePisu(pattern) {
+  if (!navigator.vibrate) return;
+
+  try {
+    navigator.vibrate(pattern);
+  } catch {
+    // Vibration non disponible ou refusée.
+  }
+}
+
+function playPisuSound(name, options = {}) {
+  if (!pisuSoundsEnabled && !options.force) return;
+
+  resumePisuAudioContext().then(isRunning => {
+    if (!isRunning) return;
+
+    switch (name) {
+      case "rcpTick":
+        playTone(720, 0.035, { type: "square", volume: 0.055 });
+        break;
+
+      case "rcpAccent":
+        playTone(920, 0.045, { type: "square", volume: 0.075 });
+        break;
+
+      case "rcpStart":
+        playTone(520, 0.08, { type: "triangle", volume: 0.1 });
+        playTone(780, 0.1, { type: "triangle", volume: 0.1, delay: 0.11 });
+        vibratePisu([40, 40, 40]);
+        break;
+
+      case "rcpStop":
+        playTone(440, 0.08, { type: "triangle", volume: 0.08 });
+        playTone(330, 0.12, { type: "triangle", volume: 0.08, delay: 0.1 });
+        vibratePisu([80]);
+        break;
+
+      case "rcpCycleEnd":
+        playTone(660, 0.12, { type: "sine", volume: 0.14 });
+        playTone(660, 0.12, { type: "sine", volume: 0.14, delay: 0.18 });
+        playTone(990, 0.28, { type: "sine", volume: 0.14, delay: 0.36 });
+        vibratePisu([100, 80, 100]);
+        break;
+
+      case "adrenalineDue":
+        playTone(880, 0.1, { type: "sine", volume: 0.16 });
+        playTone(1175, 0.1, { type: "sine", volume: 0.16, delay: 0.15 });
+        playTone(1568, 0.22, { type: "sine", volume: 0.16, delay: 0.3 });
+        vibratePisu([80, 60, 80, 60, 180]);
+        break;
+
+      case "call15Required":
+        playTone(440, 0.16, { type: "sawtooth", volume: 0.15 });
+        playTone(880, 0.16, { type: "sawtooth", volume: 0.15, delay: 0.18 });
+        playTone(440, 0.16, { type: "sawtooth", volume: 0.15, delay: 0.36 });
+        playTone(880, 0.22, { type: "sawtooth", volume: 0.15, delay: 0.62 });
+        vibratePisu([180, 80, 180, 80, 260]);
+        break;
+
+      case "vitalsOrange":
+        playTone(620, 0.12, { type: "triangle", volume: 0.1 });
+        playTone(520, 0.18, { type: "triangle", volume: 0.1, delay: 0.18 });
+        vibratePisu([90, 60, 90]);
+        break;
+
+      case "success":
+        playTone(740, 0.07, { type: "sine", volume: 0.08 });
+        playTone(980, 0.1, { type: "sine", volume: 0.08, delay: 0.08 });
+        break;
+
+      case "test":
+        playTone(720, 0.05, { type: "square", volume: 0.06, force: true });
+        playTone(1175, 0.08, { type: "sine", volume: 0.1, delay: 0.1, force: true });
+        break;
+
+      default:
+        playTone(700, 0.08, { volume: 0.1 });
+    }
+  });
+}
+
+function updateSoundToggleButton() {
+  if (!soundToggleBtn) return;
+
+  soundToggleBtn.classList.toggle("sound-on", pisuSoundsEnabled);
+  soundToggleBtn.setAttribute("aria-pressed", String(pisuSoundsEnabled));
+  soundToggleBtn.textContent = pisuSoundsEnabled ? "🔊 Sons ON" : "🔇 Sons OFF";
+}
+
+async function enablePisuSounds() {
+  const isRunning = await resumePisuAudioContext();
+
+  if (!isRunning) {
+    alert("Le son n’a pas pu être activé par le navigateur.");
+    return;
+  }
+
+  pisuSoundsEnabled = true;
+  localStorage.setItem(PISU_SOUND_STORAGE_KEY, "true");
+  updateSoundToggleButton();
+  playPisuSound("test", { force: true });
+}
+
+function disablePisuSounds() {
+  pisuSoundsEnabled = false;
+  localStorage.setItem(PISU_SOUND_STORAGE_KEY, "false");
+  stopRcpMetronome();
+  updateSoundToggleButton();
+}
+
+function togglePisuSounds() {
+  if (pisuSoundsEnabled) {
+    disablePisuSounds();
+    return;
+  }
+
+  enablePisuSounds();
+}
+
+function startRcpMetronome(protocolId = "") {
+  if (!pisuSoundsEnabled) {
+    enablePisuSounds().then(() => {
+      if (pisuSoundsEnabled) startRcpMetronome(protocolId);
+    });
+
+    return;
+  }
+
+  resumePisuAudioContext();
+
+  stopRcpMetronome();
+
+  const bpm = getRcpBpm();
+  const intervalMs = Math.round(60000 / bpm);
+
+  rcpMetronomeBeatCount = 0;
+
+  playPisuSound("rcpStart");
+
+  rcpMetronomeInterval = window.setInterval(() => {
+    rcpMetronomeBeatCount += 1;
+
+    if (rcpMetronomeBeatCount % 30 === 0) {
+      playPisuSound("rcpAccent");
+    } else {
+      playPisuSound("rcpTick");
+    }
+  }, intervalMs);
+
+  rcpCycleInterval = window.setInterval(() => {
+    playPisuSound("rcpCycleEnd");
+  }, RCP_CYCLE_MS);
+
+  document.body.classList.add("rcp-metronome-on");
+
+  if (typeof addLog === "function") {
+    addLog(`Son : métronome RCP démarré à ${bpm}/min`, {
+      protocole: protocolId || "Mission PISU",
+      categorie: "journal_technique",
+      sousCategorie: "son_rcp",
+      sectionSAED: "journal",
+      visibleSAED: false,
+      visibleChrono: false,
+      visibleJournal: true
+    });
+  }
+}
+
+function stopRcpMetronome() {
+  const hadActiveMetronome = Boolean(rcpMetronomeInterval || rcpCycleInterval);
+
+  if (rcpMetronomeInterval) {
+    window.clearInterval(rcpMetronomeInterval);
+    rcpMetronomeInterval = null;
+  }
+
+  if (rcpCycleInterval) {
+    window.clearInterval(rcpCycleInterval);
+    rcpCycleInterval = null;
+  }
+
+  rcpMetronomeBeatCount = 0;
+  document.body.classList.remove("rcp-metronome-on");
+
+  if (pisuSoundsEnabled && hadActiveMetronome) {
+    playPisuSound("rcpStop");
+  }
+}
+
+function notifyRcpCycleEnd() {
+  playPisuSound("rcpCycleEnd");
+}
+
+function notifyAdrenalineDue(label = "Adrénaline à réévaluer") {
+  const now = Date.now();
+
+  if (now - lastAdrenalineDueSoundAt < 5000) {
+    return;
+  }
+
+  lastAdrenalineDueSoundAt = now;
+  playPisuSound("adrenalineDue");
+
+  if (typeof addLog === "function") {
+    addLog(`Alerte sonore : ${label}`, {
+      protocole: currentProtocolPageId || "Mission PISU",
+      categorie: "journal_technique",
+      sousCategorie: "alerte_adrenaline",
+      sectionSAED: "journal",
+      visibleSAED: false,
+      visibleChrono: true,
+      visibleJournal: true
+    });
+  }
+}
+
+function notifyCall15Required(reason = "Appel 15 exigé") {
+  const key = normalizeSAEDText
+    ? normalizeSAEDText(reason)
+    : String(reason || "").toLowerCase();
+
+  if (key && key === lastCall15SoundKey) {
+    return;
+  }
+
+  lastCall15SoundKey = key;
+  playPisuSound("call15Required");
+
+  if (typeof addLog === "function") {
+    addLog(`Alerte sonore : appel 15 exigé — ${reason}`, {
+      protocole: currentProtocolPageId || "Mission PISU",
+      categorie: "journal_technique",
+      sousCategorie: "alerte_appel_15",
+      sectionSAED: "journal",
+      visibleSAED: false,
+      visibleChrono: true,
+      visibleJournal: true
+    });
+  }
+}
+
+function notifyVitalsOrange(reason = "Alerte constantes orange") {
+  const key = normalizeSAEDText
+    ? normalizeSAEDText(reason)
+    : String(reason || "").toLowerCase();
+
+  if (key && key === lastVitalsOrangeSoundKey) {
+    return;
+  }
+
+  lastVitalsOrangeSoundKey = key;
+  playPisuSound("vitalsOrange");
+}
+
+function resetSoundAlertMemory() {
+  lastCall15SoundKey = "";
+  lastVitalsOrangeSoundKey = "";
+  lastAdrenalineDueSoundAt = 0;
+}
+
+function setupPisuSoundFeature() {
+  updateSoundToggleButton();
+
+  soundToggleBtn?.addEventListener("click", togglePisuSounds);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      stopRcpMetronome();
+    }
+  });
+}
+
+window.pisuSounds = {
+  enable: enablePisuSounds,
+  disable: disablePisuSounds,
+  play: playPisuSound,
+  startRcpMetronome,
+  stopRcpMetronome,
+  notifyRcpCycleEnd,
+  notifyAdrenalineDue,
+  notifyCall15Required,
+  notifyVitalsOrange,
+  resetAlertMemory: resetSoundAlertMemory
+};
+
 const PISU_PROTOCOLS = {
   acrAdultProtocol: {
     label: "Arrêt cardiaque adulte",
@@ -271,6 +642,7 @@ const routeArrivalCard = document.getElementById("routeArrivalCard");
 const routeDepartureTimeInput = document.getElementById("routeDepartureTime");
 const routeDestinationNameInput = document.getElementById("routeDestinationName");
 const routeDestinationServiceInput = document.getElementById("routeDestinationService");
+const routeTransportTypeInput = document.getElementById("routeTransportType");
 const routeTransportVectorInput = document.getElementById("routeTransportVector");
 const routeTransportModeInput = document.getElementById("routeTransportMode");
 const routeTransportMonitoringInput = document.getElementById("routeTransportMonitoring");
@@ -2208,6 +2580,9 @@ function resetMissionCompletely() {
     return;
   }
 
+  window.pisuSounds?.stopRcpMetronome();
+  window.pisuSounds?.resetAlertMemory();
+
   localStorage.removeItem("pisuLog");
 
   clearStructuredEvents?.();
@@ -2780,6 +3155,7 @@ function getMissionRouteSnapshot() {
     departureTime: getRouteValue(routeDepartureTimeInput),
     destinationName: getRouteValue(routeDestinationNameInput),
     destinationService: getRouteValue(routeDestinationServiceInput),
+    transportType: getRouteValue(routeTransportTypeInput),
     transportVector: getRouteValue(routeTransportVectorInput),
     transportMode: getRouteValue(routeTransportModeInput),
     transportMonitoring: getRouteValue(routeTransportMonitoringInput),
@@ -2799,6 +3175,7 @@ function hasMissionRouteData(route = getMissionRouteSnapshot()) {
     route.departureTime ||
     route.destinationName ||
     route.destinationService ||
+    route.transportType ||
     route.transportVector ||
     route.transportMode ||
     route.transportMonitoring ||
@@ -2845,6 +3222,7 @@ function applyMissionRouteSnapshot(route = {}, options = {}) {
   setRouteValue(routeDepartureTimeInput, route.departureTime);
   setRouteValue(routeDestinationNameInput, route.destinationName);
   setRouteValue(routeDestinationServiceInput, route.destinationService);
+  setRouteValue(routeTransportTypeInput, route.transportType);
   setRouteValue(routeTransportVectorInput, route.transportVector);
   setRouteValue(routeTransportModeInput, route.transportMode);
   setRouteValue(routeTransportMonitoringInput, route.transportMonitoring);
@@ -2903,7 +3281,7 @@ function updateMissionRouteCards(route = getMissionRouteSnapshot()) {
 
   routeTransportCard?.classList.toggle(
     "complete",
-    Boolean(route.transportVector || route.transportMode || route.transportMonitoring || route.transportTeam)
+    Boolean(route.transportType || route.transportVector || route.transportMode || route.transportMonitoring || route.transportTeam)
   );
 
   routeJunctionCard?.classList.toggle(
@@ -2949,9 +3327,10 @@ function getMissionRouteLines(route = getMissionRouteSnapshot()) {
   lines.push(`Destination : ${destination || "À compléter"}`);
 
   const transport = [
-    route.transportVector,
-    route.transportMode,
-    route.transportMonitoring,
+    route.transportType ? `Type : ${route.transportType}` : "",
+    route.transportVector ? `Vecteur : ${route.transportVector}` : "",
+    route.transportMode ? `Modalité : ${route.transportMode}` : "",
+    route.transportMonitoring ? `Surveillance : ${route.transportMonitoring}` : "",
     route.transportTeam ? `Équipe : ${route.transportTeam}` : ""
   ].filter(Boolean).join(" — ");
 
@@ -2997,6 +3376,7 @@ function getMissionRouteSAEDLines(route = getMissionRouteSnapshot()) {
   }
 
   const transport = [
+    route.transportType,
     route.transportVector,
     route.transportMode,
     route.transportMonitoring
@@ -3083,6 +3463,7 @@ function setupMissionRouteFeature() {
     routeDepartureTimeInput,
     routeDestinationNameInput,
     routeDestinationServiceInput,
+    routeTransportTypeInput,
     routeTransportVectorInput,
     routeTransportModeInput,
     routeTransportMonitoringInput,
@@ -3595,6 +3976,8 @@ confirmImportHandoffBtn?.addEventListener("click", () => {
 });
 
 function markButtonValidated(button, label = "Enregistré ✓", duration = 1800) {
+  window.pisuSounds?.play("success");
+
   if (!button) return;
 
   const originalText = button.dataset.originalText || button.textContent;
@@ -4813,6 +5196,16 @@ function saveCurrentVitals() {
   renderVitalsAlertBanner(alert);
   applyCall15AlertDisplay();
 
+  if (alert.level === "red" || alert.call15Level === "red") {
+    window.pisuSounds?.notifyCall15Required(
+      alert.reasons?.join(" ; ") || alert.message || "Appel 15 exigé"
+    );
+  } else if (alert.level === "orange") {
+    window.pisuSounds?.notifyVitalsOrange(
+      alert.reasons?.join(" ; ") || alert.message || "Alerte constantes orange"
+    );
+  }
+
   if (alert.level !== "none") {
     const alertLine = `Alerte constantes ${alert.level.toUpperCase()} : ${alert.reasons.join(" ; ")} — ${alert.message}`;
 
@@ -5621,6 +6014,7 @@ setupCollapsiblePanels();
 setupStickyDetailsScrollBehavior?.();
 invalidateHandoffWhenPatientChanges();
 setupMobileLayoutOffsets();
+setupPisuSoundFeature();
 setupVitalsFeature();
 setupUserCharterFeature();
 installStructuredSAEDEngine();
