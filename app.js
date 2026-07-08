@@ -220,7 +220,7 @@ async function enablePisuSounds() {
   playPisuSound("test", { force: true });
 
   window.setTimeout(() => {
-    notifyCall15IfImmediateVisible?.();
+    scanImmediateCall15VisualAlert?.({ force: true });
   }, 350);
 }
 
@@ -374,6 +374,8 @@ function notifyCall15Required(reason = "Appel 15 exigé") {
 }
 
 let lastCall15UiAlertSignature = "";
+let lastImmediateCall15VisualSignature = "";
+let call15VisualObserver = null;
 
 function getCurrentCall15ImmediateReason() {
   /*
@@ -450,6 +452,140 @@ function notifyCall15IfImmediateVisible() {
   window.pisuSounds?.notifyCall15Required(reason);
 }
 
+function isElementReallyVisible(element) {
+  if (!element) return false;
+
+  const style = window.getComputedStyle(element);
+
+  if (
+    style.display === "none" ||
+    style.visibility === "hidden" ||
+    Number(style.opacity) === 0
+  ) {
+    return false;
+  }
+
+  const rect = element.getBoundingClientRect();
+
+  return rect.width > 0 && rect.height > 0;
+}
+
+function getImmediateCall15VisualReason() {
+  const candidates = Array.from(document.querySelectorAll("body *"));
+
+  const found = candidates.find(element => {
+    if (!isElementReallyVisible(element)) return false;
+
+    const rawText = String(element.textContent || "").trim();
+    const isFocusedTextBlock =
+      rawText.length <= 180 ||
+      element.matches("a, button, small, span, strong, em, b, p, label, summary");
+
+    const text = normalizeSAEDText
+      ? normalizeSAEDText(rawText)
+      : rawText.toLowerCase();
+
+    const hasCall15 =
+      text.includes("appel 15") ||
+      text.includes("centre 15") ||
+      text.includes("regulation") ||
+      text.includes("régulation");
+
+    const hasImmediate =
+      text.includes("immediat") ||
+      text.includes("immédiat") ||
+      text.includes("exige") ||
+      text.includes("exigé") ||
+      text.includes("prioritaire") ||
+      text.includes("urgence");
+
+    const hasAlertClass =
+      element.classList.contains("call15-alert") ||
+      element.classList.contains("call15-alert-red") ||
+      element.classList.contains("call15-alert-orange") ||
+      element.classList.contains("call15-required") ||
+      element.classList.contains("call15-immediate") ||
+      element.classList.contains("call15-blink") ||
+      element.classList.contains("blink-call15") ||
+      element.hasAttribute("data-call15-alert") ||
+      element.dataset.call15Alert === "true" ||
+      element.dataset.call15Required === "true" ||
+      element.dataset.call15Immediate === "true";
+
+    if (!hasAlertClass && !isFocusedTextBlock) return false;
+
+    return hasAlertClass || (hasCall15 && hasImmediate);
+  });
+
+  if (!found) return "";
+
+  return found.textContent?.trim() || "Appel 15 immédiat affiché";
+}
+
+function scanImmediateCall15VisualAlert(options = {}) {
+  const reason = getImmediateCall15VisualReason();
+
+  if (!reason) {
+    lastImmediateCall15VisualSignature = "";
+    return;
+  }
+
+  const signature = normalizeSAEDText
+    ? normalizeSAEDText(reason)
+    : String(reason).toLowerCase();
+
+  if (!options.force && signature === lastImmediateCall15VisualSignature) {
+    return;
+  }
+
+  lastImmediateCall15VisualSignature = signature;
+
+  window.pisuSounds?.notifyCall15Required?.(reason);
+}
+
+function setupImmediateCall15SoundWatcher() {
+  if (call15VisualObserver) return;
+
+  document.addEventListener("click", event => {
+    const clickedAction = event.target.closest(
+      [
+        "[data-action]",
+        "[data-acr-action]",
+        "[data-child-acr-action]",
+        "[data-dt-action]",
+        "[data-smoke-action]",
+        "[data-burn-action]",
+        "[data-seizure-action]",
+        "[data-anaphylaxis-action]",
+        "[data-hemo-action]",
+        "[data-hypo-action]",
+        "[data-asthma-action]",
+        "[data-analgesia-action]"
+      ].join(", ")
+    );
+
+    if (!clickedAction) return;
+
+    window.setTimeout(() => {
+      scanImmediateCall15VisualAlert();
+    }, 120);
+  });
+
+  call15VisualObserver = new MutationObserver(() => {
+    window.setTimeout(() => {
+      scanImmediateCall15VisualAlert();
+    }, 80);
+  });
+
+  call15VisualObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    characterData: true,
+    attributeFilter: ["class", "style", "hidden", "data-call15-alert", "data-call15-required", "data-call15-immediate"]
+  });
+}
+
 function notifyVitalsOrange(reason = "Alerte constantes orange") {
   const key = normalizeSAEDText
     ? normalizeSAEDText(reason)
@@ -468,6 +604,7 @@ function resetSoundAlertMemory() {
   lastVitalsOrangeSoundKey = "";
   lastAdrenalineDueSoundAt = 0;
   lastCall15UiAlertSignature = "";
+  lastImmediateCall15VisualSignature = "";
 }
 
 function setupPisuSoundFeature() {
@@ -6855,6 +6992,7 @@ setupPatientRollerFeature?.();
 setupPatientSwipeFeature?.();
 setupPatientIdentityValidationFeedback?.();
 setupPisuSoundFeature();
+setupImmediateCall15SoundWatcher?.();
 setupVitalsFeature();
 setupUserCharterFeature();
 installStructuredSAEDEngine();
