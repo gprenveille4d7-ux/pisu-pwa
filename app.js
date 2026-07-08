@@ -691,8 +691,13 @@ const patientSexInput = document.getElementById("patientSex");
 const patientWeightInput = document.getElementById("patientWeight");
 const patientNoteInput = document.getElementById("patientNote");
 const patientCategoryInput = document.getElementById("patientCategory");
-const saveIdentityBtn = document.getElementById("saveIdentityBtn");
-const unknownIdentityBtn = document.getElementById("unknownIdentityBtn");
+const patientAgeUnitInput = document.getElementById("patientAgeUnit");
+const patientSwipeTrack = document.getElementById("patientSwipeTrack");
+const patientSwipePrev = document.getElementById("patientSwipePrev");
+const patientSwipeNext = document.getElementById("patientSwipeNext");
+const patientSwipeTabs = Array.from(document.querySelectorAll("[data-patient-slide-target]"));
+const saveIdentityBtn = document.getElementById("saveIdentity");
+const unknownIdentityBtn = document.getElementById("unknownIdentity");
 const patientAllergiesInput = document.getElementById("patientAllergies");
 const patientMedicalHistoryInput = document.getElementById("patientMedicalHistory");
 const patientCurrentTreatmentInput = document.getElementById("patientCurrentTreatment");
@@ -712,6 +717,10 @@ const teamPanel = document.querySelector(".team-block");
 const toggleTeamBtn = document.getElementById("toggleTeamBtn");
 const teamContent = document.getElementById("teamContent");
 const teamSummary = document.getElementById("teamSummary");
+const teamSwipeTrack = document.getElementById("teamSwipeTrack");
+const teamSwipePrev = document.getElementById("teamSwipePrev");
+const teamSwipeNext = document.getElementById("teamSwipeNext");
+const teamSwipeTabs = Array.from(document.querySelectorAll("[data-team-slide-target]"));
 const responderPanel = document.querySelector(".responder-block");
 const responderSummary = document.getElementById("responderSummary");
 const crewPanel = document.querySelector(".crew-block");
@@ -763,6 +772,10 @@ const routeTransmissionDoneInput = document.getElementById("routeTransmissionDon
 const routeTransportNoteInput = document.getElementById("routeTransportNote");
 const saveMissionRouteBtn = document.getElementById("saveMissionRouteBtn");
 const clearMissionRouteBtn = document.getElementById("clearMissionRouteBtn");
+const routeSwipeTrack = document.getElementById("routeSwipeTrack");
+const routeSwipePrev = document.getElementById("routeSwipePrev");
+const routeSwipeNext = document.getElementById("routeSwipeNext");
+const routeSwipeTabs = Array.from(document.querySelectorAll("[data-route-slide-target]"));
 const createHandoffBtn = document.getElementById("createHandoffBtn");
 const showImportHandoffBtn = document.getElementById("showImportHandoffBtn");
 const handoffPanel = document.querySelector(".handoff-block");
@@ -1730,12 +1743,12 @@ function valueOrDefault(value, fallback = "non renseigné") {
   return cleaned || fallback;
 }
 
-function savePatientIdentity() {
+function savePatientIdentity(options = {}) {
   const name = valueOrDefault(patientNameInput.value, "identité non renseignée");
-  const age = valueOrDefault(patientAgeInput.value);
+  const age = valueOrDefault(formatPatientAge());
   const sex = valueOrDefault(patientSexInput.value);
-  const weight = valueOrDefault(patientWeightInput.value);
-  const category = valueOrDefault(patientCategoryInput.value);
+  const weight = valueOrDefault(formatPatientWeight());
+  const category = valueOrDefault(getPatientCategoryLabel(getPatientCategory()));
   const note = patientNoteInput.value.trim();
 
   let logLine = `Identité patient : ${name} — âge/naissance : ${age} — sexe : ${sex} — catégorie : ${category} — poids estimé : ${weight}`;
@@ -1744,19 +1757,28 @@ function savePatientIdentity() {
     logLine += ` — remarque : ${note}`;
   }
 
-  addLog(logLine);
+  if (!options.silent) {
+    addLog(logLine);
+    setButtonValidatedPersistent?.(saveIdentityBtn, true, "Identité enregistrée ✓");
+  }
+
   updatePatientIdentitySummary();
 }
 
 function setUnknownIdentity() {
   patientNameInput.value = "Inconnu";
-  patientAgeInput.value = "";
   patientSexInput.value = "";
   patientCategoryInput.value = "";
-  patientWeightInput.value = "";
   patientNoteInput.value = "Identité inconnue au moment de la prise en charge";
 
+  if (patientAgeUnitInput) patientAgeUnitInput.value = "years";
+  populatePatientAgeSelect();
+  populatePatientWeightSelect();
+  resetPatientRoller(patientAgeInput);
+  resetPatientRoller(patientWeightInput);
+
   addLog("Identité patient : inconnue au moment de la prise en charge");
+  scrollToPatientSlide?.(0, "auto");
   updatePatientIdentitySummary();
 }
 
@@ -1989,42 +2011,204 @@ function formatLogList(items, fallback = "À compléter") {
   return items.map(formatLogLine).join("\n");
 }
 
-function getPatientWeightKg() {
-  const rawValue = patientWeightInput?.value || "";
+function populatePatientNumberSelect(select, config) {
+  if (!select) return;
 
-  const normalizedValue = rawValue
-    .toLowerCase()
-    .replace(",", ".")
-    .replace("kg", "")
-    .trim();
+  const {
+    min,
+    max,
+    start,
+    step = 1,
+    suffix = "",
+    decimals = 0
+  } = config;
 
-  const weight = Number.parseFloat(normalizedValue);
+  const currentValue = select.value;
+  const wasTouched = select.dataset.patientTouched === "true";
 
-  if (!Number.isFinite(weight) || weight <= 0) {
-    return null;
+  select.innerHTML = "";
+
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = "Non renseigné";
+  select.appendChild(emptyOption);
+
+  for (let value = min; value <= max + step / 2; value += step) {
+    const rounded = Number(value.toFixed(decimals));
+    const optionValue = decimals > 0 ? rounded.toFixed(decimals) : String(rounded);
+    const textValue = decimals > 0
+      ? rounded.toFixed(decimals).replace(".", ",")
+      : String(rounded);
+
+    const option = document.createElement("option");
+    option.value = optionValue;
+    option.textContent = `${textValue}${suffix}`;
+
+    select.appendChild(option);
   }
 
-  return weight;
+  const defaultValue =
+    select.dataset.patientDefault ||
+    (decimals > 0 ? Number(start).toFixed(decimals) : String(start));
+
+  const values = Array.from(select.options).map(option => option.value);
+
+  if (currentValue && values.includes(currentValue)) {
+    select.value = currentValue;
+    select.dataset.patientTouched = wasTouched ? "true" : "false";
+  } else if (defaultValue && values.includes(defaultValue)) {
+    select.value = defaultValue;
+    select.dataset.patientTouched = "false";
+  } else {
+    select.value = "";
+    select.dataset.patientTouched = "false";
+  }
+}
+
+function populatePatientAgeSelect() {
+  if (!patientAgeInput) return;
+
+  const unit = patientAgeUnitInput?.value || "years";
+
+  if (unit === "months") {
+    patientAgeInput.dataset.patientDefault = "6";
+
+    populatePatientNumberSelect(patientAgeInput, {
+      min: 0,
+      max: 36,
+      start: 6,
+      step: 1,
+      suffix: " mois"
+    });
+
+    return;
+  }
+
+  patientAgeInput.dataset.patientDefault = "40";
+
+  populatePatientNumberSelect(patientAgeInput, {
+    min: 0,
+    max: 120,
+    start: 40,
+    step: 1,
+    suffix: " ans"
+  });
+}
+
+function populatePatientWeightSelect() {
+  populatePatientNumberSelect(patientWeightInput, {
+    min: 1,
+    max: 200,
+    start: 70,
+    step: 1,
+    suffix: " kg"
+  });
+}
+
+function populatePatientIdentityRollers() {
+  populatePatientAgeSelect();
+  populatePatientWeightSelect();
+}
+
+function markPatientRollerTouched(event) {
+  const input = event.target;
+
+  if (!input?.dataset) return;
+
+  input.dataset.patientTouched = "true";
+}
+
+function resetPatientRoller(select) {
+  if (!select) return;
+
+  const defaultValue = select.dataset.patientDefault || "";
+
+  if (defaultValue) {
+    select.value = defaultValue;
+    select.dataset.patientTouched = "false";
+  } else {
+    select.value = "";
+    select.dataset.patientTouched = "false";
+  }
+}
+
+function getPatientRollerValue(select) {
+  if (!select) return "";
+
+  if (select.dataset.patientDefault && select.dataset.patientTouched !== "true") {
+    return "";
+  }
+
+  return select.value?.trim() || "";
+}
+
+function formatPatientAge() {
+  const value = getPatientRollerValue(patientAgeInput);
+
+  if (!value) return "";
+
+  const unit = patientAgeUnitInput?.value || "years";
+
+  if (unit === "months") {
+    return `${value} mois`;
+  }
+
+  return `${value} ans`;
+}
+
+function formatPatientWeight() {
+  const value = getPatientRollerValue(patientWeightInput);
+
+  return value ? `${value} kg` : "";
+}
+
+function setupPatientRollerFeature() {
+  populatePatientIdentityRollers();
+
+  [patientAgeInput, patientWeightInput].forEach(input => {
+    if (!input) return;
+
+    input.addEventListener("focus", markPatientRollerTouched);
+    input.addEventListener("pointerdown", markPatientRollerTouched);
+    input.addEventListener("change", markPatientRollerTouched);
+  });
+
+  patientAgeUnitInput?.addEventListener("change", () => {
+    if (patientAgeInput) {
+      patientAgeInput.dataset.patientTouched = "true";
+    }
+
+    populatePatientAgeSelect();
+
+    if (typeof savePatientIdentity === "function") {
+      savePatientIdentity({ silent: true });
+    }
+  });
+}
+
+function getPatientWeightKg() {
+  const value = getPatientRollerValue(patientWeightInput);
+
+  if (!value) return null;
+
+  const weight = Number(String(value).replace(",", "."));
+
+  return Number.isFinite(weight) && weight > 0 ? weight : null;
 }
 
 function getPatientAgeYears() {
-  const rawValue = patientAgeInput?.value || "";
-  const normalizedValue = rawValue
-    .toLowerCase()
-    .replace(",", ".")
-    .trim();
+  const value = getPatientRollerValue(patientAgeInput);
 
-  // Cas simple : "11", "11 ans", "11a"
-  const yearMatch = normalizedValue.match(/(\d+(\.\d+)?)\s*(ans|an|a)?/);
+  if (!value) return null;
 
-  if (!yearMatch) {
-    return null;
-  }
+  const age = Number(String(value).replace(",", "."));
 
-  const age = Number.parseFloat(yearMatch[1]);
+  if (!Number.isFinite(age) || age < 0) return null;
 
-  if (!Number.isFinite(age) || age < 0) {
-    return null;
+  const unit = patientAgeUnitInput?.value || "years";
+
+  if (unit === "months") {
+    return age / 12;
   }
 
   return age;
@@ -2138,10 +2322,10 @@ function exportTextLegacy() {
     : ["Aucun équipage associé renseigné."];
 
   const patientName = patientNameInput?.value?.trim() || "Identité non renseignée";
-  const patientAge = patientAgeInput?.value?.trim() || "À compléter";
+  const patientAge = formatPatientAge() || "À compléter";
   const patientSex = patientSexInput?.value?.trim() || "À compléter";
-  const patientCategory = patientCategoryInput?.value?.trim() || "À compléter";
-  const patientWeight = patientWeightInput?.value?.trim() || "À compléter";
+  const patientCategory = getPatientCategoryLabel(getPatientCategory()) || "À compléter";
+  const patientWeight = formatPatientWeight() || "À compléter";
   const patientNote = patientNoteInput?.value?.trim() || "Aucune remarque renseignée";
 
   const initialVitals = window.pisuVitals?.getInitialLine?.() || getInitialVitalsLine();
@@ -2661,11 +2845,17 @@ function clearAllProtocolCounters() {
 
 function resetPatientIdentityFields() {
   if (patientNameInput) patientNameInput.value = "";
-  if (patientAgeInput) patientAgeInput.value = "";
   if (patientSexInput) patientSexInput.value = "";
   if (patientCategoryInput) patientCategoryInput.value = "";
-  if (patientWeightInput) patientWeightInput.value = "";
   if (patientNoteInput) patientNoteInput.value = "";
+
+  if (patientAgeUnitInput) patientAgeUnitInput.value = "years";
+
+  populatePatientAgeSelect();
+  populatePatientWeightSelect();
+
+  resetPatientRoller(patientAgeInput);
+  resetPatientRoller(patientWeightInput);
 
   resetPatientAntecedentsFields();
   updatePatientIdentitySummary?.();
@@ -3220,6 +3410,294 @@ function setupProtocolSwipeMenu() {
   updateProtocolSwipeUi();
 }
 
+function getTeamSwipeSlides() {
+  if (!teamSwipeTrack) return [];
+  return Array.from(teamSwipeTrack.querySelectorAll("[data-team-slide]"));
+}
+
+function getCurrentTeamSwipeIndex() {
+  const slides = getTeamSwipeSlides();
+
+  if (!teamSwipeTrack || slides.length === 0) return 0;
+
+  const trackRect = teamSwipeTrack.getBoundingClientRect();
+  const trackCenter = trackRect.left + trackRect.width / 2;
+
+  let closestIndex = 0;
+  let closestDistance = Infinity;
+
+  slides.forEach((slide, index) => {
+    const rect = slide.getBoundingClientRect();
+    const center = rect.left + rect.width / 2;
+    const distance = Math.abs(center - trackCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
+}
+
+function scrollToTeamSlide(index, behavior = "smooth") {
+  const slides = getTeamSwipeSlides();
+
+  if (!teamSwipeTrack || slides.length === 0) return;
+
+  const safeIndex = Math.max(0, Math.min(index, slides.length - 1));
+
+  slides[safeIndex].scrollIntoView({
+    behavior,
+    inline: "start",
+    block: "nearest"
+  });
+}
+
+function updateTeamSwipeUi() {
+  const slides = getTeamSwipeSlides();
+  const index = getCurrentTeamSwipeIndex();
+
+  if (teamSwipePrev) {
+    teamSwipePrev.disabled = index <= 0;
+  }
+
+  if (teamSwipeNext) {
+    teamSwipeNext.disabled = index >= slides.length - 1;
+  }
+
+  teamSwipeTabs.forEach(tab => {
+    const targetIndex = Number(tab.dataset.teamSlideTarget);
+    tab.classList.toggle("active", targetIndex === index);
+  });
+}
+
+function setupTeamSwipeFeature() {
+  if (!teamSwipeTrack) return;
+
+  teamSwipePrev?.addEventListener("click", () => {
+    scrollToTeamSlide(getCurrentTeamSwipeIndex() - 1);
+  });
+
+  teamSwipeNext?.addEventListener("click", () => {
+    scrollToTeamSlide(getCurrentTeamSwipeIndex() + 1);
+  });
+
+  teamSwipeTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const targetIndex = Number(tab.dataset.teamSlideTarget);
+
+      if (!Number.isFinite(targetIndex)) return;
+
+      scrollToTeamSlide(targetIndex);
+    });
+  });
+
+  let scrollTimer = null;
+
+  teamSwipeTrack.addEventListener("scroll", () => {
+    window.clearTimeout(scrollTimer);
+
+    scrollTimer = window.setTimeout(() => {
+      updateTeamSwipeUi();
+    }, 80);
+  });
+
+  updateTeamSwipeUi();
+}
+
+function getRouteSwipeSlides() {
+  if (!routeSwipeTrack) return [];
+  return Array.from(routeSwipeTrack.querySelectorAll("[data-route-slide]"));
+}
+
+function getCurrentRouteSwipeIndex() {
+  const slides = getRouteSwipeSlides();
+
+  if (!routeSwipeTrack || slides.length === 0) return 0;
+
+  const trackRect = routeSwipeTrack.getBoundingClientRect();
+  const trackCenter = trackRect.left + trackRect.width / 2;
+
+  let closestIndex = 0;
+  let closestDistance = Infinity;
+
+  slides.forEach((slide, index) => {
+    const rect = slide.getBoundingClientRect();
+    const center = rect.left + rect.width / 2;
+    const distance = Math.abs(center - trackCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
+}
+
+function scrollToRouteSlide(index, behavior = "smooth") {
+  const slides = getRouteSwipeSlides();
+
+  if (!routeSwipeTrack || slides.length === 0) return;
+
+  const safeIndex = Math.max(0, Math.min(index, slides.length - 1));
+
+  slides[safeIndex].scrollIntoView({
+    behavior,
+    inline: "start",
+    block: "nearest"
+  });
+}
+
+function updateRouteSwipeUi() {
+  const slides = getRouteSwipeSlides();
+  const index = getCurrentRouteSwipeIndex();
+
+  if (routeSwipePrev) {
+    routeSwipePrev.disabled = index <= 0;
+  }
+
+  if (routeSwipeNext) {
+    routeSwipeNext.disabled = index >= slides.length - 1;
+  }
+
+  routeSwipeTabs.forEach(tab => {
+    const targetIndex = Number(tab.dataset.routeSlideTarget);
+    tab.classList.toggle("active", targetIndex === index);
+  });
+}
+
+function setupRouteSwipeFeature() {
+  if (!routeSwipeTrack) return;
+
+  routeSwipePrev?.addEventListener("click", () => {
+    scrollToRouteSlide(getCurrentRouteSwipeIndex() - 1);
+  });
+
+  routeSwipeNext?.addEventListener("click", () => {
+    scrollToRouteSlide(getCurrentRouteSwipeIndex() + 1);
+  });
+
+  routeSwipeTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const targetIndex = Number(tab.dataset.routeSlideTarget);
+
+      if (!Number.isFinite(targetIndex)) return;
+
+      scrollToRouteSlide(targetIndex);
+    });
+  });
+
+  let scrollTimer = null;
+
+  routeSwipeTrack.addEventListener("scroll", () => {
+    window.clearTimeout(scrollTimer);
+
+    scrollTimer = window.setTimeout(() => {
+      updateRouteSwipeUi();
+    }, 80);
+  });
+
+  updateRouteSwipeUi();
+}
+
+function getPatientSwipeSlides() {
+  if (!patientSwipeTrack) return [];
+  return Array.from(patientSwipeTrack.querySelectorAll("[data-patient-slide]"));
+}
+
+function getCurrentPatientSwipeIndex() {
+  const slides = getPatientSwipeSlides();
+
+  if (!patientSwipeTrack || slides.length === 0) return 0;
+
+  const trackRect = patientSwipeTrack.getBoundingClientRect();
+  const trackCenter = trackRect.left + trackRect.width / 2;
+
+  let closestIndex = 0;
+  let closestDistance = Infinity;
+
+  slides.forEach((slide, index) => {
+    const rect = slide.getBoundingClientRect();
+    const center = rect.left + rect.width / 2;
+    const distance = Math.abs(center - trackCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
+}
+
+function scrollToPatientSlide(index, behavior = "smooth") {
+  const slides = getPatientSwipeSlides();
+
+  if (!patientSwipeTrack || slides.length === 0) return;
+
+  const safeIndex = Math.max(0, Math.min(index, slides.length - 1));
+
+  slides[safeIndex].scrollIntoView({
+    behavior,
+    inline: "start",
+    block: "nearest"
+  });
+}
+
+function updatePatientSwipeUi() {
+  const slides = getPatientSwipeSlides();
+  const index = getCurrentPatientSwipeIndex();
+
+  if (patientSwipePrev) {
+    patientSwipePrev.disabled = index <= 0;
+  }
+
+  if (patientSwipeNext) {
+    patientSwipeNext.disabled = index >= slides.length - 1;
+  }
+
+  patientSwipeTabs.forEach(tab => {
+    const targetIndex = Number(tab.dataset.patientSlideTarget);
+    tab.classList.toggle("active", targetIndex === index);
+  });
+}
+
+function setupPatientSwipeFeature() {
+  if (!patientSwipeTrack) return;
+
+  patientSwipePrev?.addEventListener("click", () => {
+    scrollToPatientSlide(getCurrentPatientSwipeIndex() - 1);
+  });
+
+  patientSwipeNext?.addEventListener("click", () => {
+    scrollToPatientSlide(getCurrentPatientSwipeIndex() + 1);
+  });
+
+  patientSwipeTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const targetIndex = Number(tab.dataset.patientSlideTarget);
+
+      if (!Number.isFinite(targetIndex)) return;
+
+      scrollToPatientSlide(targetIndex);
+    });
+  });
+
+  let scrollTimer = null;
+
+  patientSwipeTrack.addEventListener("scroll", () => {
+    window.clearTimeout(scrollTimer);
+
+    scrollTimer = window.setTimeout(() => {
+      updatePatientSwipeUi();
+    }, 80);
+  });
+
+  updatePatientSwipeUi();
+}
+
 function setupProtocolOpeners() {
   document.addEventListener("click", event => {
     const opener = event.target.closest("[data-open-protocol]");
@@ -3377,25 +3855,78 @@ function loadResponderIdentity() {
 }
 
 function getPatientSnapshot() {
+  const ageValue = getPatientRollerValue(patientAgeInput);
+  const ageUnit = patientAgeUnitInput?.value || "years";
+  const weightValue = getPatientRollerValue(patientWeightInput);
+
   return {
-    name: patientNameInput?.value || "",
-    age: patientAgeInput?.value || "",
+    name: patientNameInput?.value?.trim() || "",
+    age: formatPatientAge(),
+    ageValue,
+    ageUnit,
     sex: patientSexInput?.value || "",
-    category: patientCategoryInput?.value || "",
-    weight: patientWeightInput?.value || "",
-    note: patientNoteInput?.value || ""
+    category: getPatientCategory(),
+    categoryLabel: getPatientCategoryLabel?.(getPatientCategory()) || "",
+    weight: weightValue,
+    note: patientNoteInput?.value?.trim() || ""
   };
 }
 
-function applyPatientSnapshot(patient = {}) {
+function inferAgeUnitFromText(ageText) {
+  const normalized = String(ageText || "").toLowerCase();
+
+  if (normalized.includes("mois")) return "months";
+
+  return "years";
+}
+
+function inferAgeValueFromText(ageText) {
+  const match = String(ageText || "").match(/(\d+(?:[.,]\d+)?)/);
+
+  return match ? match[1].replace(",", ".") : "";
+}
+
+function applyPatientSnapshot(patient = {}, options = {}) {
   if (patientNameInput) patientNameInput.value = patient.name || "";
-  if (patientAgeInput) patientAgeInput.value = patient.age || "";
   if (patientSexInput) patientSexInput.value = patient.sex || "";
   if (patientCategoryInput) patientCategoryInput.value = patient.category || "";
-  if (patientWeightInput) patientWeightInput.value = patient.weight || "";
   if (patientNoteInput) patientNoteInput.value = patient.note || "";
 
-  updatePatientIdentitySummary();
+  const ageUnit = patient.ageUnit || inferAgeUnitFromText(patient.age);
+
+  if (patientAgeUnitInput) {
+    patientAgeUnitInput.value = ageUnit;
+  }
+
+  populatePatientAgeSelect();
+
+  const ageValue = patient.ageValue || inferAgeValueFromText(patient.age);
+
+  if (patientAgeInput) {
+    if (ageValue) {
+      patientAgeInput.value = ageValue;
+      patientAgeInput.dataset.patientTouched = "true";
+    } else {
+      resetPatientRoller(patientAgeInput);
+    }
+  }
+
+  populatePatientWeightSelect();
+
+  if (patientWeightInput) {
+    if (patient.weight) {
+      patientWeightInput.value = String(patient.weight).replace(/[^\d.,]/g, "").replace(",", ".");
+      patientWeightInput.dataset.patientTouched = "true";
+    } else {
+      resetPatientRoller(patientWeightInput);
+    }
+  }
+
+  updatePatientIdentitySummary?.();
+
+  if (!options.skipSave && typeof savePatientIdentity === "function") {
+    savePatientIdentity({ silent: true });
+  }
 }
 
 function getRouteValue(input) {
@@ -3710,12 +4241,14 @@ function stampMissionRouteTime(kind) {
   const time = getCurrentTimeValue();
 
   if (kind === "departure") {
+    scrollToRouteSlide?.(0, "auto");
     setRouteValue(routeDepartureTimeInput, time);
     saveMissionRoute({ log: true, logLabel: "Départ des lieux horodaté" });
     return;
   }
 
   if (kind === "junction") {
+    scrollToRouteSlide?.(0, "auto");
     setRouteChecked(routeJunctionEnabledInput, true);
     setRouteValue(routeJunctionTimeInput, time);
     saveMissionRoute({ log: true, logLabel: "Jonction horodatée" });
@@ -3723,6 +4256,7 @@ function stampMissionRouteTime(kind) {
   }
 
   if (kind === "arrival") {
+    scrollToRouteSlide?.(2, "auto");
     setRouteValue(routeArrivalTimeInput, time);
     saveMissionRoute({ log: true, logLabel: "Arrivée destination horodatée" });
   }
@@ -4520,16 +5054,16 @@ function updatePatientIdentitySummary() {
   if (!patientIdentitySummary) return;
 
   const name = patientNameInput?.value?.trim();
-  const age = patientAgeInput?.value?.trim();
+  const age = formatPatientAge();
   const sex = patientSexInput?.value?.trim();
-  const weight = patientWeightInput?.value?.trim();
+  const weight = formatPatientWeight();
 
   const parts = [];
 
   parts.push(name || "Identité non renseignée");
 
   if (age) {
-    parts.push(`Âge/naissance : ${age}`);
+    parts.push(`Âge : ${age}`);
   }
 
   if (sex) {
@@ -4559,6 +5093,7 @@ function setupIdentitySummaries() {
   [
     patientNameInput,
     patientAgeInput,
+    patientAgeUnitInput,
     patientSexInput,
     patientCategoryInput,
     patientWeightInput,
@@ -4573,6 +5108,7 @@ function invalidateHandoffWhenPatientChanges() {
   [
     patientNameInput,
     patientAgeInput,
+    patientAgeUnitInput,
     patientSexInput,
     patientCategoryInput,
     patientWeightInput,
@@ -4588,6 +5124,28 @@ function invalidateHandoffWhenPatientChanges() {
       if (handoffCode?.value) {
         resetMissionHandoffUi?.();
       }
+    });
+  });
+}
+
+function setupPatientIdentityValidationFeedback() {
+  [
+    patientNameInput,
+    patientAgeInput,
+    patientAgeUnitInput,
+    patientSexInput,
+    patientCategoryInput,
+    patientWeightInput,
+    patientNoteInput
+  ].forEach(input => {
+    if (!input) return;
+
+    input.addEventListener("input", () => {
+      setButtonValidatedPersistent?.(saveIdentityBtn, false);
+    });
+
+    input.addEventListener("change", () => {
+      setButtonValidatedPersistent?.(saveIdentityBtn, false);
     });
   });
 }
@@ -5891,6 +6449,7 @@ function saveCrewMemberToRoster() {
     alert("Ce collègue existe déjà dans le carnet.");
     selectedCrewMemberId = existing.id;
     renderCrewFeature();
+    scrollToTeamSlide?.(1, "auto");
     return;
   }
 
@@ -5914,6 +6473,7 @@ function saveCrewMemberToRoster() {
   }
 
   renderCrewFeature();
+  scrollToTeamSlide?.(1, "auto");
   markButtonValidated(saveCrewMemberBtn, "Collègue enregistré ✓");
   updateTeamSummary?.();
 
@@ -5963,6 +6523,7 @@ function addSelectedCrewToMission() {
   }
 
   renderCrewFeature();
+  scrollToTeamSlide?.(1, "auto");
   markButtonValidated(addCrewToMissionBtn, "Ajouté ✓");
   updateTeamSummary?.();
 
@@ -6288,6 +6849,11 @@ invalidateHandoffWhenPatientChanges();
 setupMobileLayoutOffsets();
 setupProtocolSwipeMenu?.();
 setupProtocolOpeners?.();
+setupTeamSwipeFeature?.();
+setupRouteSwipeFeature?.();
+setupPatientRollerFeature?.();
+setupPatientSwipeFeature?.();
+setupPatientIdentityValidationFeedback?.();
 setupPisuSoundFeature();
 setupVitalsFeature();
 setupUserCharterFeature();

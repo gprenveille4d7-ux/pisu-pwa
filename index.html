@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=182">
+  <link rel="stylesheet" href="./style.css?v=185">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -103,158 +103,180 @@
         Intervenant et équipage à renseigner.
       </small>
 
-      <div id="teamContent" class="collapsible-content team-content">
-        <section class="team-subcard responder-block">
-          <div class="team-subtitle">
-            <span class="team-subicon">👤</span>
-            <strong>Intervenant principal</strong>
+      <div id="teamContent" class="collapsible-content team-content team-swipe-content">
+        <div class="team-swipe-tabs" aria-label="Navigation équipe intervention">
+          <button class="team-swipe-tab active" type="button" data-team-slide-target="0">
+            👤 Intervenant
+          </button>
+
+          <button class="team-swipe-tab" type="button" data-team-slide-target="1">
+            🚑 Équipage
+          </button>
+        </div>
+
+        <div class="team-swipe-shell">
+          <button id="teamSwipePrev" class="team-swipe-nav" type="button" aria-label="Section équipe précédente">
+            ‹
+          </button>
+
+          <div id="teamSwipeTrack" class="team-swipe-track">
+            <section class="team-swipe-slide team-subcard responder-block" data-team-slide="0">
+              <div class="team-subtitle">
+                <span class="team-subicon">👤</span>
+                <strong>Intervenant principal</strong>
+              </div>
+
+              <small id="responderSummary" class="collapse-summary">
+                Intervenant non renseigné
+              </small>
+
+              <div id="responderContent" class="responder-content">
+                <div class="identity-grid">
+                  <label>
+                    Nom / Prénom
+                    <input id="responderName" type="text" placeholder="Ex : Guillaume Prenveille">
+                  </label>
+
+                  <label>
+                    Fonction / rang
+                    <select id="responderRole">
+                      <option value="">Non renseigné</option>
+                      <option value="IDE">IDE</option>
+                      <option value="Ambulancier">Ambulancier</option>
+                      <option value="Médecin">Médecin</option>
+                      <option value="Aide-soignant">Aide-soignant</option>
+                      <option value="Secouriste">Secouriste</option>
+                      <option value="Autre">Autre</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Service / unité
+                    <input id="responderService" type="text" placeholder="Ex : Urgences / SMUR Falaise">
+                  </label>
+                </div>
+
+                <button id="saveResponderBtn" class="primary validation-button" type="button">
+                  Enregistrer intervenant
+                </button>
+              </div>
+            </section>
+
+            <section class="team-swipe-slide team-subcard crew-block" data-team-slide="1">
+              <div class="team-subtitle">
+                <span class="team-subicon">🚑</span>
+                <strong>Équipage mission</strong>
+              </div>
+
+              <small id="crewSummary" class="collapse-summary crew-summary">
+                Aucun équipage sélectionné
+              </small>
+
+              <div id="crewContent" class="crew-content-v2">
+                <div class="crew-step-card">
+                  <div class="crew-step-header">
+                    <span class="crew-step-number">1</span>
+                    <h3>Choisir un collègue</h3>
+                  </div>
+
+                  <div id="crewQuickRoster" class="crew-quick-roster">
+                    Aucun collègue enregistré.
+                  </div>
+
+                  <button id="openNewCrewMemberBtn" class="crew-new-btn" type="button">
+                    + Nouveau collègue
+                  </button>
+                </div>
+
+                <div class="crew-step-card">
+                  <div class="crew-step-header">
+                    <span class="crew-step-number">2</span>
+                    <h3>Choisir son rôle</h3>
+                  </div>
+
+                  <div id="crewRoleButtons" class="crew-role-buttons">
+                    <button class="crew-role-btn crew-role-conducteur selected" type="button" data-crew-role="Conducteur">Conducteur</button>
+                    <button class="crew-role-btn crew-role-equipier" type="button" data-crew-role="Équipier">Équipier</button>
+                    <button class="crew-role-btn crew-role-ide" type="button" data-crew-role="IDE">IDE</button>
+                    <button class="crew-role-btn crew-role-medecin" type="button" data-crew-role="Médecin">Médecin</button>
+                    <button class="crew-role-btn crew-role-ambulancier" type="button" data-crew-role="Ambulancier">Ambulancier</button>
+                    <button class="crew-role-btn crew-role-observateur" type="button" data-crew-role="Observateur">Observateur</button>
+                    <button class="crew-role-btn crew-role-autre" type="button" data-crew-role="Autre">Autre</button>
+                  </div>
+
+                  <div id="selectedCrewPreview" class="selected-crew-preview">
+                    Sélectionne un collègue, puis son rôle.
+                  </div>
+
+                  <button id="addCrewToMissionBtn" class="crew-add-mission-btn validation-button" type="button" disabled>
+                    Ajouter à la mission
+                  </button>
+                </div>
+
+                <div class="crew-step-card">
+                  <div class="crew-step-header">
+                    <span class="crew-step-number">3</span>
+                    <h3>Équipage actuel</h3>
+                  </div>
+
+                  <div id="missionCrewList" class="crew-list crew-mission-list">
+                    Aucun équipage renseigné pour cette mission.
+                  </div>
+                </div>
+
+                <details id="crewNewMemberDetails" class="crew-details">
+                  <summary>Ajouter un collègue au carnet</summary>
+
+                  <div class="crew-grid crew-form">
+                    <label>
+                      Nom / Prénom
+                      <input id="crewMemberName" type="text" placeholder="Ex : Florian Guyet">
+                    </label>
+
+                    <label>
+                      Fonction habituelle
+                      <select id="crewMemberDefaultRole">
+                        <option value="">Non renseignée</option>
+                        <option value="Ambulancier">Ambulancier</option>
+                        <option value="Conducteur ambulancier">Conducteur ambulancier</option>
+                        <option value="IDE">IDE</option>
+                        <option value="Médecin">Médecin</option>
+                        <option value="Aide-soignant">Aide-soignant</option>
+                        <option value="Secouriste">Secouriste</option>
+                        <option value="Autre">Autre</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Service / base
+                      <input id="crewMemberService" type="text" placeholder="Ex : SMUR Falaise">
+                    </label>
+
+                    <label>
+                      Note
+                      <input id="crewMemberNote" type="text" placeholder="Optionnel">
+                    </label>
+                  </div>
+
+                  <button id="saveCrewMemberBtn" class="secondary validation-button" type="button">
+                    Enregistrer dans le carnet
+                  </button>
+                </details>
+
+                <details class="crew-details">
+                  <summary>Gestion du carnet</summary>
+                  <div id="crewRosterList" class="crew-list">
+                    Aucun collègue enregistré.
+                  </div>
+                </details>
+              </div>
+            </section>
           </div>
 
-          <small id="responderSummary" class="collapse-summary">
-            Intervenant non renseigné
-          </small>
-
-          <div id="responderContent" class="responder-content">
-            <div class="identity-grid">
-              <label>
-                Nom / Prénom
-                <input id="responderName" type="text" placeholder="Ex : Guillaume Prenveille">
-              </label>
-
-              <label>
-                Fonction / rang
-                <select id="responderRole">
-                  <option value="">Non renseigné</option>
-                  <option value="IDE">IDE</option>
-                  <option value="Ambulancier">Ambulancier</option>
-                  <option value="Médecin">Médecin</option>
-                  <option value="Aide-soignant">Aide-soignant</option>
-                  <option value="Secouriste">Secouriste</option>
-                  <option value="Autre">Autre</option>
-                </select>
-              </label>
-
-              <label>
-                Service / unité
-                <input id="responderService" type="text" placeholder="Ex : Urgences / SMUR Falaise">
-              </label>
-            </div>
-
-            <button id="saveResponderBtn" class="primary validation-button" type="button">
-              Enregistrer intervenant
-            </button>
-          </div>
-        </section>
-
-        <section class="team-subcard crew-block">
-          <div class="team-subtitle">
-            <span class="team-subicon">🚑</span>
-            <strong>Équipage mission</strong>
-          </div>
-
-          <small id="crewSummary" class="collapse-summary crew-summary">
-            Aucun équipage sélectionné
-          </small>
-
-          <div id="crewContent" class="crew-content-v2">
-            <div class="crew-step-card">
-              <div class="crew-step-header">
-                <span class="crew-step-number">1</span>
-                <h3>Choisir un collègue</h3>
-              </div>
-
-              <div id="crewQuickRoster" class="crew-quick-roster">
-                Aucun collègue enregistré.
-              </div>
-
-              <button id="openNewCrewMemberBtn" class="crew-new-btn" type="button">
-                + Nouveau collègue
-              </button>
-            </div>
-
-            <div class="crew-step-card">
-              <div class="crew-step-header">
-                <span class="crew-step-number">2</span>
-                <h3>Choisir son rôle</h3>
-              </div>
-
-              <div id="crewRoleButtons" class="crew-role-buttons">
-                <button class="crew-role-btn crew-role-conducteur selected" type="button" data-crew-role="Conducteur">Conducteur</button>
-                <button class="crew-role-btn crew-role-equipier" type="button" data-crew-role="Équipier">Équipier</button>
-                <button class="crew-role-btn crew-role-ide" type="button" data-crew-role="IDE">IDE</button>
-                <button class="crew-role-btn crew-role-medecin" type="button" data-crew-role="Médecin">Médecin</button>
-                <button class="crew-role-btn crew-role-ambulancier" type="button" data-crew-role="Ambulancier">Ambulancier</button>
-                <button class="crew-role-btn crew-role-observateur" type="button" data-crew-role="Observateur">Observateur</button>
-                <button class="crew-role-btn crew-role-autre" type="button" data-crew-role="Autre">Autre</button>
-              </div>
-
-              <div id="selectedCrewPreview" class="selected-crew-preview">
-                Sélectionne un collègue, puis son rôle.
-              </div>
-
-              <button id="addCrewToMissionBtn" class="crew-add-mission-btn validation-button" type="button" disabled>
-                Ajouter à la mission
-              </button>
-            </div>
-
-            <div class="crew-step-card">
-              <div class="crew-step-header">
-                <span class="crew-step-number">3</span>
-                <h3>Équipage actuel</h3>
-              </div>
-
-              <div id="missionCrewList" class="crew-list crew-mission-list">
-                Aucun équipage renseigné pour cette mission.
-              </div>
-            </div>
-
-            <details id="crewNewMemberDetails" class="crew-details">
-              <summary>Ajouter un collègue au carnet</summary>
-
-              <div class="crew-grid crew-form">
-                <label>
-                  Nom / Prénom
-                  <input id="crewMemberName" type="text" placeholder="Ex : Florian Guyet">
-                </label>
-
-                <label>
-                  Fonction habituelle
-                  <select id="crewMemberDefaultRole">
-                    <option value="">Non renseignée</option>
-                    <option value="Ambulancier">Ambulancier</option>
-                    <option value="Conducteur ambulancier">Conducteur ambulancier</option>
-                    <option value="IDE">IDE</option>
-                    <option value="Médecin">Médecin</option>
-                    <option value="Aide-soignant">Aide-soignant</option>
-                    <option value="Secouriste">Secouriste</option>
-                    <option value="Autre">Autre</option>
-                  </select>
-                </label>
-
-                <label>
-                  Service / base
-                  <input id="crewMemberService" type="text" placeholder="Ex : SMUR Falaise">
-                </label>
-
-                <label>
-                  Note
-                  <input id="crewMemberNote" type="text" placeholder="Optionnel">
-                </label>
-              </div>
-
-              <button id="saveCrewMemberBtn" class="secondary validation-button" type="button">
-                Enregistrer dans le carnet
-              </button>
-            </details>
-
-            <details class="crew-details">
-              <summary>Gestion du carnet</summary>
-              <div id="crewRosterList" class="crew-list">
-                Aucun collègue enregistré.
-              </div>
-            </details>
-          </div>
-        </section>
+          <button id="teamSwipeNext" class="team-swipe-nav" type="button" aria-label="Section équipe suivante">
+            ›
+          </button>
+        </div>
       </div>
     </section>
 
@@ -280,170 +302,202 @@
           Départ, destination et arrivée à renseigner.
         </small>
 
-        <div id="missionRouteContent" class="mission-route-content">
-          <div id="routeDepartureCard" class="route-card">
-            <div class="route-card-title">
-              <span class="route-step">1</span>
-              <strong>Départ des lieux</strong>
-            </div>
+        <div id="missionRouteContent" class="mission-route-content route-swipe-content">
+          <div class="route-swipe-tabs" aria-label="Navigation parcours transport destination">
+            <button class="route-swipe-tab active" type="button" data-route-slide-target="0">
+              🧭 Parcours
+            </button>
 
-            <div class="route-grid">
-              <label>
-                Heure départ lieux
-                <input id="routeDepartureTime" type="time">
-              </label>
+            <button class="route-swipe-tab" type="button" data-route-slide-target="1">
+              🚑 Transport
+            </button>
 
-              <button class="route-now-btn validation-button" type="button" data-route-stamp="departure">
-                Maintenant
-              </button>
-            </div>
+            <button class="route-swipe-tab" type="button" data-route-slide-target="2">
+              🏥 Destination
+            </button>
           </div>
 
-          <div id="routeDestinationCard" class="route-card">
-            <div class="route-card-title">
-              <span class="route-step">2</span>
-              <strong>Destination</strong>
+          <div class="route-swipe-shell">
+            <button id="routeSwipePrev" class="route-swipe-nav" type="button" aria-label="Section précédente">
+              ‹
+            </button>
+
+            <div id="routeSwipeTrack" class="route-swipe-track">
+              <section class="route-swipe-slide" data-route-slide="0">
+                <div id="routeDepartureCard" class="route-card">
+                  <div class="route-card-title">
+                    <span class="route-step">1</span>
+                    <strong>Départ des lieux</strong>
+                  </div>
+
+                  <div class="route-grid">
+                    <label>
+                      Heure départ lieux
+                      <input id="routeDepartureTime" type="time">
+                    </label>
+
+                    <button class="route-now-btn validation-button" type="button" data-route-stamp="departure">
+                      Maintenant
+                    </button>
+                  </div>
+                </div>
+
+                <div id="routeJunctionCard" class="route-card route-junction-card">
+                  <div class="route-card-title">
+                    <span class="route-step">J</span>
+                    <strong>Jonction</strong>
+                  </div>
+
+                  <label class="route-check">
+                    <input id="routeJunctionEnabled" type="checkbox">
+                    <span>Jonction réalisée ou prévue</span>
+                  </label>
+
+                  <div class="route-grid route-grid-two">
+                    <label>
+                      Heure jonction
+                      <input id="routeJunctionTime" type="time">
+                    </label>
+
+                    <button class="route-now-btn validation-button" type="button" data-route-stamp="junction">
+                      Maintenant
+                    </button>
+
+                    <label>
+                      Lieu de jonction
+                      <input id="routeJunctionPlace" type="text" placeholder="Ex : péage, aire, commune...">
+                    </label>
+
+                    <label>
+                      Jonction avec
+                      <input id="routeJunctionWith" type="text" placeholder="Ex : UMH Caen, VSAV, ambulance...">
+                    </label>
+                  </div>
+                </div>
+              </section>
+
+              <section class="route-swipe-slide" data-route-slide="1">
+                <div id="routeTransportCard" class="route-card">
+                  <div class="route-card-title">
+                    <span class="route-step">2</span>
+                    <strong>Transport</strong>
+                  </div>
+
+                  <div class="route-grid route-grid-two">
+                    <label>
+                      Type de transport
+                      <select id="routeTransportType">
+                        <option value="">Non renseigné</option>
+                        <option value="Primaire">Primaire</option>
+                        <option value="Secondaire">Secondaire</option>
+                        <option value="Jonction">Jonction</option>
+                        <option value="Renfort / relève">Renfort / relève</option>
+                        <option value="Retour base">Retour base</option>
+                        <option value="Autre">Autre</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Vecteur
+                      <select id="routeTransportVector">
+                        <option value="">Non renseigné</option>
+                        <option value="UMH">UMH</option>
+                        <option value="VSAV">VSAV</option>
+                        <option value="Ambulance privée">Ambulance privée</option>
+                        <option value="HéliSMUR">HéliSMUR</option>
+                        <option value="Véhicule léger médical">Véhicule léger médical</option>
+                        <option value="Autre">Autre</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Modalité
+                      <select id="routeTransportMode">
+                        <option value="">Non renseignée</option>
+                        <option value="Transport médicalisé">Transport médicalisé</option>
+                        <option value="Transport paramédicalisé">Transport paramédicalisé</option>
+                        <option value="Transport non médicalisé">Transport non médicalisé</option>
+                        <option value="Couché brancardisé">Couché brancardisé</option>
+                        <option value="Assis">Assis</option>
+                        <option value="Autre">Autre</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Surveillance
+                      <select id="routeTransportMonitoring">
+                        <option value="">Non renseignée</option>
+                        <option value="Stable">Stable</option>
+                        <option value="Surveillance rapprochée">Surveillance rapprochée</option>
+                        <option value="Instable / réévaluations fréquentes">Instable / réévaluations fréquentes</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Accompagnant / équipe
+                      <input id="routeTransportTeam" type="text" placeholder="Ex : IDE + médecin, IDE seul, VSAV...">
+                    </label>
+                  </div>
+                </div>
+
+                <div class="route-card">
+                  <div class="route-card-title">
+                    <span class="route-step">+</span>
+                    <strong>Note transport</strong>
+                  </div>
+
+                  <textarea id="routeTransportNote" rows="2" placeholder="Ex : patient stable pendant transport, aggravation, réévaluation, difficulté d’accès..."></textarea>
+                </div>
+              </section>
+
+              <section class="route-swipe-slide" data-route-slide="2">
+                <div id="routeDestinationCard" class="route-card">
+                  <div class="route-card-title">
+                    <span class="route-step">3</span>
+                    <strong>Destination</strong>
+                  </div>
+
+                  <div class="route-grid route-grid-two">
+                    <label>
+                      Destination
+                      <input id="routeDestinationName" type="text" placeholder="Ex : CH Falaise, CHU Caen, domicile...">
+                    </label>
+
+                    <label>
+                      Service / lieu d’accueil
+                      <input id="routeDestinationService" type="text" placeholder="Ex : SAU, déchocage, réanimation...">
+                    </label>
+                  </div>
+                </div>
+
+                <div id="routeArrivalCard" class="route-card">
+                  <div class="route-card-title">
+                    <span class="route-step">4</span>
+                    <strong>Arrivée destination</strong>
+                  </div>
+
+                  <div class="route-grid">
+                    <label>
+                      Heure arrivée destination
+                      <input id="routeArrivalTime" type="time">
+                    </label>
+
+                    <button class="route-now-btn validation-button" type="button" data-route-stamp="arrival">
+                      Maintenant
+                    </button>
+                  </div>
+
+                  <label class="route-check">
+                    <input id="routeTransmissionDone" type="checkbox">
+                    <span>Transmission réalisée à l’équipe receveuse</span>
+                  </label>
+                </div>
+              </section>
             </div>
 
-            <div class="route-grid route-grid-two">
-              <label>
-                Destination
-                <input id="routeDestinationName" type="text" placeholder="Ex : CH Falaise, CHU Caen, domicile...">
-              </label>
-
-              <label>
-                Service / lieu d’accueil
-                <input id="routeDestinationService" type="text" placeholder="Ex : SAU, déchocage, réanimation...">
-              </label>
-            </div>
-          </div>
-
-          <div id="routeTransportCard" class="route-card">
-            <div class="route-card-title">
-              <span class="route-step">3</span>
-              <strong>Transport</strong>
-            </div>
-
-            <div class="route-grid route-grid-two">
-              <label>
-                Type de transport
-                <select id="routeTransportType">
-                  <option value="">Non renseigné</option>
-                  <option value="Primaire">Primaire</option>
-                  <option value="Secondaire">Secondaire</option>
-                  <option value="Jonction">Jonction</option>
-                  <option value="Renfort / relève">Renfort / relève</option>
-                  <option value="Retour base">Retour base</option>
-                  <option value="Autre">Autre</option>
-                </select>
-              </label>
-
-              <label>
-                Vecteur
-                <select id="routeTransportVector">
-                  <option value="">Non renseigné</option>
-                  <option value="UMH">UMH</option>
-                  <option value="VSAV">VSAV</option>
-                  <option value="Ambulance privée">Ambulance privée</option>
-                  <option value="HéliSMUR">HéliSMUR</option>
-                  <option value="Véhicule léger médical">Véhicule léger médical</option>
-                  <option value="Autre">Autre</option>
-                </select>
-              </label>
-
-              <label>
-                Modalité
-                <select id="routeTransportMode">
-                  <option value="">Non renseignée</option>
-                  <option value="Transport médicalisé">Transport médicalisé</option>
-                  <option value="Transport paramédicalisé">Transport paramédicalisé</option>
-                  <option value="Transport non médicalisé">Transport non médicalisé</option>
-                  <option value="Couché brancardisé">Couché brancardisé</option>
-                  <option value="Assis">Assis</option>
-                  <option value="Autre">Autre</option>
-                </select>
-              </label>
-
-              <label>
-                Surveillance
-                <select id="routeTransportMonitoring">
-                  <option value="">Non renseignée</option>
-                  <option value="Stable">Stable</option>
-                  <option value="Surveillance rapprochée">Surveillance rapprochée</option>
-                  <option value="Instable / réévaluations fréquentes">Instable / réévaluations fréquentes</option>
-                </select>
-              </label>
-
-              <label>
-                Accompagnant / équipe
-                <input id="routeTransportTeam" type="text" placeholder="Ex : IDE + médecin, IDE seul, VSAV...">
-              </label>
-            </div>
-          </div>
-
-          <div id="routeJunctionCard" class="route-card route-junction-card">
-            <div class="route-card-title">
-              <span class="route-step">J</span>
-              <strong>Jonction</strong>
-            </div>
-
-            <label class="route-check">
-              <input id="routeJunctionEnabled" type="checkbox">
-              <span>Jonction réalisée ou prévue</span>
-            </label>
-
-            <div class="route-grid route-grid-two">
-              <label>
-                Heure jonction
-                <input id="routeJunctionTime" type="time">
-              </label>
-
-              <button class="route-now-btn validation-button" type="button" data-route-stamp="junction">
-                Maintenant
-              </button>
-
-              <label>
-                Lieu de jonction
-                <input id="routeJunctionPlace" type="text" placeholder="Ex : péage, aire, commune...">
-              </label>
-
-              <label>
-                Jonction avec
-                <input id="routeJunctionWith" type="text" placeholder="Ex : UMH Caen, VSAV, ambulance...">
-              </label>
-            </div>
-          </div>
-
-          <div id="routeArrivalCard" class="route-card">
-            <div class="route-card-title">
-              <span class="route-step">4</span>
-              <strong>Arrivée destination</strong>
-            </div>
-
-            <div class="route-grid">
-              <label>
-                Heure arrivée destination
-                <input id="routeArrivalTime" type="time">
-              </label>
-
-              <button class="route-now-btn validation-button" type="button" data-route-stamp="arrival">
-                Maintenant
-              </button>
-            </div>
-
-            <label class="route-check">
-              <input id="routeTransmissionDone" type="checkbox">
-              <span>Transmission réalisée à l’équipe receveuse</span>
-            </label>
-          </div>
-
-          <div class="route-card">
-            <div class="route-card-title">
-              <span class="route-step">+</span>
-              <strong>Note transport</strong>
-            </div>
-
-            <textarea id="routeTransportNote" rows="2" placeholder="Ex : patient stable pendant transport, aggravation, réévaluation, difficulté d’accès..."></textarea>
+            <button id="routeSwipeNext" class="route-swipe-nav" type="button" aria-label="Section suivante">
+              ›
+            </button>
           </div>
 
           <div class="route-actions">
@@ -469,115 +523,187 @@
 
       <small id="patientIdentitySummary" class="collapse-summary">Identité non renseignée</small>
 
-      <div id="patientIdentityContent" class="collapsible-content">
-        <div class="identity-grid">
-          <label>
-            Nom / Prénom
-            <input id="patientName" type="text" placeholder="Ex : Dupont Jean / Inconnu">
-          </label>
+      <div id="patientIdentityContent" class="collapsible-content patient-swipe-content">
+        <div class="patient-swipe-tabs" aria-label="Navigation identité patient">
+          <button class="patient-swipe-tab active" type="button" data-patient-slide-target="0">
+            👤 Identité
+          </button>
 
-          <label>
-            Âge ou date de naissance
-            <input id="patientAge" type="text" placeholder="Ex : 68 ans / 12-04-1958">
-          </label>
+          <button class="patient-swipe-tab" type="button" data-patient-slide-target="1">
+            ⚕️ Antécédents
+          </button>
 
-          <label>
-            Sexe
-            <select id="patientSex">
-              <option value="">Non renseigné</option>
-              <option value="Homme">Homme</option>
-              <option value="Femme">Femme</option>
-              <option value="Indéterminé">Indéterminé</option>
-            </select>
-          </label>
-
-          <label>
-            Catégorie patient
-            <select id="patientCategory">
-              <option value="">Non renseignée</option>
-              <option value="adulte">Adulte / &gt; 10 ans</option>
-              <option value="enfant-5-10">Enfant 5 à 10 ans</option>
-              <option value="enfant-1-5">Enfant 1 à 5 ans</option>
-              <option value="nourrisson-3-12">Nourrisson 3 à 12 mois</option>
-            </select>
-          </label>
-
-          <label>
-            Poids estimé
-            <input id="patientWeight" type="text" inputmode="numeric" placeholder="Ex : 80 kg">
-          </label>
-
-          <label class="full-width">
-            Remarque
-            <textarea id="patientNote" rows="2" placeholder="Ex : identité confirmée par famille, papiers absents, bracelet patient..."></textarea>
-          </label>
+          <button class="patient-swipe-tab" type="button" data-patient-slide-target="2">
+            📝 Notes
+          </button>
         </div>
 
-        <details class="patient-subblock antecedents-subblock" open>
-          <summary>Antécédents / risques utiles</summary>
+        <div class="patient-swipe-shell">
+          <button id="patientSwipePrev" class="patient-swipe-nav" type="button" aria-label="Section identité précédente">
+            ‹
+          </button>
 
-          <div class="patient-antecedents-grid">
-            <label>
-              Allergies
-              <textarea id="patientAllergies" rows="2" placeholder="Ex : pénicilline, iode, latex..."></textarea>
-            </label>
+          <div id="patientSwipeTrack" class="patient-swipe-track">
+            <section class="patient-swipe-slide" data-patient-slide="0">
+              <div class="patient-slide-card">
+                <div class="patient-slide-title">
+                  <span class="patient-slide-step">1</span>
+                  <strong>Identité patient</strong>
+                </div>
 
-            <label>
-              Antécédents médicaux
-              <textarea id="patientMedicalHistory" rows="2" placeholder="Ex : cardiopathie, asthme, épilepsie..."></textarea>
-            </label>
+                <div class="identity-grid">
+                  <label>
+                    Nom / Prénom
+                    <input id="patientName" type="text" placeholder="Identité si connue">
+                  </label>
 
-            <label>
-              Traitements habituels
-              <textarea id="patientCurrentTreatment" rows="2" placeholder="Ex : AVK, AOD, insuline, bêtabloquant..."></textarea>
-            </label>
+                  <label>
+                    Sexe
+                    <select id="patientSex">
+                      <option value="">À compléter</option>
+                      <option value="Féminin">Féminin</option>
+                      <option value="Masculin">Masculin</option>
+                      <option value="Non précisé">Non précisé</option>
+                    </select>
+                  </label>
 
-            <label>
-              Remarque utile
-              <textarea id="patientAntecedentsNote" rows="2" placeholder="Contexte, information famille, dossier, bracelet..."></textarea>
-            </label>
+                  <label>
+                    Catégorie patient
+                    <select id="patientCategory">
+                      <option value="">Automatique / à compléter</option>
+                      <option value="adulte">Adulte</option>
+                      <option value="enfant-5-10">Enfant 5-10 ans</option>
+                      <option value="enfant-1-5">Enfant 1-5 ans</option>
+                      <option value="nourrisson-3-12">Nourrisson 3-12 mois</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="patient-roller-grid">
+                  <label>
+                    Âge
+                    <select id="patientAge" data-patient-default="40">
+                      <option value="">Non renseigné</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Unité
+                    <select id="patientAgeUnit">
+                      <option value="years">ans</option>
+                      <option value="months">mois</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Poids estimé
+                    <select id="patientWeight" data-patient-default="70">
+                      <option value="">Non renseigné</option>
+                    </select>
+                  </label>
+                </div>
+
+                <small class="patient-roller-help">
+                  L’âge et le poids affichent une valeur pratique pour ouvrir la roulette, mais ne sont enregistrés que s’ils sont modifiés.
+                </small>
+              </div>
+            </section>
+
+            <section class="patient-swipe-slide" data-patient-slide="1">
+              <div class="patient-slide-card">
+                <div class="patient-slide-title">
+                  <span class="patient-slide-step">2</span>
+                  <strong>Antécédents / risques utiles</strong>
+                </div>
+
+                <div class="patient-antecedents-grid">
+                  <label>
+                    Allergies
+                    <textarea id="patientAllergies" rows="2" placeholder="Ex : pénicilline, iode, latex..."></textarea>
+                  </label>
+
+                  <label>
+                    Antécédents médicaux
+                    <textarea id="patientMedicalHistory" rows="2" placeholder="Ex : cardiopathie, asthme, épilepsie..."></textarea>
+                  </label>
+
+                  <label>
+                    Traitements habituels
+                    <textarea id="patientCurrentTreatment" rows="2" placeholder="Ex : AVK, AOD, insuline, bêtabloquant..."></textarea>
+                  </label>
+                </div>
+
+                <div class="antecedents-flags">
+                  <label class="antecedent-chip">
+                    <input id="patientAnticoagulantCheck" type="checkbox">
+                    <span>Anticoagulant / antiagrégant</span>
+                  </label>
+
+                  <label class="antecedent-chip">
+                    <input id="patientDiabetesCheck" type="checkbox">
+                    <span>Diabète</span>
+                  </label>
+
+                  <label class="antecedent-chip">
+                    <input id="patientEpilepsyCheck" type="checkbox">
+                    <span>Épilepsie</span>
+                  </label>
+
+                  <label class="antecedent-chip">
+                    <input id="patientCardiacHistoryCheck" type="checkbox">
+                    <span>Cardiaque</span>
+                  </label>
+
+                  <label class="antecedent-chip">
+                    <input id="patientRespHistoryCheck" type="checkbox">
+                    <span>Respiratoire</span>
+                  </label>
+
+                  <label class="antecedent-chip">
+                    <input id="patientPregnancyCheck" type="checkbox">
+                    <span>Grossesse possible</span>
+                  </label>
+                </div>
+
+                <small id="patientAntecedentsSummary" class="antecedents-summary">
+                  Aucun antécédent renseigné.
+                </small>
+              </div>
+            </section>
+
+            <section class="patient-swipe-slide" data-patient-slide="2">
+              <div class="patient-slide-card">
+                <div class="patient-slide-title">
+                  <span class="patient-slide-step">3</span>
+                  <strong>Notes / contexte</strong>
+                </div>
+
+                <label class="patient-note-label">
+                  Remarque identité / contexte
+                  <textarea id="patientNote" rows="3" placeholder="Ex : identité incertaine, famille présente, dossier, bracelet, contexte particulier..."></textarea>
+                </label>
+
+                <label class="patient-note-label">
+                  Remarque antécédents
+                  <textarea id="patientAntecedentsNote" rows="3" placeholder="Information famille, dossier médical, traitement retrouvé, incertitude..."></textarea>
+                </label>
+              </div>
+            </section>
           </div>
 
-          <div class="antecedents-flags">
-            <label class="antecedent-chip">
-              <input id="patientAnticoagulantCheck" type="checkbox">
-              <span>Anticoagulant / antiagrégant</span>
-            </label>
+          <button id="patientSwipeNext" class="patient-swipe-nav" type="button" aria-label="Section identité suivante">
+            ›
+          </button>
+        </div>
 
-            <label class="antecedent-chip">
-              <input id="patientDiabetesCheck" type="checkbox">
-              <span>Diabète</span>
-            </label>
+        <div class="patient-actions">
+          <button id="saveIdentity" class="primary validation-button" type="button">
+            Enregistrer identité
+          </button>
 
-            <label class="antecedent-chip">
-              <input id="patientEpilepsyCheck" type="checkbox">
-              <span>Épilepsie</span>
-            </label>
-
-            <label class="antecedent-chip">
-              <input id="patientCardiacHistoryCheck" type="checkbox">
-              <span>Cardiaque</span>
-            </label>
-
-            <label class="antecedent-chip">
-              <input id="patientRespHistoryCheck" type="checkbox">
-              <span>Respiratoire</span>
-            </label>
-
-            <label class="antecedent-chip">
-              <input id="patientPregnancyCheck" type="checkbox">
-              <span>Grossesse possible</span>
-            </label>
-          </div>
-
-          <small id="patientAntecedentsSummary" class="antecedents-summary">
-            Aucun antécédent renseigné.
-          </small>
-        </details>
-
-        <div class="timer-actions">
-          <button id="saveIdentityBtn" class="primary">Enregistrer identité</button>
-          <button id="unknownIdentityBtn" class="secondary">Identité inconnue</button>
+          <button id="unknownIdentity" class="secondary validation-button" type="button">
+            Patient non identifié
+          </button>
         </div>
       </div>
     </section>
@@ -3002,7 +3128,7 @@
     </section>
   </div>
 
-  <script src="./app.js?v=182"></script>
+  <script src="./app.js?v=185"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>

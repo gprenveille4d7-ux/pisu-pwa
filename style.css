@@ -4916,3 +4916,399 @@ body.charter-open .sound-toggle-button {
     min-height: 122px;
   }
 }
+
+/* =========================================================
+   EQUIPE INTERVENTION - SWIPE INTERNE
+   ========================================================= */
+
+.team-swipe-content {
+  display: grid;
+  gap: 12px;
+}
+
+.team-swipe-tabs {
+  position: sticky;
+  top: var(--accordion-nested-sticky-top, 172px);
+  z-index: 2200;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.team-swipe-tab {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.team-swipe-tab.active {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.48);
+  color: #cffafe;
+}
+
+.team-swipe-shell {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.team-swipe-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding: 2px 2px 10px;
+}
+
+.team-swipe-track::-webkit-scrollbar {
+  height: 0;
+}
+
+.team-swipe-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  box-sizing: border-box;
+}
+
+.team-swipe-nav {
+  width: 34px;
+  height: 64px;
+  margin-top: 10px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.86);
+  color: #e2e8f0;
+  font-size: 1.65rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.team-swipe-nav:disabled {
+  opacity: 0.25;
+}
+
+.team-block:not(.collapsed) > #teamSummary {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .team-swipe-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .team-swipe-nav {
+    display: none;
+  }
+
+  .team-swipe-slide {
+    flex-basis: 100%;
+  }
+}
+
+/* =========================================================
+   PARCOURS / TRANSPORT / DESTINATION - SWIPE INTERNE
+   ========================================================= */
+
+.route-swipe-content {
+  display: grid;
+  gap: 12px;
+}
+
+.route-swipe-tabs {
+  position: sticky;
+  top: var(--accordion-nested-sticky-top, 172px);
+  z-index: 2100;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.route-swipe-tab {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.route-swipe-tab.active {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.48);
+  color: #cffafe;
+}
+
+.route-swipe-shell {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.route-swipe-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding: 2px 2px 10px;
+}
+
+.route-swipe-track::-webkit-scrollbar {
+  height: 0;
+}
+
+.route-swipe-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  display: grid;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.route-swipe-nav {
+  width: 34px;
+  height: 64px;
+  margin-top: 10px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.86);
+  color: #e2e8f0;
+  font-size: 1.65rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.route-swipe-nav:disabled {
+  opacity: 0.25;
+}
+
+body.vitals-sheet-open .route-swipe-tabs {
+  z-index: 1 !important;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .route-swipe-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .route-swipe-nav {
+    display: none;
+  }
+
+  .route-swipe-tab {
+    font-size: 0.72rem;
+    padding: 0 6px;
+  }
+}
+
+/* =========================================================
+   IDENTITE PATIENT - SWIPE INTERNE
+   ========================================================= */
+
+.patient-swipe-content {
+  display: grid;
+  gap: 12px;
+}
+
+.patient-swipe-tabs {
+  position: sticky;
+  top: var(--accordion-nested-sticky-top, 172px);
+  z-index: 2100;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.patient-swipe-tab {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.patient-swipe-tab.active {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.48);
+  color: #cffafe;
+}
+
+.patient-swipe-shell {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.patient-swipe-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding: 2px 2px 10px;
+}
+
+.patient-swipe-track::-webkit-scrollbar {
+  height: 0;
+}
+
+.patient-swipe-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  display: grid;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.patient-swipe-nav {
+  width: 34px;
+  height: 64px;
+  margin-top: 10px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.86);
+  color: #e2e8f0;
+  font-size: 1.65rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.patient-swipe-nav:disabled {
+  opacity: 0.25;
+}
+
+.patient-slide-card {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.patient-slide-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e2e8f0;
+}
+
+.patient-slide-step {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #bfdbfe;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.patient-roller-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.8fr 1.1fr;
+  gap: 10px;
+}
+
+.patient-roller-grid label,
+.patient-note-label {
+  display: grid;
+  gap: 5px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.patient-roller-grid select,
+.patient-note-label textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  padding: 9px 10px;
+  font-size: 0.92rem;
+}
+
+.patient-note-label textarea {
+  resize: vertical;
+}
+
+.patient-roller-help {
+  color: #94a3b8;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.patient-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.patient-actions button {
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 14px;
+  font-weight: 900;
+}
+
+body.vitals-sheet-open .patient-swipe-tabs {
+  z-index: 1 !important;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .patient-swipe-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-swipe-nav {
+    display: none;
+  }
+
+  .patient-swipe-tab {
+    font-size: 0.72rem;
+    padding: 0 6px;
+  }
+
+  .patient-roller-grid {
+    grid-template-columns: 1fr;
+  }
+}
