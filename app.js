@@ -3589,6 +3589,25 @@ function scrollToTeamSlide(index, behavior = "smooth") {
     inline: "start",
     block: "nearest"
   });
+
+  window.setTimeout(updateTeamSwipeUi, 220);
+}
+
+function updateTeamSwipeHeight() {
+  if (!teamSwipeTrack) return;
+
+  const slides = getTeamSwipeSlides();
+
+  if (slides.length === 0) return;
+
+  const index = getCurrentTeamSwipeIndex();
+  const activeSlide = slides[index];
+
+  if (!activeSlide) return;
+
+  window.requestAnimationFrame(() => {
+    teamSwipeTrack.style.height = `${activeSlide.scrollHeight + 4}px`;
+  });
 }
 
 function updateTeamSwipeUi() {
@@ -3607,6 +3626,8 @@ function updateTeamSwipeUi() {
     const targetIndex = Number(tab.dataset.teamSlideTarget);
     tab.classList.toggle("active", targetIndex === index);
   });
+
+  updateTeamSwipeHeight();
 }
 
 function setupTeamSwipeFeature() {
@@ -6390,14 +6411,14 @@ function updateSelectedCrewPreview() {
   if (!member) {
     selectedCrewPreview.textContent = "Sélectionne un collègue, puis son rôle.";
     addCrewToMissionBtn.disabled = true;
-    addCrewToMissionBtn.className = "crew-add-mission-btn validation-button";
+    addCrewToMissionBtn.className = "crew-add-mission-btn validation-button compact-main-button";
     return;
   }
 
   selectedCrewPreview.textContent = `${member.name} sera ajouté comme ${selectedCrewMissionRole}.`;
 
   addCrewToMissionBtn.disabled = false;
-  addCrewToMissionBtn.className = `crew-add-mission-btn validation-button ${getCrewRoleClass(selectedCrewMissionRole)}`;
+  addCrewToMissionBtn.className = `crew-add-mission-btn validation-button compact-main-button ${getCrewRoleClass(selectedCrewMissionRole)}`;
 }
 
 function selectCrewMember(memberId) {
@@ -6560,6 +6581,10 @@ function renderCrewFeature() {
   renderCrewRosterList();
   updateCrewSummary();
   updateSelectedCrewPreview();
+
+  window.requestAnimationFrame(() => {
+    updateTeamSwipeUi?.();
+  });
 }
 
 function clearCrewMemberForm() {
@@ -6586,7 +6611,8 @@ function saveCrewMemberToRoster() {
     alert("Ce collègue existe déjà dans le carnet.");
     selectedCrewMemberId = existing.id;
     renderCrewFeature();
-    scrollToTeamSlide?.(1, "auto");
+    scrollToTeamSlide?.(1, "smooth");
+    window.setTimeout(updateTeamSwipeUi, 260);
     return;
   }
 
@@ -6610,7 +6636,8 @@ function saveCrewMemberToRoster() {
   }
 
   renderCrewFeature();
-  scrollToTeamSlide?.(1, "auto");
+  scrollToTeamSlide?.(1, "smooth");
+  window.setTimeout(updateTeamSwipeUi, 260);
   markButtonValidated(saveCrewMemberBtn, "Collègue enregistré ✓");
   updateTeamSummary?.();
 
@@ -6661,6 +6688,7 @@ function addSelectedCrewToMission() {
 
   renderCrewFeature();
   scrollToTeamSlide?.(1, "auto");
+  window.setTimeout(updateTeamSwipeUi, 80);
   markButtonValidated(addCrewToMissionBtn, "Ajouté ✓");
   updateTeamSummary?.();
 
@@ -6749,11 +6777,16 @@ function setupCrewFeature() {
   addCrewToMissionBtn?.addEventListener("click", addSelectedCrewToMission);
 
   openNewCrewMemberBtn?.addEventListener("click", () => {
-    if (crewNewMemberDetails) {
-      crewNewMemberDetails.open = true;
-    }
+    scrollToTeamSlide?.(2, "smooth");
 
-    crewMemberNameInput?.focus();
+    window.setTimeout(() => {
+      if (crewNewMemberDetails) {
+        crewNewMemberDetails.open = true;
+      }
+
+      crewMemberNameInput?.focus();
+      updateTeamSwipeUi?.();
+    }, 250);
   });
 
   crewRoleButtons?.addEventListener("click", event => {

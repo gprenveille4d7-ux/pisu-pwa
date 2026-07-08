@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=186">
+  <link rel="stylesheet" href="./style.css?v=187">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -103,138 +103,122 @@
         Intervenant et équipage à renseigner.
       </small>
 
-      <div id="teamContent" class="collapsible-content team-content team-swipe-content">
-        <div class="team-swipe-tabs" aria-label="Navigation équipe intervention">
+      <div id="teamContent" class="collapsible-content team-content team-swipe-content team-compact-content">
+        <div class="team-swipe-tabs compact-tabs" aria-label="Navigation équipe intervention">
           <button class="team-swipe-tab active" type="button" data-team-slide-target="0">
             👤 Intervenant
           </button>
 
           <button class="team-swipe-tab" type="button" data-team-slide-target="1">
-            🚑 Équipage
+            🚑 Mission
+          </button>
+
+          <button class="team-swipe-tab" type="button" data-team-slide-target="2">
+            📒 Carnet
           </button>
         </div>
 
-        <div class="team-swipe-shell">
+        <div class="team-swipe-shell compact-swipe-shell">
           <button id="teamSwipePrev" class="team-swipe-nav" type="button" aria-label="Section équipe précédente">
             ‹
           </button>
 
-          <div id="teamSwipeTrack" class="team-swipe-track">
-            <section class="team-swipe-slide team-subcard responder-block" data-team-slide="0">
-              <div class="team-subtitle">
-                <span class="team-subicon">👤</span>
+          <div id="teamSwipeTrack" class="team-swipe-track compact-swipe-track">
+            <section class="team-swipe-slide team-subcard responder-block team-compact-slide" data-team-slide="0">
+              <div class="team-compact-title">
                 <strong>Intervenant principal</strong>
+                <small id="responderSummary">Intervenant non renseigné</small>
               </div>
 
-              <small id="responderSummary" class="collapse-summary">
-                Intervenant non renseigné
-              </small>
-
               <div id="responderContent" class="responder-content">
-                <div class="identity-grid">
+                <div class="responder-compact-grid">
                   <label>
-                    Nom / Prénom
-                    <input id="responderName" type="text" placeholder="Ex : Guillaume Prenveille">
+                    Nom
+                    <input id="responderName" type="text" placeholder="Guillaume Prenveille">
                   </label>
 
                   <label>
-                    Fonction / rang
-                    <select id="responderRole">
-                      <option value="">Non renseigné</option>
-                      <option value="IDE">IDE</option>
-                      <option value="Ambulancier">Ambulancier</option>
-                      <option value="Médecin">Médecin</option>
-                      <option value="Aide-soignant">Aide-soignant</option>
-                      <option value="Secouriste">Secouriste</option>
-                      <option value="Autre">Autre</option>
-                    </select>
+                    Fonction
+                    <input id="responderRole" type="text" placeholder="IDE">
                   </label>
 
                   <label>
-                    Service / unité
-                    <input id="responderService" type="text" placeholder="Ex : Urgences / SMUR Falaise">
+                    Service
+                    <input id="responderService" type="text" placeholder="SMUR Falaise">
                   </label>
                 </div>
 
-                <button id="saveResponderBtn" class="primary validation-button" type="button">
+                <button id="saveResponderBtn" class="primary validation-button compact-main-button" type="button">
                   Enregistrer intervenant
                 </button>
               </div>
             </section>
 
-            <section class="team-swipe-slide team-subcard crew-block" data-team-slide="1">
-              <div class="team-subtitle">
-                <span class="team-subicon">🚑</span>
+            <section class="team-swipe-slide team-subcard crew-block team-compact-slide" data-team-slide="1">
+              <div class="team-compact-title">
                 <strong>Équipage mission</strong>
+                <small id="crewSummary" class="crew-summary">Aucun équipage sélectionné</small>
               </div>
 
-              <small id="crewSummary" class="collapse-summary crew-summary">
-                Aucun équipage sélectionné
-              </small>
-
-              <div id="crewContent" class="crew-content-v2">
-                <div class="crew-step-card">
-                  <div class="crew-step-header">
-                    <span class="crew-step-number">1</span>
-                    <h3>Choisir un collègue</h3>
-                  </div>
-
-                  <div id="crewQuickRoster" class="crew-quick-roster">
+              <div id="crewContent" class="crew-content-v2 crew-compact-mission">
+                <div class="crew-compact-zone">
+                  <div class="crew-compact-label">Collègue</div>
+                  <div id="crewQuickRoster" class="crew-quick-roster crew-horizontal-list">
                     Aucun collègue enregistré.
                   </div>
-
-                  <button id="openNewCrewMemberBtn" class="crew-new-btn" type="button">
-                    + Nouveau collègue
-                  </button>
                 </div>
 
-                <div class="crew-step-card">
-                  <div class="crew-step-header">
-                    <span class="crew-step-number">2</span>
-                    <h3>Choisir son rôle</h3>
-                  </div>
+                <div class="crew-compact-zone">
+                  <div class="crew-compact-label">Rôle mission</div>
 
-                  <div id="crewRoleButtons" class="crew-role-buttons">
+                  <div id="crewRoleButtons" class="crew-role-buttons crew-role-compact-grid">
                     <button class="crew-role-btn crew-role-conducteur selected" type="button" data-crew-role="Conducteur">Conducteur</button>
                     <button class="crew-role-btn crew-role-equipier" type="button" data-crew-role="Équipier">Équipier</button>
                     <button class="crew-role-btn crew-role-ide" type="button" data-crew-role="IDE">IDE</button>
                     <button class="crew-role-btn crew-role-medecin" type="button" data-crew-role="Médecin">Médecin</button>
                     <button class="crew-role-btn crew-role-ambulancier" type="button" data-crew-role="Ambulancier">Ambulancier</button>
-                    <button class="crew-role-btn crew-role-observateur" type="button" data-crew-role="Observateur">Observateur</button>
                     <button class="crew-role-btn crew-role-autre" type="button" data-crew-role="Autre">Autre</button>
                   </div>
-
-                  <div id="selectedCrewPreview" class="selected-crew-preview">
-                    Sélectionne un collègue, puis son rôle.
-                  </div>
-
-                  <button id="addCrewToMissionBtn" class="crew-add-mission-btn validation-button" type="button" disabled>
-                    Ajouter à la mission
-                  </button>
                 </div>
 
-                <div class="crew-step-card">
-                  <div class="crew-step-header">
-                    <span class="crew-step-number">3</span>
-                    <h3>Équipage actuel</h3>
-                  </div>
+                <div id="selectedCrewPreview" class="selected-crew-preview compact-preview">
+                  Sélectionne un collègue, puis son rôle.
+                </div>
 
-                  <div id="missionCrewList" class="crew-list crew-mission-list">
-                    Aucun équipage renseigné pour cette mission.
+                <button id="addCrewToMissionBtn" class="crew-add-mission-btn validation-button compact-main-button" type="button" disabled>
+                  Ajouter à la mission
+                </button>
+
+                <div class="crew-compact-zone">
+                  <div class="crew-compact-label">Équipage actuel</div>
+                  <div id="missionCrewList" class="crew-list crew-mission-list compact-mission-list">
+                    Aucun équipage renseigné.
                   </div>
                 </div>
 
-                <details id="crewNewMemberDetails" class="crew-details">
-                  <summary>Ajouter un collègue au carnet</summary>
+                <button id="openNewCrewMemberBtn" class="crew-new-btn compact-secondary-button" type="button">
+                  + Ajouter au carnet
+                </button>
+              </div>
+            </section>
 
-                  <div class="crew-grid crew-form">
+            <section class="team-swipe-slide team-subcard team-compact-slide" data-team-slide="2">
+              <div class="team-compact-title">
+                <strong>Carnet équipage</strong>
+                <small>Ajouter ou gérer les collègues enregistrés.</small>
+              </div>
+
+              <details id="crewNewMemberDetails" class="crew-details compact-details" open>
+                <summary>Nouveau collègue</summary>
+
+                <div class="crew-grid crew-form compact-crew-form">
                     <label>
-                      Nom / Prénom
-                      <input id="crewMemberName" type="text" placeholder="Ex : Florian Guyet">
+                      Nom
+                      <input id="crewMemberName" type="text" placeholder="Florian Guyet">
                     </label>
 
                     <label>
-                      Fonction habituelle
+                      Fonction
                       <select id="crewMemberDefaultRole">
                         <option value="">Non renseignée</option>
                         <option value="Ambulancier">Ambulancier</option>
@@ -248,28 +232,27 @@
                     </label>
 
                     <label>
-                      Service / base
-                      <input id="crewMemberService" type="text" placeholder="Ex : SMUR Falaise">
+                      Service
+                      <input id="crewMemberService" type="text" placeholder="SMUR Falaise">
                     </label>
 
                     <label>
                       Note
                       <input id="crewMemberNote" type="text" placeholder="Optionnel">
                     </label>
-                  </div>
+                </div>
 
-                  <button id="saveCrewMemberBtn" class="secondary validation-button" type="button">
-                    Enregistrer dans le carnet
-                  </button>
-                </details>
+                <button id="saveCrewMemberBtn" class="secondary validation-button compact-main-button" type="button">
+                  Enregistrer dans le carnet
+                </button>
+              </details>
 
-                <details class="crew-details">
-                  <summary>Gestion du carnet</summary>
-                  <div id="crewRosterList" class="crew-list">
-                    Aucun collègue enregistré.
-                  </div>
-                </details>
-              </div>
+              <details class="crew-details compact-details">
+                <summary>Gestion du carnet</summary>
+                <div id="crewRosterList" class="crew-list compact-roster-list">
+                  Aucun collègue enregistré.
+                </div>
+              </details>
             </section>
           </div>
 
@@ -3128,7 +3111,7 @@
     </section>
   </div>
 
-  <script src="./app.js?v=186"></script>
+  <script src="./app.js?v=187"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>

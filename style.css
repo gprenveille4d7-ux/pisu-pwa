@@ -5312,3 +5312,272 @@ body.vitals-sheet-open .patient-swipe-tabs {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   EQUIPE INTERVENTION - VERSION COMPACTE
+   ========================================================= */
+
+.team-compact-content {
+  gap: 8px;
+}
+
+.team-compact-content .team-swipe-tabs {
+  min-height: 34px;
+  gap: 5px;
+  padding: 3px;
+}
+
+.team-compact-content .team-swipe-tab {
+  min-height: 34px;
+  font-size: 0.76rem;
+  padding: 0 6px;
+}
+
+.compact-swipe-shell {
+  gap: 6px;
+}
+
+.compact-swipe-track {
+  align-items: flex-start;
+  overflow-y: hidden;
+  transition: height 0.18s ease;
+}
+
+.team-compact-slide {
+  gap: 8px;
+  padding: 9px;
+  border-radius: 16px;
+}
+
+.team-compact-title {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.team-compact-title strong {
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  line-height: 1.1;
+}
+
+.team-compact-title small {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.responder-compact-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.65fr 1.2fr;
+  gap: 7px;
+}
+
+.responder-compact-grid label,
+.compact-crew-form label {
+  display: grid;
+  gap: 4px;
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.responder-compact-grid input,
+.compact-crew-form input,
+.compact-crew-form select {
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 7px 9px;
+  font-size: 0.84rem;
+}
+
+.compact-main-button {
+  min-height: 38px !important;
+  border-radius: 999px !important;
+  padding: 0 12px !important;
+  font-size: 0.82rem !important;
+  font-weight: 900 !important;
+}
+
+.compact-secondary-button {
+  min-height: 34px;
+  justify-self: start;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+}
+
+.crew-compact-mission {
+  display: grid;
+  gap: 7px;
+}
+
+.crew-compact-zone {
+  display: grid;
+  gap: 5px;
+}
+
+.crew-compact-label {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.crew-horizontal-list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.crew-horizontal-list::-webkit-scrollbar {
+  height: 0;
+}
+
+.crew-person-chip {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 0.78rem;
+}
+
+.crew-role-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.crew-role-compact-grid .crew-role-btn {
+  min-height: 34px;
+  padding: 0 6px;
+  font-size: 0.72rem;
+  line-height: 1.05;
+}
+
+.compact-preview {
+  min-height: 34px;
+  padding: 7px 9px;
+  border-radius: 12px;
+  font-size: 0.74rem;
+  line-height: 1.2;
+}
+
+.compact-mission-list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 7px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compact-mission-list::-webkit-scrollbar {
+  height: 0;
+}
+
+.compact-mission-list .crew-role-card {
+  flex: 0 0 76%;
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 14px;
+  gap: 5px;
+}
+
+.compact-mission-list .crew-role-card-main {
+  font-size: 0.82rem;
+  line-height: 1.15;
+}
+
+.compact-mission-list .crew-role-card-meta {
+  font-size: 0.68rem;
+  line-height: 1.15;
+}
+
+.compact-mission-list .crew-role-card-actions {
+  margin-top: 2px;
+}
+
+.compact-mission-list .crew-mini-btn {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 0.68rem;
+}
+
+.compact-details {
+  padding: 8px;
+  border-radius: 14px;
+}
+
+.compact-details > summary {
+  min-height: 34px !important;
+  padding: 7px 10px !important;
+  font-size: 0.78rem !important;
+  border-radius: 12px !important;
+}
+
+.compact-crew-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.compact-roster-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.compact-roster-list .crew-item {
+  padding: 7px;
+  border-radius: 12px;
+}
+
+.compact-roster-list .crew-item-main {
+  font-size: 0.78rem;
+}
+
+.compact-roster-list .crew-item-meta {
+  font-size: 0.66rem;
+  line-height: 1.15;
+}
+
+@media (max-width: 700px) {
+  .responder-compact-grid {
+    grid-template-columns: 1fr 0.55fr;
+  }
+
+  .responder-compact-grid label:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .crew-role-compact-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .compact-crew-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .compact-main-button {
+    min-height: 36px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .crew-role-compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .compact-crew-form {
+    grid-template-columns: 1fr;
+  }
+}
