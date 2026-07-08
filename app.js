@@ -829,11 +829,19 @@ const patientWeightInput = document.getElementById("patientWeight");
 const patientNoteInput = document.getElementById("patientNote");
 const patientCategoryInput = document.getElementById("patientCategory");
 const patientAgeUnitInput = document.getElementById("patientAgeUnit");
-const patientSwipeTrack = document.getElementById("patientSwipeTrack");
-const patientSwipePrev = document.getElementById("patientSwipePrev");
-const patientSwipeNext = document.getElementById("patientSwipeNext");
-const patientSwipeTabs = Array.from(document.querySelectorAll("[data-patient-slide-target]"));
-const saveIdentityBtn = document.getElementById("saveIdentity");
+const identitySwipeTrack = document.getElementById("identitySwipeTrack");
+const identitySwipePrev = document.getElementById("identitySwipePrev");
+const identitySwipeNext = document.getElementById("identitySwipeNext");
+const identitySwipeTabs = Array.from(document.querySelectorAll("[data-identity-slide-target]"));
+const patientSwipeTrack = identitySwipeTrack || document.getElementById("patientSwipeTrack");
+const patientSwipePrev = identitySwipePrev || document.getElementById("patientSwipePrev");
+const patientSwipeNext = identitySwipeNext || document.getElementById("patientSwipeNext");
+const patientSwipeTabs = identitySwipeTabs.length > 0
+  ? identitySwipeTabs
+  : Array.from(document.querySelectorAll("[data-patient-slide-target]"));
+const saveIdentityBtn = document.getElementById("savePatientIdentityBtn") || document.getElementById("saveIdentity");
+const savePatientHistoryBtn = document.getElementById("savePatientHistoryBtn");
+const savePatientNotesBtn = document.getElementById("savePatientNotesBtn");
 const unknownIdentityBtn = document.getElementById("unknownIdentity");
 const patientAllergiesInput = document.getElementById("patientAllergies");
 const patientMedicalHistoryInput = document.getElementById("patientMedicalHistory");
@@ -890,7 +898,7 @@ const missionRouteSummary = document.getElementById("missionRouteSummary");
 const routeDepartureCard = document.getElementById("routeDepartureCard");
 const routeDestinationCard = document.getElementById("routeDestinationCard");
 const routeTransportCard = document.getElementById("routeTransportCard");
-const routeJunctionCard = document.getElementById("routeJunctionCard");
+const routeJunctionCard = document.getElementById("routeJunctionCard") || document.getElementById("routeJunctionCompactDetails");
 const routeArrivalCard = document.getElementById("routeArrivalCard");
 const routeDepartureTimeInput = document.getElementById("routeDepartureTime");
 const routeDestinationNameInput = document.getElementById("routeDestinationName");
@@ -2948,8 +2956,17 @@ document.querySelectorAll("[data-action]").forEach(button => {
   });
 });
 
-saveIdentityBtn.addEventListener("click", savePatientIdentity);
-unknownIdentityBtn.addEventListener("click", setUnknownIdentity);
+saveIdentityBtn?.addEventListener("click", savePatientIdentity);
+savePatientHistoryBtn?.addEventListener("click", () => {
+  savePatientAntecedents();
+  markButtonValidated?.(savePatientHistoryBtn, "Antécédents enregistrés ✓");
+});
+savePatientNotesBtn?.addEventListener("click", () => {
+  savePatientIdentity({ silent: true });
+  savePatientAntecedents();
+  markButtonValidated?.(savePatientNotesBtn, "Notes enregistrées ✓");
+});
+unknownIdentityBtn?.addEventListener("click", setUnknownIdentity);
 
 const startTimerBtn = document.getElementById("startTimer");
 const resetTimerBtn = document.getElementById("resetTimer");
@@ -3718,6 +3735,29 @@ function scrollToRouteSlide(index, behavior = "smooth") {
     inline: "start",
     block: "nearest"
   });
+
+  window.setTimeout(updateRouteSwipeUi, 220);
+}
+
+function updateRouteSwipeHeight() {
+  if (!routeSwipeTrack) return;
+
+  const slides = getRouteSwipeSlides();
+
+  if (slides.length === 0) return;
+
+  const index = getCurrentRouteSwipeIndex();
+  const activeSlide = slides[index];
+
+  if (!activeSlide) return;
+
+  window.requestAnimationFrame(() => {
+    const height = activeSlide.scrollHeight;
+
+    if (height > 0) {
+      routeSwipeTrack.style.height = `${height + 6}px`;
+    }
+  });
 }
 
 function updateRouteSwipeUi() {
@@ -3736,6 +3776,8 @@ function updateRouteSwipeUi() {
     const targetIndex = Number(tab.dataset.routeSlideTarget);
     tab.classList.toggle("active", targetIndex === index);
   });
+
+  updateRouteSwipeHeight();
 }
 
 function setupRouteSwipeFeature() {
@@ -3769,43 +3811,76 @@ function setupRouteSwipeFeature() {
     }, 80);
   });
 
+  document.querySelectorAll(".route-compact-content details").forEach(details => {
+    details.addEventListener("toggle", () => {
+      window.setTimeout(() => {
+        updateRouteSwipeUi?.();
+      }, 80);
+    });
+  });
+
   updateRouteSwipeUi();
 }
 
-function getPatientSwipeSlides() {
-  if (!patientSwipeTrack) return [];
-  return Array.from(patientSwipeTrack.querySelectorAll("[data-patient-slide]"));
+function getIdentitySwipeSlides() {
+  if (!identitySwipeTrack) return [];
+  return Array.from(identitySwipeTrack.querySelectorAll("[data-identity-slide]"));
 }
 
-function getCurrentPatientSwipeIndex() {
-  const slides = getPatientSwipeSlides();
+function getCurrentIdentitySwipeIndex() {
+  if (!identitySwipeTrack) return 0;
 
-  if (!patientSwipeTrack || slides.length === 0) return 0;
+  const slides = getIdentitySwipeSlides();
+  if (slides.length === 0) return 0;
 
-  const trackRect = patientSwipeTrack.getBoundingClientRect();
-  const trackCenter = trackRect.left + trackRect.width / 2;
+  const left = identitySwipeTrack.scrollLeft;
+  const width = identitySwipeTrack.clientWidth || 1;
 
-  let closestIndex = 0;
-  let closestDistance = Infinity;
+  return Math.max(0, Math.min(slides.length - 1, Math.round(left / width)));
+}
 
-  slides.forEach((slide, index) => {
-    const rect = slide.getBoundingClientRect();
-    const center = rect.left + rect.width / 2;
-    const distance = Math.abs(center - trackCenter);
+function updateIdentitySwipeHeight() {
+  if (!identitySwipeTrack) return;
 
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestIndex = index;
+  const slides = getIdentitySwipeSlides();
+  if (!slides.length) return;
+
+  const index = getCurrentIdentitySwipeIndex();
+  const activeSlide = slides[index];
+  if (!activeSlide) return;
+
+  window.requestAnimationFrame(() => {
+    const height = activeSlide.scrollHeight;
+
+    if (height > 0) {
+      identitySwipeTrack.style.height = `${height + 6}px`;
     }
   });
-
-  return closestIndex;
 }
 
-function scrollToPatientSlide(index, behavior = "smooth") {
-  const slides = getPatientSwipeSlides();
+function updateIdentitySwipeUi() {
+  const slides = getIdentitySwipeSlides();
+  const index = getCurrentIdentitySwipeIndex();
 
-  if (!patientSwipeTrack || slides.length === 0) return;
+  if (identitySwipePrev) {
+    identitySwipePrev.disabled = index <= 0;
+  }
+
+  if (identitySwipeNext) {
+    identitySwipeNext.disabled = index >= slides.length - 1;
+  }
+
+  identitySwipeTabs.forEach(tab => {
+    const targetIndex = Number(tab.dataset.identitySlideTarget);
+    tab.classList.toggle("active", targetIndex === index);
+  });
+
+  updateIdentitySwipeHeight();
+}
+
+function scrollToIdentitySlide(index, behavior = "smooth") {
+  const slides = getIdentitySwipeSlides();
+  if (!identitySwipeTrack || !slides.length) return;
 
   const safeIndex = Math.max(0, Math.min(index, slides.length - 1));
 
@@ -3814,58 +3889,64 @@ function scrollToPatientSlide(index, behavior = "smooth") {
     inline: "start",
     block: "nearest"
   });
+
+  window.setTimeout(updateIdentitySwipeUi, 220);
 }
 
-function updatePatientSwipeUi() {
-  const slides = getPatientSwipeSlides();
-  const index = getCurrentPatientSwipeIndex();
+function setupIdentitySwipeFeature() {
+  if (!identitySwipeTrack) return;
 
-  if (patientSwipePrev) {
-    patientSwipePrev.disabled = index <= 0;
-  }
-
-  if (patientSwipeNext) {
-    patientSwipeNext.disabled = index >= slides.length - 1;
-  }
-
-  patientSwipeTabs.forEach(tab => {
-    const targetIndex = Number(tab.dataset.patientSlideTarget);
-    tab.classList.toggle("active", targetIndex === index);
-  });
-}
-
-function setupPatientSwipeFeature() {
-  if (!patientSwipeTrack) return;
-
-  patientSwipePrev?.addEventListener("click", () => {
-    scrollToPatientSlide(getCurrentPatientSwipeIndex() - 1);
-  });
-
-  patientSwipeNext?.addEventListener("click", () => {
-    scrollToPatientSlide(getCurrentPatientSwipeIndex() + 1);
-  });
-
-  patientSwipeTabs.forEach(tab => {
+  identitySwipeTabs.forEach(tab => {
     tab.addEventListener("click", () => {
-      const targetIndex = Number(tab.dataset.patientSlideTarget);
+      const index = Number(tab.dataset.identitySlideTarget);
 
-      if (!Number.isFinite(targetIndex)) return;
+      if (!Number.isFinite(index)) return;
 
-      scrollToPatientSlide(targetIndex);
+      scrollToIdentitySlide(index);
     });
+  });
+
+  identitySwipePrev?.addEventListener("click", () => {
+    scrollToIdentitySlide(getCurrentIdentitySwipeIndex() - 1);
+  });
+
+  identitySwipeNext?.addEventListener("click", () => {
+    scrollToIdentitySlide(getCurrentIdentitySwipeIndex() + 1);
   });
 
   let scrollTimer = null;
 
-  patientSwipeTrack.addEventListener("scroll", () => {
+  identitySwipeTrack.addEventListener("scroll", () => {
     window.clearTimeout(scrollTimer);
 
     scrollTimer = window.setTimeout(() => {
-      updatePatientSwipeUi();
+      updateIdentitySwipeUi();
     }, 80);
   });
 
-  updatePatientSwipeUi();
+  window.addEventListener("resize", updateIdentitySwipeUi);
+
+  updateIdentitySwipeUi();
+}
+
+function getPatientSwipeSlides() {
+  return getIdentitySwipeSlides();
+}
+
+function getCurrentPatientSwipeIndex() {
+  return getCurrentIdentitySwipeIndex();
+}
+
+function scrollToPatientSlide(index, behavior = "smooth") {
+  scrollToIdentitySlide(index, behavior);
+}
+
+function updatePatientSwipeUi() {
+  updateIdentitySwipeUi();
+}
+
+function setupPatientSwipeFeature() {
+  setupIdentitySwipeFeature();
 }
 
 function setupProtocolOpeners() {
@@ -7034,7 +7115,7 @@ setupProtocolOpeners?.();
 setupTeamSwipeFeature?.();
 setupRouteSwipeFeature?.();
 setupPatientRollerFeature?.();
-setupPatientSwipeFeature?.();
+setupIdentitySwipeFeature?.();
 setupPatientIdentityValidationFeedback?.();
 setupPisuSoundFeature();
 setupImmediateCall15SoundWatcher?.();

@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=189">
+  <link rel="stylesheet" href="./style.css?v=191">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -285,8 +285,8 @@
           Départ, destination et arrivée à renseigner.
         </small>
 
-        <div id="missionRouteContent" class="mission-route-content route-swipe-content">
-          <div class="route-swipe-tabs" aria-label="Navigation parcours transport destination">
+        <div id="missionRouteContent" class="mission-route-content route-swipe-content route-compact-content">
+          <div class="route-swipe-tabs route-compact-tabs" aria-label="Navigation parcours transport destination">
             <button class="route-swipe-tab active" type="button" data-route-slide-target="0">
               🧭 Parcours
             </button>
@@ -300,75 +300,77 @@
             </button>
           </div>
 
-          <div class="route-swipe-shell">
+          <div class="route-swipe-shell route-compact-shell">
             <button id="routeSwipePrev" class="route-swipe-nav" type="button" aria-label="Section précédente">
               ‹
             </button>
 
-            <div id="routeSwipeTrack" class="route-swipe-track">
-              <section class="route-swipe-slide" data-route-slide="0">
-                <div id="routeDepartureCard" class="route-card">
-                  <div class="route-card-title">
+            <div id="routeSwipeTrack" class="route-swipe-track route-compact-track">
+              <section class="route-swipe-slide route-compact-slide" data-route-slide="0">
+                <div id="routeDepartureCard" class="route-compact-card">
+                  <div class="route-compact-title">
                     <span class="route-step">1</span>
                     <strong>Départ des lieux</strong>
                   </div>
 
-                  <div class="route-grid">
+                  <div class="route-compact-inline">
                     <label>
-                      Heure départ lieux
+                      Heure départ
                       <input id="routeDepartureTime" type="time">
                     </label>
 
-                    <button class="route-now-btn validation-button" type="button" data-route-stamp="departure">
+                    <button class="route-now-btn validation-button route-mini-button" type="button" data-route-stamp="departure">
                       Maintenant
                     </button>
                   </div>
                 </div>
 
-                <div id="routeJunctionCard" class="route-card route-junction-card">
-                  <div class="route-card-title">
+                <details id="routeJunctionCompactDetails" class="route-compact-card route-compact-details">
+                  <summary>
                     <span class="route-step">J</span>
                     <strong>Jonction</strong>
-                  </div>
+                  </summary>
 
-                  <label class="route-check">
+                  <label class="route-check route-compact-check">
                     <input id="routeJunctionEnabled" type="checkbox">
                     <span>Jonction réalisée ou prévue</span>
                   </label>
 
-                  <div class="route-grid route-grid-two">
+                  <div class="route-compact-inline">
                     <label>
                       Heure jonction
                       <input id="routeJunctionTime" type="time">
                     </label>
 
-                    <button class="route-now-btn validation-button" type="button" data-route-stamp="junction">
+                    <button class="route-now-btn validation-button route-mini-button" type="button" data-route-stamp="junction">
                       Maintenant
                     </button>
+                  </div>
 
+                  <div class="route-compact-two">
                     <label>
-                      Lieu de jonction
-                      <input id="routeJunctionPlace" type="text" placeholder="Ex : péage, aire, commune...">
+                      Lieu
+                      <input id="routeJunctionPlace" type="text" placeholder="Péage, aire, commune...">
                     </label>
 
                     <label>
-                      Jonction avec
-                      <input id="routeJunctionWith" type="text" placeholder="Ex : UMH Caen, VSAV, ambulance...">
+                      Avec
+                      <input id="routeJunctionWith" type="text" placeholder="UMH, VSAV, ambulance...">
                     </label>
                   </div>
-                </div>
+                </details>
               </section>
 
-              <section class="route-swipe-slide" data-route-slide="1">
-                <div id="routeTransportCard" class="route-card">
-                  <div class="route-card-title">
+              <section class="route-swipe-slide route-compact-slide" data-route-slide="1">
+                <div id="routeTransportCard" class="route-compact-card">
+                  <div class="route-compact-title">
                     <span class="route-step">2</span>
                     <strong>Transport</strong>
                   </div>
 
-                  <div class="route-grid route-grid-two">
+                  <div class="route-compact-two">
                     <label>
-                      Type de transport
+                      Type
                       <select id="routeTransportType">
                         <option value="">Non renseigné</option>
                         <option value="Primaire">Primaire</option>
@@ -415,64 +417,58 @@
                         <option value="Instable / réévaluations fréquentes">Instable / réévaluations fréquentes</option>
                       </select>
                     </label>
-
-                    <label>
-                      Accompagnant / équipe
-                      <input id="routeTransportTeam" type="text" placeholder="Ex : IDE + médecin, IDE seul, VSAV...">
-                    </label>
-                  </div>
-                </div>
-
-                <div class="route-card">
-                  <div class="route-card-title">
-                    <span class="route-step">+</span>
-                    <strong>Note transport</strong>
                   </div>
 
-                  <textarea id="routeTransportNote" rows="2" placeholder="Ex : patient stable pendant transport, aggravation, réévaluation, difficulté d’accès..."></textarea>
+                  <label>
+                    Équipe / accompagnant
+                    <input id="routeTransportTeam" type="text" placeholder="IDE + médecin, IDE seul, VSAV...">
+                  </label>
+
+                  <label>
+                    Note transport
+                    <textarea id="routeTransportNote" rows="2" placeholder="Stable, aggravation, difficulté d’accès..."></textarea>
+                  </label>
                 </div>
               </section>
 
-              <section class="route-swipe-slide" data-route-slide="2">
-                <div id="routeDestinationCard" class="route-card">
-                  <div class="route-card-title">
+              <section class="route-swipe-slide route-compact-slide" data-route-slide="2">
+                <div id="routeDestinationCard" class="route-compact-card">
+                  <div class="route-compact-title">
                     <span class="route-step">3</span>
                     <strong>Destination</strong>
                   </div>
 
-                  <div class="route-grid route-grid-two">
-                    <label>
-                      Destination
-                      <input id="routeDestinationName" type="text" placeholder="Ex : CH Falaise, CHU Caen, domicile...">
-                    </label>
+                  <label>
+                    Destination
+                    <input id="routeDestinationName" type="text" placeholder="CH Falaise, CHU Caen, domicile...">
+                  </label>
 
-                    <label>
-                      Service / lieu d’accueil
-                      <input id="routeDestinationService" type="text" placeholder="Ex : SAU, déchocage, réanimation...">
-                    </label>
-                  </div>
+                  <label>
+                    Service / lieu d’accueil
+                    <input id="routeDestinationService" type="text" placeholder="SAU, déchocage, réanimation...">
+                  </label>
                 </div>
 
-                <div id="routeArrivalCard" class="route-card">
-                  <div class="route-card-title">
+                <div id="routeArrivalCard" class="route-compact-card">
+                  <div class="route-compact-title">
                     <span class="route-step">4</span>
-                    <strong>Arrivée destination</strong>
+                    <strong>Arrivée</strong>
                   </div>
 
-                  <div class="route-grid">
+                  <div class="route-compact-inline">
                     <label>
-                      Heure arrivée destination
+                      Heure arrivée
                       <input id="routeArrivalTime" type="time">
                     </label>
 
-                    <button class="route-now-btn validation-button" type="button" data-route-stamp="arrival">
+                    <button class="route-now-btn validation-button route-mini-button" type="button" data-route-stamp="arrival">
                       Maintenant
                     </button>
                   </div>
 
-                  <label class="route-check">
+                  <label class="route-check route-compact-check">
                     <input id="routeTransmissionDone" type="checkbox">
-                    <span>Transmission réalisée à l’équipe receveuse</span>
+                    <span>Transmission réalisée</span>
                   </label>
                 </div>
               </section>
@@ -483,13 +479,13 @@
             </button>
           </div>
 
-          <div class="route-actions">
-            <button id="saveMissionRouteBtn" class="primary validation-button" type="button">
+          <div class="route-compact-actions">
+            <button id="saveMissionRouteBtn" class="primary validation-button route-save-button" type="button">
               Enregistrer parcours
             </button>
 
-            <button id="clearMissionRouteBtn" class="secondary danger" type="button">
-              Effacer parcours
+            <button id="clearMissionRouteBtn" class="secondary danger route-clear-button" type="button">
+              Effacer
             </button>
           </div>
         </div>
@@ -506,63 +502,50 @@
 
       <small id="patientIdentitySummary" class="collapse-summary">Identité non renseignée</small>
 
-      <div id="patientIdentityContent" class="collapsible-content patient-swipe-content">
-        <div class="patient-swipe-tabs" aria-label="Navigation identité patient">
-          <button class="patient-swipe-tab active" type="button" data-patient-slide-target="0">
+      <div id="patientIdentityContent" class="collapsible-content identity-compact-content">
+        <div class="identity-swipe-tabs identity-compact-tabs" aria-label="Navigation identité patient">
+          <button class="identity-swipe-tab active" type="button" data-identity-slide-target="0">
             👤 Identité
           </button>
 
-          <button class="patient-swipe-tab" type="button" data-patient-slide-target="1">
+          <button class="identity-swipe-tab" type="button" data-identity-slide-target="1">
             ⚕️ Antécédents
           </button>
 
-          <button class="patient-swipe-tab" type="button" data-patient-slide-target="2">
+          <button class="identity-swipe-tab" type="button" data-identity-slide-target="2">
             📝 Notes
           </button>
         </div>
 
-        <div class="patient-swipe-shell">
-          <button id="patientSwipePrev" class="patient-swipe-nav" type="button" aria-label="Section identité précédente">
+        <div class="identity-swipe-shell identity-compact-shell">
+          <button id="identitySwipePrev" class="identity-swipe-nav" type="button" aria-label="Section précédente">
             ‹
           </button>
 
-          <div id="patientSwipeTrack" class="patient-swipe-track">
-            <section class="patient-swipe-slide" data-patient-slide="0">
-              <div class="patient-slide-card">
-                <div class="patient-slide-title">
-                  <span class="patient-slide-step">1</span>
+          <div id="identitySwipeTrack" class="identity-swipe-track identity-compact-track">
+            <section class="identity-swipe-slide identity-compact-slide" data-identity-slide="0">
+              <div class="identity-compact-card">
+                <div class="identity-compact-title">
+                  <span class="identity-step">1</span>
                   <strong>Identité patient</strong>
                 </div>
 
-                <div class="identity-grid">
+                <div class="identity-compact-two">
                   <label>
-                    Nom / Prénom
-                    <input id="patientName" type="text" placeholder="Identité si connue">
+                    Nom / prénom
+                    <input id="patientName" type="text" placeholder="Ex : Dupont Jean / Inconnu">
                   </label>
 
                   <label>
                     Sexe
                     <select id="patientSex">
-                      <option value="">À compléter</option>
+                      <option value="">Non renseigné</option>
                       <option value="Féminin">Féminin</option>
                       <option value="Masculin">Masculin</option>
                       <option value="Non précisé">Non précisé</option>
                     </select>
                   </label>
 
-                  <label>
-                    Catégorie patient
-                    <select id="patientCategory">
-                      <option value="">Automatique / à compléter</option>
-                      <option value="adulte">Adulte</option>
-                      <option value="enfant-5-10">Enfant 5-10 ans</option>
-                      <option value="enfant-1-5">Enfant 1-5 ans</option>
-                      <option value="nourrisson-3-12">Nourrisson 3-12 mois</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div class="patient-roller-grid">
                   <label>
                     Âge
                     <select id="patientAge" data-patient-default="40">
@@ -584,39 +567,54 @@
                       <option value="">Non renseigné</option>
                     </select>
                   </label>
+
+                  <label>
+                    Catégorie patient
+                    <select id="patientCategory">
+                      <option value="">Automatique / à compléter</option>
+                      <option value="adulte">Adulte</option>
+                      <option value="enfant-5-10">Enfant 5-10 ans</option>
+                      <option value="enfant-1-5">Enfant 1-5 ans</option>
+                      <option value="nourrisson-3-12">Nourrisson 3-12 mois</option>
+                    </select>
+                  </label>
                 </div>
 
-                <small class="patient-roller-help">
-                  L’âge et le poids affichent une valeur pratique pour ouvrir la roulette, mais ne sont enregistrés que s’ils sont modifiés.
-                </small>
+                <div class="identity-compact-actions">
+                  <button id="savePatientIdentityBtn" class="primary validation-button identity-save-button" type="button">
+                    Enregistrer identité
+                  </button>
+
+                  <button id="unknownIdentity" class="secondary validation-button identity-unknown-button" type="button">
+                    Patient non identifié
+                  </button>
+                </div>
               </div>
             </section>
 
-            <section class="patient-swipe-slide" data-patient-slide="1">
-              <div class="patient-slide-card">
-                <div class="patient-slide-title">
-                  <span class="patient-slide-step">2</span>
-                  <strong>Antécédents / risques utiles</strong>
+            <section class="identity-swipe-slide identity-compact-slide" data-identity-slide="1">
+              <div class="identity-compact-card">
+                <div class="identity-compact-title">
+                  <span class="identity-step">2</span>
+                  <strong>Antécédents utiles</strong>
                 </div>
 
-                <div class="patient-antecedents-grid">
-                  <label>
-                    Allergies
-                    <textarea id="patientAllergies" rows="2" placeholder="Ex : pénicilline, iode, latex..."></textarea>
-                  </label>
+                <label>
+                  Antécédents médicaux
+                  <textarea id="patientMedicalHistory" rows="3" placeholder="ATCD utiles..."></textarea>
+                </label>
 
-                  <label>
-                    Antécédents médicaux
-                    <textarea id="patientMedicalHistory" rows="2" placeholder="Ex : cardiopathie, asthme, épilepsie..."></textarea>
-                  </label>
+                <label>
+                  Allergies
+                  <textarea id="patientAllergies" rows="2" placeholder="Allergies connues..."></textarea>
+                </label>
 
-                  <label>
-                    Traitements habituels
-                    <textarea id="patientCurrentTreatment" rows="2" placeholder="Ex : AVK, AOD, insuline, bêtabloquant..."></textarea>
-                  </label>
-                </div>
+                <label>
+                  Traitements en cours
+                  <textarea id="patientCurrentTreatment" rows="2" placeholder="Traitements retrouvés / habituels..."></textarea>
+                </label>
 
-                <div class="antecedents-flags">
+                <div class="identity-compact-flags">
                   <label class="antecedent-chip">
                     <input id="patientAnticoagulantCheck" type="checkbox">
                     <span>Anticoagulant / antiagrégant</span>
@@ -651,41 +649,39 @@
                 <small id="patientAntecedentsSummary" class="antecedents-summary">
                   Aucun antécédent renseigné.
                 </small>
+
+                <button id="savePatientHistoryBtn" class="primary validation-button identity-save-button" type="button">
+                  Enregistrer antécédents
+                </button>
               </div>
             </section>
 
-            <section class="patient-swipe-slide" data-patient-slide="2">
-              <div class="patient-slide-card">
-                <div class="patient-slide-title">
-                  <span class="patient-slide-step">3</span>
+            <section class="identity-swipe-slide identity-compact-slide" data-identity-slide="2">
+              <div class="identity-compact-card">
+                <div class="identity-compact-title">
+                  <span class="identity-step">3</span>
                   <strong>Notes / contexte</strong>
                 </div>
 
-                <label class="patient-note-label">
+                <label>
                   Remarque identité / contexte
-                  <textarea id="patientNote" rows="3" placeholder="Ex : identité incertaine, famille présente, dossier, bracelet, contexte particulier..."></textarea>
+                  <textarea id="patientNote" rows="3" placeholder="Identité incertaine, famille présente, bracelet, dossier, contexte particulier..."></textarea>
                 </label>
 
-                <label class="patient-note-label">
+                <label>
                   Remarque antécédents
-                  <textarea id="patientAntecedentsNote" rows="3" placeholder="Information famille, dossier médical, traitement retrouvé, incertitude..."></textarea>
+                  <textarea id="patientAntecedentsNote" rows="3" placeholder="Info famille, dossier, traitement retrouvé..."></textarea>
                 </label>
+
+                <button id="savePatientNotesBtn" class="primary validation-button identity-save-button" type="button">
+                  Enregistrer notes
+                </button>
               </div>
             </section>
           </div>
 
-          <button id="patientSwipeNext" class="patient-swipe-nav" type="button" aria-label="Section identité suivante">
+          <button id="identitySwipeNext" class="identity-swipe-nav" type="button" aria-label="Section suivante">
             ›
-          </button>
-        </div>
-
-        <div class="patient-actions">
-          <button id="saveIdentity" class="primary validation-button" type="button">
-            Enregistrer identité
-          </button>
-
-          <button id="unknownIdentity" class="secondary validation-button" type="button">
-            Patient non identifié
           </button>
         </div>
       </div>
@@ -3111,7 +3107,7 @@
     </section>
   </div>
 
-  <script src="./app.js?v=189"></script>
+  <script src="./app.js?v=191"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>
