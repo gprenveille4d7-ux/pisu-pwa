@@ -3661,6 +3661,14 @@ function setupTeamSwipeFeature() {
     }, 80);
   });
 
+  document.querySelectorAll(".team-compact-content details").forEach(details => {
+    details.addEventListener("toggle", () => {
+      window.setTimeout(() => {
+        updateTeamSwipeUi?.();
+      }, 80);
+    });
+  });
+
   updateTeamSwipeUi();
 }
 
@@ -6631,7 +6639,7 @@ function saveCrewMemberToRoster() {
 
   clearCrewMemberForm();
 
-  if (crewNewMemberDetails) {
+  if (crewNewMemberDetails && "open" in crewNewMemberDetails) {
     crewNewMemberDetails.open = false;
   }
 
@@ -6780,10 +6788,6 @@ function setupCrewFeature() {
     scrollToTeamSlide?.(2, "smooth");
 
     window.setTimeout(() => {
-      if (crewNewMemberDetails) {
-        crewNewMemberDetails.open = true;
-      }
-
       crewMemberNameInput?.focus();
       updateTeamSwipeUi?.();
     }, 250);

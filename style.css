@@ -5581,3 +5581,129 @@ body.vitals-sheet-open .patient-swipe-tabs {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   FIX EQUIPE COMPACTE - OVERFLOW + CARNET
+   ========================================================= */
+
+.team-compact-content,
+.team-compact-content *,
+.team-compact-content *::before,
+.team-compact-content *::after {
+  box-sizing: border-box;
+}
+
+.team-compact-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.team-compact-content .team-swipe-track,
+.team-compact-content .team-swipe-slide,
+.team-compact-content .team-subcard,
+.team-compact-content .team-compact-slide,
+.team-compact-content .responder-content,
+.team-compact-content .crew-content-v2,
+.team-compact-content label {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.team-compact-content input,
+.team-compact-content select,
+.team-compact-content textarea,
+.team-compact-content button {
+  max-width: 100%;
+}
+
+.responder-compact-grid input,
+.compact-crew-form input,
+.compact-crew-form select {
+  width: 100%;
+  min-width: 0;
+}
+
+.responder-compact-grid {
+  grid-template-columns: minmax(0, 1.3fr) minmax(88px, 0.7fr);
+  gap: 8px;
+}
+
+.responder-compact-grid label {
+  min-width: 0;
+}
+
+.responder-compact-grid label:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+#saveResponderBtn {
+  width: min(100%, 360px);
+}
+
+.team-compact-content .crew-details > summary,
+.team-compact-content details.crew-details > summary,
+.team-compact-content .compact-details > summary {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+  transform: none !important;
+}
+
+.compact-details {
+  display: block;
+  overflow: visible;
+  padding: 8px;
+}
+
+.compact-details[open] > summary {
+  margin-bottom: 8px;
+}
+
+.compact-form-title {
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.compact-crew-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+#saveCrewMemberBtn {
+  width: min(100%, 360px);
+  margin-top: 8px;
+}
+
+.compact-roster-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.team-compact-slide {
+  align-content: start;
+}
+
+.compact-swipe-track {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+@media (max-width: 430px) {
+  .responder-compact-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .compact-crew-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .team-compact-content .team-swipe-tab {
+    font-size: 0.72rem;
+  }
+}

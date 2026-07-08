@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=187">
+  <link rel="stylesheet" href="./style.css?v=188">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -208,44 +208,44 @@
                 <small>Ajouter ou gérer les collègues enregistrés.</small>
               </div>
 
-              <details id="crewNewMemberDetails" class="crew-details compact-details" open>
-                <summary>Nouveau collègue</summary>
+              <div id="crewNewMemberDetails" class="compact-details compact-crew-form-card">
+                <div class="compact-form-title">Nouveau collègue</div>
 
                 <div class="crew-grid crew-form compact-crew-form">
-                    <label>
-                      Nom
-                      <input id="crewMemberName" type="text" placeholder="Florian Guyet">
-                    </label>
+                  <label>
+                    Nom
+                    <input id="crewMemberName" type="text" placeholder="Florian Guyet">
+                  </label>
 
-                    <label>
-                      Fonction
-                      <select id="crewMemberDefaultRole">
-                        <option value="">Non renseignée</option>
-                        <option value="Ambulancier">Ambulancier</option>
-                        <option value="Conducteur ambulancier">Conducteur ambulancier</option>
-                        <option value="IDE">IDE</option>
-                        <option value="Médecin">Médecin</option>
-                        <option value="Aide-soignant">Aide-soignant</option>
-                        <option value="Secouriste">Secouriste</option>
-                        <option value="Autre">Autre</option>
-                      </select>
-                    </label>
+                  <label>
+                    Fonction
+                    <select id="crewMemberDefaultRole">
+                      <option value="">Non renseignée</option>
+                      <option value="Ambulancier">Ambulancier</option>
+                      <option value="Conducteur ambulancier">Conducteur ambulancier</option>
+                      <option value="IDE">IDE</option>
+                      <option value="Médecin">Médecin</option>
+                      <option value="Aide-soignant">Aide-soignant</option>
+                      <option value="Secouriste">Secouriste</option>
+                      <option value="Autre">Autre</option>
+                    </select>
+                  </label>
 
-                    <label>
-                      Service
-                      <input id="crewMemberService" type="text" placeholder="SMUR Falaise">
-                    </label>
+                  <label>
+                    Service
+                    <input id="crewMemberService" type="text" placeholder="SMUR Falaise">
+                  </label>
 
-                    <label>
-                      Note
-                      <input id="crewMemberNote" type="text" placeholder="Optionnel">
-                    </label>
+                  <label>
+                    Note
+                    <input id="crewMemberNote" type="text" placeholder="Optionnel">
+                  </label>
                 </div>
 
                 <button id="saveCrewMemberBtn" class="secondary validation-button compact-main-button" type="button">
                   Enregistrer dans le carnet
                 </button>
-              </details>
+              </div>
 
               <details class="crew-details compact-details">
                 <summary>Gestion du carnet</summary>
@@ -3111,7 +3111,7 @@
     </section>
   </div>
 
-  <script src="./app.js?v=187"></script>
+  <script src="./app.js?v=188"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>
