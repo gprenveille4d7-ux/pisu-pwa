@@ -6233,3 +6233,222 @@ body.vitals-sheet-open .patient-swipe-tabs {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* =========================================================
+   CORRECTION DEBORDEMENTS INPUTS - PARCOURS / TRANSPORT
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.panel,
+.panel-content,
+.transport-block,
+.transport-content,
+.transport-swipe-shell,
+.transport-swipe-track,
+.transport-swipe-slide,
+.transport-card,
+.transport-card label,
+.transport-card .field,
+.transport-card .form-row,
+#missionRouteContent,
+.route-compact-content,
+.route-compact-shell,
+.route-compact-track,
+.route-compact-slide,
+.route-compact-card,
+.route-compact-card label,
+.route-compact-inline,
+.route-compact-two {
+  min-width: 0;
+}
+
+.transport-card,
+.transport-swipe-slide,
+.transport-content,
+.transport-block,
+.route-compact-card,
+.route-compact-slide,
+.route-compact-content,
+.mission-route-content {
+  overflow: hidden;
+}
+
+.transport-card input,
+.transport-card select,
+.transport-card textarea,
+.transport-content input,
+.transport-content select,
+.transport-content textarea,
+#missionRouteContent input,
+#missionRouteContent select,
+#missionRouteContent textarea,
+.route-compact-card input,
+.route-compact-card select,
+.route-compact-card textarea,
+.route-compact-content input,
+.route-compact-content select,
+.route-compact-content textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.transport-card input[type="text"],
+.transport-card input[type="time"],
+.transport-card input[type="number"],
+.transport-content input[type="text"],
+.transport-content input[type="time"],
+.transport-content input[type="number"],
+#missionRouteContent input[type="text"],
+#missionRouteContent input[type="time"],
+#missionRouteContent input[type="number"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.transport-card .two-cols,
+.transport-card .grid-2,
+.transport-card .form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.transport-card,
+.route-compact-card {
+  width: 100%;
+  max-width: 100%;
+  padding: 14px;
+  border-radius: 22px;
+  box-sizing: border-box;
+}
+
+.transport-card label,
+.route-compact-card label {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.transport-card input,
+.route-compact-card input {
+  height: 52px;
+}
+
+.transport-card,
+.transport-card > div,
+.transport-card > label,
+.route-compact-card,
+.route-compact-card > div,
+.route-compact-card > label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#journeyBlock input,
+#journeyBlock select,
+#journeyBlock textarea,
+#transportBlock input,
+#transportBlock select,
+#transportBlock textarea,
+#parcoursBlock input,
+#parcoursBlock select,
+#parcoursBlock textarea,
+#missionRouteContent input,
+#missionRouteContent select,
+#missionRouteContent textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: block;
+}
+
+#journeyBlock .panel,
+#transportBlock .panel,
+#parcoursBlock .panel,
+#journeyBlock .card,
+#transportBlock .card,
+#parcoursBlock .card,
+#missionRouteContent,
+#missionRouteContent .route-compact-card {
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* =========================================================
+   FIX IDENTITE - NOTES TROP HAUTES
+   ========================================================= */
+
+#patientIdentityContent,
+.patient-swipe-content,
+.patient-compact-content,
+.identity-compact-content {
+  min-height: 0 !important;
+  overflow: hidden;
+}
+
+#patientSwipeTrack,
+#identitySwipeTrack,
+.patient-swipe-track,
+.identity-swipe-track {
+  align-items: flex-start !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  min-height: 0 !important;
+  transition: height 0.18s ease;
+}
+
+.patient-swipe-slide,
+.identity-swipe-slide,
+.patient-compact-slide,
+.identity-compact-slide {
+  align-content: start !important;
+  align-self: flex-start !important;
+  min-height: 0 !important;
+}
+
+.patient-slide-card,
+.patient-compact-card,
+.identity-compact-card {
+  align-content: start !important;
+  min-height: 0 !important;
+}
+
+[data-patient-slide="2"] textarea,
+[data-identity-slide="2"] textarea {
+  min-height: 78px !important;
+  height: 86px !important;
+  max-height: 110px !important;
+  resize: vertical;
+}
+
+[data-patient-slide="2"],
+[data-identity-slide="2"] {
+  gap: 8px !important;
+}
+
+[data-patient-slide="2"] .patient-slide-card,
+[data-patient-slide="2"] .patient-compact-card,
+[data-patient-slide="2"] .identity-compact-card,
+[data-identity-slide="2"] .patient-slide-card,
+[data-identity-slide="2"] .patient-compact-card,
+[data-identity-slide="2"] .identity-compact-card {
+  gap: 9px !important;
+  padding: 10px !important;
+}
+
+#savePatientNotesBtn,
+#saveIdentityNotesBtn {
+  min-height: 40px !important;
+  margin-top: 2px !important;
+  border-radius: 999px !important;
+}

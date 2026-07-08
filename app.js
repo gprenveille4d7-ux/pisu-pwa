@@ -3850,11 +3850,25 @@ function updateIdentitySwipeHeight() {
   if (!activeSlide) return;
 
   window.requestAnimationFrame(() => {
-    const height = activeSlide.scrollHeight;
+    const height = Math.ceil(activeSlide.scrollHeight);
 
     if (height > 0) {
       identitySwipeTrack.style.height = `${height + 6}px`;
     }
+  });
+}
+
+function setupIdentityNotesHeightRefresh() {
+  [
+    document.getElementById("patientNote"),
+    document.getElementById("patientAntecedentsNote"),
+    document.getElementById("patientIdentityRemark"),
+    document.getElementById("patientFreeNote")
+  ].forEach(field => {
+    field?.addEventListener("input", () => {
+      updatePatientSwipeUi?.();
+      updateIdentitySwipeUi?.();
+    });
   });
 }
 
@@ -7116,6 +7130,7 @@ setupTeamSwipeFeature?.();
 setupRouteSwipeFeature?.();
 setupPatientRollerFeature?.();
 setupIdentitySwipeFeature?.();
+setupIdentityNotesHeightRefresh?.();
 setupPatientIdentityValidationFeedback?.();
 setupPisuSoundFeature();
 setupImmediateCall15SoundWatcher?.();
