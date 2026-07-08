@@ -5707,3 +5707,55 @@ body.vitals-sheet-open .patient-swipe-tabs {
     font-size: 0.72rem;
   }
 }
+
+/* =========================================================
+   FIX POSITION TABS EQUIPE - SOUS LE TITRE, NON FLOTTANT
+   ========================================================= */
+
+.team-compact-content {
+  display: grid;
+  gap: 10px;
+}
+
+.team-compact-content .team-swipe-tabs,
+.team-compact-content .compact-tabs {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  transform: none !important;
+  order: 0;
+  margin: 8px 0 6px;
+  width: 100%;
+}
+
+.team-compact-content .team-swipe-shell,
+.team-compact-content .compact-swipe-shell {
+  order: 1;
+  margin-top: 0;
+}
+
+.team-swipe-track .team-swipe-tabs {
+  position: static !important;
+  display: none !important;
+}
+
+.team-block .collapsible-content {
+  padding-top: 8px;
+}
+
+.team-compact-content .team-subcard,
+.team-compact-content .team-compact-slide {
+  margin-top: 0;
+}
+
+.team-compact-content .team-swipe-track {
+  padding-top: 0;
+  align-items: flex-start;
+}
+
+.team-compact-content .team-swipe-slide {
+  align-self: flex-start;
+}

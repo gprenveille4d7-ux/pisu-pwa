@@ -3606,7 +3606,11 @@ function updateTeamSwipeHeight() {
   if (!activeSlide) return;
 
   window.requestAnimationFrame(() => {
-    teamSwipeTrack.style.height = `${activeSlide.scrollHeight + 4}px`;
+    const height = activeSlide.scrollHeight;
+
+    if (height > 0) {
+      teamSwipeTrack.style.height = `${height + 6}px`;
+    }
   });
 }
 
@@ -5110,6 +5114,10 @@ function setupCollapsiblePanel(panel, toggleBtn, content, storageKey, options = 
     }
 
     updateAccordionStickyOffsets?.();
+
+    window.setTimeout(() => {
+      updateTeamSwipeUi?.();
+    }, 120);
   });
 }
 
