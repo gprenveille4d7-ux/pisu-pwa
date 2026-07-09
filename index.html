@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=193">
+  <link rel="stylesheet" href="./style.css?v=194">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -578,6 +578,37 @@
                       <option value="nourrisson-3-12">Nourrisson 3-12 mois</option>
                     </select>
                   </label>
+                </div>
+
+                <div class="birthdate-roller-block">
+                  <div class="identity-compact-subtitle">Date de naissance</div>
+
+                  <div class="birthdate-roller-grid">
+                    <label>
+                      Jour
+                      <select id="patientBirthDay">
+                        <option value="">Jour</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Mois
+                      <select id="patientBirthMonth">
+                        <option value="">Mois</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Année
+                      <select id="patientBirthYear">
+                        <option value="">Année</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <small id="patientBirthDateSummary" class="birthdate-summary">
+                    Date de naissance non renseignée.
+                  </small>
                 </div>
 
                 <div class="identity-compact-actions">
@@ -3107,7 +3138,7 @@
     </section>
   </div>
 
-  <script src="./app.js?v=193"></script>
+  <script src="./app.js?v=194"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>

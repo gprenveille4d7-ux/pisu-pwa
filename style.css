@@ -6452,3 +6452,64 @@ body.vitals-sheet-open .patient-swipe-tabs {
   margin-top: 2px !important;
   border-radius: 999px !important;
 }
+
+/* =========================================================
+   IDENTITÉ — ROULETTES DATE DE NAISSANCE
+   ========================================================= */
+
+.birthdate-roller-block {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.32);
+}
+
+.identity-compact-subtitle {
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.birthdate-roller-grid {
+  display: grid;
+  grid-template-columns: 0.75fr 1fr 1fr;
+  gap: 7px;
+}
+
+.birthdate-roller-grid label {
+  display: grid;
+  gap: 4px;
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.birthdate-roller-grid select {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  padding: 7px 9px;
+  font-size: 0.86rem;
+}
+
+.birthdate-summary {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+@media (max-width: 390px) {
+  .birthdate-roller-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .birthdate-roller-grid label:last-child {
+    grid-column: 1 / -1;
+  }
+}

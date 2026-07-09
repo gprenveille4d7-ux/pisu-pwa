@@ -829,6 +829,10 @@ const patientWeightInput = document.getElementById("patientWeight");
 const patientNoteInput = document.getElementById("patientNote");
 const patientCategoryInput = document.getElementById("patientCategory");
 const patientAgeUnitInput = document.getElementById("patientAgeUnit");
+const patientBirthDayInput = document.getElementById("patientBirthDay");
+const patientBirthMonthInput = document.getElementById("patientBirthMonth");
+const patientBirthYearInput = document.getElementById("patientBirthYear");
+const patientBirthDateSummary = document.getElementById("patientBirthDateSummary");
 const identitySwipeTrack = document.getElementById("identitySwipeTrack");
 const identitySwipePrev = document.getElementById("identitySwipePrev");
 const identitySwipeNext = document.getElementById("identitySwipeNext");
@@ -1891,12 +1895,17 @@ function valueOrDefault(value, fallback = "non renseigné") {
 function savePatientIdentity(options = {}) {
   const name = valueOrDefault(patientNameInput.value, "identité non renseignée");
   const age = valueOrDefault(formatPatientAge());
+  const birthDate = formatPatientBirthDate();
   const sex = valueOrDefault(patientSexInput.value);
   const weight = valueOrDefault(formatPatientWeight());
   const category = valueOrDefault(getPatientCategoryLabel(getPatientCategory()));
   const note = patientNoteInput.value.trim();
 
   let logLine = `Identité patient : ${name} — âge/naissance : ${age} — sexe : ${sex} — catégorie : ${category} — poids estimé : ${weight}`;
+
+  if (birthDate) {
+    logLine += ` — né(e) le ${birthDate}`;
+  }
 
   if (note) {
     logLine += ` — remarque : ${note}`;
@@ -1921,6 +1930,7 @@ function setUnknownIdentity() {
   populatePatientWeightSelect();
   resetPatientRoller(patientAgeInput);
   resetPatientRoller(patientWeightInput);
+  applyPatientBirthDateSnapshot({});
 
   addLog("Identité patient : inconnue au moment de la prise en charge");
   scrollToPatientSlide?.(0, "auto");
@@ -2287,18 +2297,213 @@ function getPatientRollerValue(select) {
   return select.value?.trim() || "";
 }
 
-function formatPatientAge() {
-  const value = getPatientRollerValue(patientAgeInput);
+const PATIENT_BIRTH_MONTHS = [
+  { value: "1", label: "Janvier" },
+  { value: "2", label: "Février" },
+  { value: "3", label: "Mars" },
+  { value: "4", label: "Avril" },
+  { value: "5", label: "Mai" },
+  { value: "6", label: "Juin" },
+  { value: "7", label: "Juillet" },
+  { value: "8", label: "Août" },
+  { value: "9", label: "Septembre" },
+  { value: "10", label: "Octobre" },
+  { value: "11", label: "Novembre" },
+  { value: "12", label: "Décembre" }
+];
 
-  if (!value) return "";
+function getDaysInPatientBirthMonth(month, year) {
+  const safeMonth = Number(month);
+  const safeYear = Number(year) || new Date().getFullYear();
 
-  const unit = patientAgeUnitInput?.value || "years";
+  if (!safeMonth) return 31;
 
-  if (unit === "months") {
-    return `${value} mois`;
+  return new Date(safeYear, safeMonth, 0).getDate();
+}
+
+function populatePatientBirthSelect(select, values, emptyLabel) {
+  if (!select) return;
+
+  const currentValue = select.value;
+
+  select.innerHTML = "";
+
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = emptyLabel;
+  select.appendChild(emptyOption);
+
+  values.forEach(item => {
+    const option = document.createElement("option");
+
+    if (typeof item === "object") {
+      option.value = item.value;
+      option.textContent = item.label;
+    } else {
+      option.value = String(item);
+      option.textContent = String(item).padStart(2, "0");
+    }
+
+    select.appendChild(option);
+  });
+
+  if (currentValue && Array.from(select.options).some(option => option.value === currentValue)) {
+    select.value = currentValue;
+  }
+}
+
+function populatePatientBirthDaySelect() {
+  const maxDay = getDaysInPatientBirthMonth(
+    patientBirthMonthInput?.value,
+    patientBirthYearInput?.value
+  );
+
+  const days = Array.from({ length: maxDay }, (_, index) => index + 1);
+
+  populatePatientBirthSelect(patientBirthDayInput, days, "Jour");
+}
+
+function populatePatientBirthMonthSelect() {
+  populatePatientBirthSelect(patientBirthMonthInput, PATIENT_BIRTH_MONTHS, "Mois");
+}
+
+function populatePatientBirthYearSelect() {
+  if (!patientBirthYearInput) return;
+
+  const currentYear = new Date().getFullYear();
+  const years = [];
+
+  for (let year = currentYear; year >= currentYear - 120; year -= 1) {
+    years.push(year);
   }
 
-  return `${value} ans`;
+  populatePatientBirthSelect(patientBirthYearInput, years, "Année");
+}
+
+function populatePatientBirthDateRollers() {
+  populatePatientBirthMonthSelect();
+  populatePatientBirthYearSelect();
+  populatePatientBirthDaySelect();
+}
+
+function getPatientBirthDateParts() {
+  return {
+    day: patientBirthDayInput?.value || "",
+    month: patientBirthMonthInput?.value || "",
+    year: patientBirthYearInput?.value || ""
+  };
+}
+
+function getPatientBirthDate() {
+  const { day, month, year } = getPatientBirthDateParts();
+
+  if (!day || !month || !year) return null;
+
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+  const isValid =
+    date.getFullYear() === Number(year) &&
+    date.getMonth() === Number(month) - 1 &&
+    date.getDate() === Number(day);
+
+  if (!isValid) return null;
+
+  const today = new Date();
+
+  if (date > today) return null;
+
+  return date;
+}
+
+function formatPatientBirthDate() {
+  const date = getPatientBirthDate();
+
+  if (!date) return "";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
+function formatPatientBirthDateIso() {
+  const date = getPatientBirthDate();
+
+  if (!date) return "";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${year}-${month}-${day}`;
+}
+
+function getAgeFromBirthDate() {
+  const birthDate = getPatientBirthDate();
+
+  if (!birthDate) return null;
+
+  const today = new Date();
+
+  let years = today.getFullYear() - birthDate.getFullYear();
+  let months = today.getMonth() - birthDate.getMonth();
+
+  if (today.getDate() < birthDate.getDate()) {
+    months -= 1;
+  }
+
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  const totalMonths = years * 12 + months;
+
+  return {
+    years,
+    months,
+    totalMonths,
+    ageYearsDecimal: totalMonths / 12
+  };
+}
+
+function updatePatientBirthDateSummary() {
+  if (!patientBirthDateSummary) return;
+
+  const birthDateText = formatPatientBirthDate();
+  const ageInfo = getAgeFromBirthDate();
+
+  if (!birthDateText || !ageInfo) {
+    patientBirthDateSummary.textContent = "Date de naissance non renseignée.";
+    return;
+  }
+
+  if (ageInfo.years >= 2) {
+    patientBirthDateSummary.textContent = `Né(e) le ${birthDateText} — âge calculé : ${ageInfo.years} ans.`;
+    return;
+  }
+
+  patientBirthDateSummary.textContent = `Né(e) le ${birthDateText} — âge calculé : ${ageInfo.totalMonths} mois.`;
+}
+
+function formatPatientAge() {
+  const manualValue = getPatientRollerValue?.(patientAgeInput) || "";
+
+  if (manualValue) {
+    const unit = patientAgeUnitInput?.value || "years";
+    return unit === "months" ? `${manualValue} mois` : `${manualValue} ans`;
+  }
+
+  const birthAge = getAgeFromBirthDate();
+
+  if (!birthAge) return "";
+
+  if (birthAge.years >= 2) {
+    return `${birthAge.years} ans`;
+  }
+
+  return `${birthAge.totalMonths} mois`;
 }
 
 function formatPatientWeight() {
@@ -2331,6 +2536,28 @@ function setupPatientRollerFeature() {
   });
 }
 
+function setupPatientBirthDateFeature() {
+  populatePatientBirthDateRollers();
+  updatePatientBirthDateSummary();
+
+  [patientBirthDayInput, patientBirthMonthInput, patientBirthYearInput].forEach(input => {
+    input?.addEventListener("change", () => {
+      populatePatientBirthDaySelect();
+      updatePatientBirthDateSummary();
+      updatePatientIdentitySummary?.();
+
+      setButtonValidatedPersistent?.(saveIdentityBtn, false);
+
+      if (typeof savePatientIdentity === "function") {
+        savePatientIdentity({ silent: true });
+      }
+
+      updatePatientSwipeUi?.();
+      updateIdentitySwipeUi?.();
+    });
+  });
+}
+
 function getPatientWeightKg() {
   const value = getPatientRollerValue(patientWeightInput);
 
@@ -2342,21 +2569,29 @@ function getPatientWeightKg() {
 }
 
 function getPatientAgeYears() {
-  const value = getPatientRollerValue(patientAgeInput);
+  const manualValue = getPatientRollerValue?.(patientAgeInput) || "";
 
-  if (!value) return null;
+  if (manualValue) {
+    const age = Number(String(manualValue).replace(",", "."));
 
-  const age = Number(String(value).replace(",", "."));
+    if (!Number.isFinite(age) || age < 0) return null;
 
-  if (!Number.isFinite(age) || age < 0) return null;
+    const unit = patientAgeUnitInput?.value || "years";
 
-  const unit = patientAgeUnitInput?.value || "years";
+    if (unit === "months") {
+      return age / 12;
+    }
 
-  if (unit === "months") {
-    return age / 12;
+    return age;
   }
 
-  return age;
+  const birthAge = getAgeFromBirthDate();
+
+  if (birthAge) {
+    return birthAge.ageYearsDecimal;
+  }
+
+  return null;
 }
 
 function getPatientCategory() {
@@ -2468,6 +2703,7 @@ function exportTextLegacy() {
 
   const patientName = patientNameInput?.value?.trim() || "Identité non renseignée";
   const patientAge = formatPatientAge() || "À compléter";
+  const patientBirthDate = formatPatientBirthDate();
   const patientSex = patientSexInput?.value?.trim() || "À compléter";
   const patientCategory = getPatientCategoryLabel(getPatientCategory()) || "À compléter";
   const patientWeight = formatPatientWeight() || "À compléter";
@@ -2485,6 +2721,7 @@ function exportTextLegacy() {
     responderLine,
     "",
     `Patient : ${patientName}.`,
+    ...(patientBirthDate ? [`Date de naissance : ${patientBirthDate}.`] : []),
     `Âge / naissance : ${patientAge}. Sexe : ${patientSex}. Poids : ${patientWeight}.`,
     `Protocole(s) engagé(s) : ${protocolLine}.`,
     "",
@@ -2621,7 +2858,8 @@ function exportTextLegacy() {
     "",
     "PATIENT",
     `Nom / Prénom : ${patientName}`,
-    `Âge ou date de naissance : ${patientAge}`,
+    ...(patientBirthDate ? [`Date de naissance : ${patientBirthDate}`] : []),
+    `Âge : ${patientAge}`,
     `Sexe : ${patientSex}`,
     `Catégorie patient : ${patientCategory}`,
     `Poids estimé : ${patientWeight}`,
@@ -2711,6 +2949,7 @@ function buildPatientIdentitySAEDLine() {
   const parts = [];
 
   if (patient.name) parts.push(patient.name);
+  if (patient.birthDate) parts.push(`né(e) le ${patient.birthDate}`);
   if (patient.age) parts.push(`${patient.age}`);
   if (patient.sex) parts.push(patient.sex);
   if (patient.weight) parts.push(`${patient.weight} kg`);
@@ -3004,14 +3243,19 @@ function resetPatientIdentityFields() {
   if (patientNoteInput) patientNoteInput.value = "";
 
   if (patientAgeUnitInput) patientAgeUnitInput.value = "years";
+  if (patientBirthDayInput) patientBirthDayInput.value = "";
+  if (patientBirthMonthInput) patientBirthMonthInput.value = "";
+  if (patientBirthYearInput) patientBirthYearInput.value = "";
 
   populatePatientAgeSelect();
   populatePatientWeightSelect();
+  populatePatientBirthDateRollers();
 
   resetPatientRoller(patientAgeInput);
   resetPatientRoller(patientWeightInput);
 
   resetPatientAntecedentsFields();
+  updatePatientBirthDateSummary?.();
   updatePatientIdentitySummary?.();
 }
 
@@ -4120,12 +4364,14 @@ function loadResponderIdentity() {
 }
 
 function getPatientSnapshot() {
-  const ageValue = getPatientRollerValue(patientAgeInput);
+  const ageValue = getPatientRollerValue?.(patientAgeInput) || "";
   const ageUnit = patientAgeUnitInput?.value || "years";
-  const weightValue = getPatientRollerValue(patientWeightInput);
+  const weightValue = getPatientRollerValue?.(patientWeightInput) || "";
 
   return {
     name: patientNameInput?.value?.trim() || "",
+    birthDate: formatPatientBirthDate(),
+    birthDateIso: formatPatientBirthDateIso(),
     age: formatPatientAge(),
     ageValue,
     ageUnit,
@@ -4149,6 +4395,57 @@ function inferAgeValueFromText(ageText) {
   const match = String(ageText || "").match(/(\d+(?:[.,]\d+)?)/);
 
   return match ? match[1].replace(",", ".") : "";
+}
+
+function parsePatientBirthDate(value) {
+  const text = String(value || "").trim();
+
+  if (!text) return null;
+
+  const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (isoMatch) {
+    return {
+      year: isoMatch[1],
+      month: String(Number(isoMatch[2])),
+      day: String(Number(isoMatch[3]))
+    };
+  }
+
+  const frMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (frMatch) {
+    return {
+      day: String(Number(frMatch[1])),
+      month: String(Number(frMatch[2])),
+      year: frMatch[3]
+    };
+  }
+
+  return null;
+}
+
+function applyPatientBirthDateSnapshot(patient = {}) {
+  const birthParts = parsePatientBirthDate(patient.birthDateIso || patient.birthDate);
+
+  populatePatientBirthDateRollers();
+
+  if (!birthParts) {
+    if (patientBirthDayInput) patientBirthDayInput.value = "";
+    if (patientBirthMonthInput) patientBirthMonthInput.value = "";
+    if (patientBirthYearInput) patientBirthYearInput.value = "";
+    updatePatientBirthDateSummary();
+    return;
+  }
+
+  if (patientBirthYearInput) patientBirthYearInput.value = birthParts.year;
+  if (patientBirthMonthInput) patientBirthMonthInput.value = birthParts.month;
+
+  populatePatientBirthDaySelect();
+
+  if (patientBirthDayInput) patientBirthDayInput.value = birthParts.day;
+
+  updatePatientBirthDateSummary();
 }
 
 function applyPatientSnapshot(patient = {}, options = {}) {
@@ -4187,6 +4484,7 @@ function applyPatientSnapshot(patient = {}, options = {}) {
     }
   }
 
+  applyPatientBirthDateSnapshot(patient);
   updatePatientIdentitySummary?.();
 
   if (!options.skipSave && typeof savePatientIdentity === "function") {
@@ -5324,6 +5622,7 @@ function updatePatientIdentitySummary() {
 
   const name = patientNameInput?.value?.trim();
   const age = formatPatientAge();
+  const birthDate = formatPatientBirthDate();
   const sex = patientSexInput?.value?.trim();
   const weight = formatPatientWeight();
 
@@ -5333,6 +5632,10 @@ function updatePatientIdentitySummary() {
 
   if (age) {
     parts.push(`Âge : ${age}`);
+  }
+
+  if (birthDate) {
+    parts.push(`Né(e) le ${birthDate}`);
   }
 
   if (sex) {
@@ -5363,6 +5666,9 @@ function setupIdentitySummaries() {
     patientNameInput,
     patientAgeInput,
     patientAgeUnitInput,
+    patientBirthDayInput,
+    patientBirthMonthInput,
+    patientBirthYearInput,
     patientSexInput,
     patientCategoryInput,
     patientWeightInput,
@@ -5378,6 +5684,9 @@ function invalidateHandoffWhenPatientChanges() {
     patientNameInput,
     patientAgeInput,
     patientAgeUnitInput,
+    patientBirthDayInput,
+    patientBirthMonthInput,
+    patientBirthYearInput,
     patientSexInput,
     patientCategoryInput,
     patientWeightInput,
@@ -5402,6 +5711,9 @@ function setupPatientIdentityValidationFeedback() {
     patientNameInput,
     patientAgeInput,
     patientAgeUnitInput,
+    patientBirthDayInput,
+    patientBirthMonthInput,
+    patientBirthYearInput,
     patientSexInput,
     patientCategoryInput,
     patientWeightInput,
@@ -7129,6 +7441,7 @@ setupProtocolOpeners?.();
 setupTeamSwipeFeature?.();
 setupRouteSwipeFeature?.();
 setupPatientRollerFeature?.();
+setupPatientBirthDateFeature?.();
 setupIdentitySwipeFeature?.();
 setupIdentityNotesHeightRefresh?.();
 setupPatientIdentityValidationFeedback?.();
