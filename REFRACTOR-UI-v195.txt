@@ -1,0 +1,14 @@
+Refactor UI PISU v195
+Sauvegarde : backup-ui-v195-20260710-153304
+
+Modifications :
+- styles swipe regroupes en un seul bloc coherent ;
+- regles contradictoires et correctifs empiles supprimes ;
+- debordements iPhone securises ;
+- hauteurs des slides pilotees par un moteur commun ;
+- quatre moteurs swipe remplaces par PisuSwipeController ;
+- detection sonore Appel 15 limitee au changement reel d'etat apres une action ;
+- reprise de l'AudioContext pendant le geste utilisateur sur iPhone ;
+- logique et fichiers de protocoles non modifies.
+
+Node.js absent : verification syntaxique ignoree.

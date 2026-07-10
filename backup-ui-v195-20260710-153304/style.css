@@ -4747,7 +4747,7 @@ body.charter-open .sound-toggle-button {
 .protocol-swipe-shell {
   position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 8px;
 }
@@ -4755,7 +4755,6 @@ body.charter-open .sound-toggle-button {
 .protocol-swipe-track {
   display: flex;
   gap: 12px;
-  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
@@ -4763,19 +4762,16 @@ body.charter-open .sound-toggle-button {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
   padding: 4px 4px 12px;
-  scrollbar-width: none;
 }
 
 .protocol-swipe-track::-webkit-scrollbar {
-  display: none;
+  height: 0;
 }
 
 .protocol-swipe-card {
   flex: 0 0 min(82%, 330px);
-  min-width: 0;
   min-height: 128px;
   scroll-snap-align: center;
-  scroll-snap-stop: always;
   display: grid;
   align-content: center;
   gap: 7px;
@@ -4846,15 +4842,13 @@ body.charter-open .sound-toggle-button {
 .protocol-swipe-dot {
   width: 7px;
   height: 7px;
-  min-height: 7px;
   border-radius: 999px;
   border: 0;
   padding: 0;
   background: #475569;
 }
 
-.protocol-swipe-dot.active,
-.protocol-swipe-dot[aria-current="true"] {
+.protocol-swipe-dot.active {
   width: 18px;
   background: #38bdf8;
 }
@@ -4910,7 +4904,7 @@ body.charter-open .sound-toggle-button {
 
 @media (max-width: 620px) {
   .protocol-swipe-shell {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .protocol-swipe-nav {
@@ -4922,627 +4916,500 @@ body.charter-open .sound-toggle-button {
     min-height: 122px;
   }
 }
-/* =========================================================
-   PISU — CONSOLIDATION UI V195
-   Couche ciblée sur le menu principal uniquement.
-   Ne modifie pas la logique ni la présentation des protocoles.
-   ========================================================= */
-
-:root {
-  --pisu-ui-gap: 8px;
-  --pisu-ui-radius: 16px;
-  --pisu-ui-control-height: 40px;
-  --pisu-ui-line: #334155;
-  --pisu-ui-surface: rgba(15, 23, 42, 0.82);
-  --pisu-ui-surface-deep: rgba(2, 6, 23, 0.86);
-  --pisu-ui-accent: #38bdf8;
-  --pisu-ui-accent-bg: rgba(14, 116, 144, 0.48);
-  --pisu-ui-muted: #94a3b8;
-}
-
-/* Normalisation limitée aux modules administratifs du menu principal. */
-.team-block,
-.start-block,
-.identity-block,
-.protocol-swipe-panel {
-  min-width: 0;
-}
-
-.team-block *,
-.start-block .mission-route-subblock *,
-.identity-block *,
-.protocol-swipe-panel * {
-  box-sizing: border-box;
-}
-
-.team-block input,
-.team-block select,
-.team-block textarea,
-.start-block .mission-route-subblock input,
-.start-block .mission-route-subblock select,
-.start-block .mission-route-subblock textarea,
-.identity-block input,
-.identity-block select,
-.identity-block textarea {
-  display: block;
-  inline-size: 100%;
-  min-inline-size: 0;
-  max-inline-size: 100%;
-  font-family: inherit;
-}
 
 /* =========================================================
-   COMPOSANT SWIPE COMMUN
+   EQUIPE INTERVENTION - SWIPE INTERNE
    ========================================================= */
 
-.team-compact-content,
-.route-compact-content,
-.identity-compact-content {
-  display: grid !important;
-  gap: var(--pisu-ui-gap) !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
+.team-swipe-content {
+  display: grid;
+  gap: 12px;
 }
 
-.team-compact-content .team-swipe-tabs,
-.route-compact-content .route-swipe-tabs,
-.identity-compact-content .identity-swipe-tabs {
-  position: static !important;
-  inset: auto !important;
-  z-index: auto !important;
-  transform: none !important;
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 5px !important;
-  width: 100% !important;
-  margin: 4px 0 2px !important;
-  padding: 4px !important;
-  border-radius: 999px !important;
-  background: var(--pisu-ui-surface-deep) !important;
+.team-swipe-tabs {
+  position: sticky;
+  top: var(--accordion-nested-sticky-top, 172px);
+  z-index: 2200;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.88);
   backdrop-filter: blur(10px);
 }
 
-.team-swipe-tab,
-.route-swipe-tab,
-.identity-swipe-tab {
-  min-width: 0 !important;
-  min-height: 36px !important;
-  padding: 0 6px !important;
-  border-radius: 999px !important;
-  font-size: clamp(0.68rem, 2.6vw, 0.78rem) !important;
-  line-height: 1.05 !important;
-  white-space: normal !important;
-  overflow-wrap: anywhere;
+.team-swipe-tab {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 900;
 }
 
-.team-swipe-tab.active,
-.route-swipe-tab.active,
-.identity-swipe-tab.active,
-.team-swipe-tab[aria-selected="true"],
-.route-swipe-tab[aria-selected="true"],
-.identity-swipe-tab[aria-selected="true"] {
-  border-color: var(--pisu-ui-accent) !important;
-  background: var(--pisu-ui-accent-bg) !important;
-  color: #cffafe !important;
+.team-swipe-tab.active {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.48);
+  color: #cffafe;
 }
 
-.team-swipe-shell,
-.route-swipe-shell,
-.identity-swipe-shell {
-  display: grid !important;
-  grid-template-columns: auto minmax(0, 1fr) auto !important;
-  gap: 6px !important;
-  align-items: start !important;
-  min-width: 0 !important;
+.team-swipe-shell {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: start;
 }
 
-.team-swipe-track,
-.route-swipe-track,
-.identity-swipe-track {
-  display: flex !important;
-  gap: 0 !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  padding: 0 !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scroll-snap-type: x mandatory !important;
-  scroll-behavior: smooth;
-  overscroll-behavior-x: contain;
+.team-swipe-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  transition: height 180ms ease;
+  overscroll-behavior-x: contain;
+  padding: 2px 2px 10px;
 }
 
-.team-swipe-track::-webkit-scrollbar,
-.route-swipe-track::-webkit-scrollbar,
-.identity-swipe-track::-webkit-scrollbar {
-  display: none;
+.team-swipe-track::-webkit-scrollbar {
+  height: 0;
 }
 
-.team-swipe-slide,
-.route-swipe-slide,
-.identity-swipe-slide {
-  flex: 0 0 100% !important;
-  width: 100% !important;
-  min-width: 100% !important;
-  max-width: 100% !important;
-  min-height: 0 !important;
-  align-self: flex-start !important;
-  align-content: start !important;
-  scroll-snap-align: start !important;
-  scroll-snap-stop: always;
-  overflow: hidden;
+.team-swipe-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  box-sizing: border-box;
 }
 
-.team-swipe-nav,
-.route-swipe-nav,
-.identity-swipe-nav {
-  width: 34px !important;
-  min-width: 34px !important;
-  height: 56px !important;
-  min-height: 56px !important;
-  margin-top: 6px !important;
-  padding: 0 !important;
-  border-radius: 999px !important;
+.team-swipe-nav {
+  width: 34px;
+  height: 64px;
+  margin-top: 10px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.86);
+  color: #e2e8f0;
+  font-size: 1.65rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
-.team-swipe-nav:disabled,
-.route-swipe-nav:disabled,
-.identity-swipe-nav:disabled {
+.team-swipe-nav:disabled {
   opacity: 0.25;
 }
-
-/* =========================================================
-   ÉQUIPE INTERVENTION
-   ========================================================= */
-
-.team-block .collapsible-content {
-  padding-top: 6px !important;
-}
-
-.team-compact-slide {
-  display: grid !important;
-  gap: 8px !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 10px !important;
-  border-radius: var(--pisu-ui-radius) !important;
-}
-
-.team-compact-title {
-  gap: 2px !important;
-  margin: 0 !important;
-}
-
-.responder-content,
-.crew-content-v2,
-.crew-compact-mission,
-.crew-compact-zone,
-.compact-crew-form-card,
-.compact-details {
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-
-.responder-compact-grid {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.35fr) minmax(84px, 0.65fr) !important;
-  gap: 7px !important;
-  min-width: 0 !important;
-}
-
-.responder-compact-grid > label {
-  min-width: 0 !important;
-}
-
-.responder-compact-grid > label:nth-child(3) {
-  grid-column: 1 / -1;
-}
-
-.responder-compact-grid input,
-.compact-crew-form input,
-.compact-crew-form select {
-  min-width: 0 !important;
-  max-width: 100% !important;
-  min-height: 38px !important;
-  padding: 7px 9px !important;
-}
-
-.compact-main-button {
-  min-height: 38px !important;
-  padding: 0 12px !important;
-}
-
-.crew-role-compact-grid {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 5px !important;
-}
-
-.crew-role-compact-grid .crew-role-btn {
-  min-width: 0 !important;
-  min-height: 34px !important;
-  padding: 4px !important;
-  font-size: 0.7rem !important;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
-.crew-horizontal-list,
-.compact-mission-list {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  gap: 6px !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scrollbar-width: none;
-}
-
-.crew-horizontal-list::-webkit-scrollbar,
-.compact-mission-list::-webkit-scrollbar {
-  display: none;
-}
-
-.compact-mission-list .crew-role-card {
-  flex: 0 0 min(78%, 270px) !important;
-  min-width: 210px !important;
-}
-
-.compact-crew-form {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 7px !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  margin-top: 6px !important;
-}
-
-.team-compact-content .crew-details > summary,
-.team-compact-content .compact-details > summary {
-  position: static !important;
-  inset: auto !important;
-  z-index: auto !important;
-  transform: none !important;
-}
-
-.compact-roster-list {
-  max-height: 180px !important;
-  overflow-y: auto !important;
-}
-
-/* =========================================================
-   PARCOURS / TRANSPORT / DESTINATION
-   ========================================================= */
-
-.mission-route-subblock,
-#missionRouteContent,
-.route-compact-shell,
-.route-compact-track,
-.route-compact-slide,
-.route-compact-card,
-.route-compact-inline,
-.route-compact-two,
-.route-compact-content label {
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-
-.route-compact-slide {
-  display: grid !important;
-  gap: 8px !important;
-}
-
-.route-compact-card {
-  display: grid !important;
-  gap: 8px !important;
-  width: 100% !important;
-  padding: 10px !important;
-  border-radius: var(--pisu-ui-radius) !important;
-  overflow: hidden !important;
-}
-
-.route-compact-details > summary {
-  position: static !important;
-  inset: auto !important;
-  z-index: auto !important;
-  transform: none !important;
-  min-height: 34px !important;
-  padding: 0 !important;
-}
-
-.route-compact-two {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 7px !important;
-}
-
-.route-compact-inline {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto !important;
-  gap: 7px !important;
-  align-items: end !important;
-  overflow: hidden;
-}
-
-.route-compact-inline > label {
-  min-width: 0 !important;
-  overflow: hidden;
-}
-
-.route-compact-content input,
-.route-compact-content select,
-.route-compact-content textarea {
-  inline-size: 100% !important;
-  min-inline-size: 0 !important;
-  max-inline-size: 100% !important;
-  min-height: 40px !important;
-  height: auto !important;
-  padding: 8px 9px !important;
-  font-size: 0.82rem !important;
-  overflow: hidden;
-}
-
-.route-compact-content input[type="time"] {
-  inline-size: 100% !important;
-  min-inline-size: 0 !important;
-  max-inline-size: 100% !important;
-  height: 42px !important;
-  min-height: 42px !important;
-  -webkit-min-logical-width: 0;
-}
-
-.route-compact-content textarea {
-  min-height: 58px !important;
-  max-height: 96px;
-}
-
-.route-mini-button {
-  min-width: max-content !important;
-  min-height: 40px !important;
-  padding: 0 11px !important;
-  white-space: nowrap !important;
-}
-
-.route-compact-actions {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(88px, 0.32fr) !important;
-  gap: 7px !important;
-  margin: 0 !important;
-}
-
-.route-save-button,
-.route-clear-button {
-  min-width: 0 !important;
-  min-height: 40px !important;
-  padding: 0 10px !important;
-}
-
-.route-compact-check {
-  min-height: 38px !important;
-  padding: 7px 9px !important;
-}
-
-/* =========================================================
-   IDENTITÉ PATIENT
-   ========================================================= */
-
-.identity-compact-slide {
-  display: grid !important;
-  gap: 8px !important;
-}
-
-.identity-compact-card {
-  display: grid !important;
-  gap: 8px !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  min-height: 0 !important;
-  padding: 10px !important;
-  border-radius: var(--pisu-ui-radius) !important;
-  align-content: start !important;
-  overflow: hidden !important;
-}
-
-.identity-compact-two {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 7px !important;
-}
-
-.identity-compact-two > label:first-child,
-.identity-compact-two > label:last-child {
-  grid-column: 1 / -1;
-}
-
-.identity-compact-content input,
-.identity-compact-content select,
-.identity-compact-content textarea {
-  min-width: 0 !important;
-  max-width: 100% !important;
-  min-height: 40px !important;
-  padding: 8px 9px !important;
-  font-size: 0.84rem !important;
-}
-
-.birthdate-roller-block {
-  gap: 6px !important;
-  padding: 8px !important;
-}
-
-.birthdate-roller-grid {
-  display: grid !important;
-  grid-template-columns: 0.72fr 1.18fr 1fr !important;
-  gap: 6px !important;
-}
-
-.birthdate-roller-grid select {
-  min-height: 38px !important;
-  padding: 6px !important;
-  font-size: 0.78rem !important;
-}
-
-.identity-compact-actions {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(118px, 0.48fr) !important;
-  gap: 7px !important;
-}
-
-.identity-save-button,
-.identity-unknown-button {
-  min-width: 0 !important;
-  min-height: 40px !important;
-  padding: 0 10px !important;
-}
-
-.identity-compact-slide[data-identity-slide="1"] .identity-compact-card {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.identity-compact-slide[data-identity-slide="1"] .identity-compact-title,
-.identity-compact-slide[data-identity-slide="1"] .identity-compact-card > label:first-of-type,
-.identity-compact-slide[data-identity-slide="1"] .identity-compact-flags,
-.identity-compact-slide[data-identity-slide="1"] .antecedents-summary,
-.identity-compact-slide[data-identity-slide="1"] .identity-save-button {
-  grid-column: 1 / -1;
-}
-
-.identity-compact-flags {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 5px !important;
-}
-
-.identity-compact-flags .antecedent-chip {
-  width: 100% !important;
-  min-width: 0 !important;
-  min-height: 36px !important;
-  padding: 6px 8px !important;
-  font-size: 0.72rem !important;
-}
-
-.identity-compact-slide[data-identity-slide="2"] textarea {
-  height: 76px !important;
-  min-height: 76px !important;
-  max-height: 104px !important;
-  resize: vertical;
-}
-
-/* =========================================================
-   CARROUSEL DES PROTOCOLES
-   ========================================================= */
-
-.protocol-swipe-track {
-  min-width: 0;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-}
-
-.protocol-swipe-track::-webkit-scrollbar {
-  display: none;
-}
-
-.protocol-swipe-card {
-  min-width: 0;
-  scroll-snap-stop: always;
-}
-
-.protocol-swipe-dot[aria-current="true"],
-.protocol-swipe-dot.active {
-  width: 18px;
-  background: var(--pisu-ui-accent);
-}
-
-/* Les feuilles et modales restent prioritaires sur le menu principal. */
-body.vitals-sheet-open .team-swipe-tabs,
-body.vitals-sheet-open .route-swipe-tabs,
-body.vitals-sheet-open .identity-swipe-tabs {
-  pointer-events: none !important;
-}
-
-@media (max-width: 700px) {
-  .team-swipe-shell,
-  .route-swipe-shell,
-  .identity-swipe-shell {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  .team-swipe-nav,
-  .route-swipe-nav,
-  .identity-swipe-nav {
-    display: none !important;
-  }
-}
-
-@media (max-width: 360px) {
-  .team-swipe-tab,
-  .route-swipe-tab,
-  .identity-swipe-tab {
-    font-size: 0.64rem !important;
-    padding: 0 3px !important;
-  }
-
-  .crew-role-compact-grid,
-  .compact-crew-form,
-  .route-compact-two,
-  .identity-compact-flags {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  .route-compact-inline,
-  .route-compact-actions,
-  .identity-compact-actions {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  .route-mini-button {
-    justify-self: start;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .team-swipe-track,
-  .route-swipe-track,
-  .identity-swipe-track,
-  .protocol-swipe-track {
-    scroll-behavior: auto !important;
-    transition: none !important;
-  }
-}
-
-/* =========================================================
-   DÉTAILS VISUELS CONSERVÉS APRÈS CONSOLIDATION
-   ========================================================= */
 
 .team-block:not(.collapsed) > #teamSummary {
   display: none;
 }
 
+@media (max-width: 700px) {
+  .team-swipe-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .team-swipe-nav {
+    display: none;
+  }
+
+  .team-swipe-slide {
+    flex-basis: 100%;
+  }
+}
+
+/* =========================================================
+   PARCOURS / TRANSPORT / DESTINATION - SWIPE INTERNE
+   ========================================================= */
+
+.route-swipe-content {
+  display: grid;
+  gap: 12px;
+}
+
+.route-swipe-tabs {
+  position: sticky;
+  top: var(--accordion-nested-sticky-top, 172px);
+  z-index: 2100;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.route-swipe-tab {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.route-swipe-tab.active {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.48);
+  color: #cffafe;
+}
+
+.route-swipe-shell {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.route-swipe-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding: 2px 2px 10px;
+}
+
+.route-swipe-track::-webkit-scrollbar {
+  height: 0;
+}
+
+.route-swipe-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  display: grid;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.route-swipe-nav {
+  width: 34px;
+  height: 64px;
+  margin-top: 10px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.86);
+  color: #e2e8f0;
+  font-size: 1.65rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.route-swipe-nav:disabled {
+  opacity: 0.25;
+}
+
+body.vitals-sheet-open .route-swipe-tabs {
+  z-index: 1 !important;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .route-swipe-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .route-swipe-nav {
+    display: none;
+  }
+
+  .route-swipe-tab {
+    font-size: 0.72rem;
+    padding: 0 6px;
+  }
+}
+
+/* =========================================================
+   IDENTITE PATIENT - SWIPE INTERNE
+   ========================================================= */
+
+.patient-swipe-content {
+  display: grid;
+  gap: 12px;
+}
+
+.patient-swipe-tabs {
+  position: sticky;
+  top: var(--accordion-nested-sticky-top, 172px);
+  z-index: 2100;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.patient-swipe-tab {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.96);
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.patient-swipe-tab.active {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.48);
+  color: #cffafe;
+}
+
+.patient-swipe-shell {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.patient-swipe-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding: 2px 2px 10px;
+}
+
+.patient-swipe-track::-webkit-scrollbar {
+  height: 0;
+}
+
+.patient-swipe-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  display: grid;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.patient-swipe-nav {
+  width: 34px;
+  height: 64px;
+  margin-top: 10px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.86);
+  color: #e2e8f0;
+  font-size: 1.65rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.patient-swipe-nav:disabled {
+  opacity: 0.25;
+}
+
+.patient-slide-card {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.patient-slide-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e2e8f0;
+}
+
+.patient-slide-step {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #bfdbfe;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.patient-roller-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.8fr 1.1fr;
+  gap: 10px;
+}
+
+.patient-roller-grid label,
+.patient-note-label {
+  display: grid;
+  gap: 5px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.patient-roller-grid select,
+.patient-note-label textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  padding: 9px 10px;
+  font-size: 0.92rem;
+}
+
+.patient-note-label textarea {
+  resize: vertical;
+}
+
+.patient-roller-help {
+  color: #94a3b8;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.patient-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.patient-actions button {
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 14px;
+  font-weight: 900;
+}
+
+body.vitals-sheet-open .patient-swipe-tabs {
+  z-index: 1 !important;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .patient-swipe-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-swipe-nav {
+    display: none;
+  }
+
+  .patient-swipe-tab {
+    font-size: 0.72rem;
+    padding: 0 6px;
+  }
+
+  .patient-roller-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   EQUIPE INTERVENTION - VERSION COMPACTE
+   ========================================================= */
+
+.team-compact-content {
+  gap: 8px;
+}
+
+.team-compact-content .team-swipe-tabs {
+  min-height: 34px;
+  gap: 5px;
+  padding: 3px;
+}
+
+.team-compact-content .team-swipe-tab {
+  min-height: 34px;
+  font-size: 0.76rem;
+  padding: 0 6px;
+}
+
+.compact-swipe-shell {
+  gap: 6px;
+}
+
+.compact-swipe-track {
+  align-items: flex-start;
+  overflow-y: hidden;
+  transition: height 0.18s ease;
+}
+
+.team-compact-slide {
+  gap: 8px;
+  padding: 9px;
+  border-radius: 16px;
+}
+
 .team-compact-title {
   display: grid;
   gap: 2px;
+  margin-bottom: 2px;
 }
 
-.team-compact-title strong,
-.compact-form-title {
+.team-compact-title strong {
   color: #e2e8f0;
-  font-size: 0.9rem;
-  font-weight: 900;
-  line-height: 1.12;
+  font-size: 0.95rem;
+  line-height: 1.1;
 }
 
 .team-compact-title small {
   color: #94a3b8;
   font-size: 0.72rem;
   line-height: 1.2;
+}
+
+.responder-compact-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.65fr 1.2fr;
+  gap: 7px;
+}
+
+.responder-compact-grid label,
+.compact-crew-form label {
+  display: grid;
+  gap: 4px;
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.responder-compact-grid input,
+.compact-crew-form input,
+.compact-crew-form select {
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 7px 9px;
+  font-size: 0.84rem;
+}
+
+.compact-main-button {
+  min-height: 38px !important;
+  border-radius: 999px !important;
+  padding: 0 12px !important;
+  font-size: 0.82rem !important;
+  font-weight: 900 !important;
+}
+
+.compact-secondary-button {
+  min-height: 34px;
+  justify-self: start;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+}
+
+.crew-compact-mission {
+  display: grid;
+  gap: 7px;
 }
 
 .crew-compact-zone {
@@ -5558,6 +5425,40 @@ body.vitals-sheet-open .identity-swipe-tabs {
   letter-spacing: 0.04em;
 }
 
+.crew-horizontal-list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.crew-horizontal-list::-webkit-scrollbar {
+  height: 0;
+}
+
+.crew-person-chip {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 0.78rem;
+}
+
+.crew-role-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.crew-role-compact-grid .crew-role-btn {
+  min-height: 34px;
+  padding: 0 6px;
+  font-size: 0.72rem;
+  line-height: 1.05;
+}
+
 .compact-preview {
   min-height: 34px;
   padding: 7px 9px;
@@ -5566,14 +5467,378 @@ body.vitals-sheet-open .identity-swipe-tabs {
   line-height: 1.2;
 }
 
+.compact-mission-list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 7px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compact-mission-list::-webkit-scrollbar {
+  height: 0;
+}
+
+.compact-mission-list .crew-role-card {
+  flex: 0 0 76%;
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 14px;
+  gap: 5px;
+}
+
+.compact-mission-list .crew-role-card-main {
+  font-size: 0.82rem;
+  line-height: 1.15;
+}
+
+.compact-mission-list .crew-role-card-meta {
+  font-size: 0.68rem;
+  line-height: 1.15;
+}
+
+.compact-mission-list .crew-role-card-actions {
+  margin-top: 2px;
+}
+
+.compact-mission-list .crew-mini-btn {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 0.68rem;
+}
+
 .compact-details {
-  display: block;
   padding: 8px;
   border-radius: 14px;
 }
 
+.compact-details > summary {
+  min-height: 34px !important;
+  padding: 7px 10px !important;
+  font-size: 0.78rem !important;
+  border-radius: 12px !important;
+}
+
+.compact-crew-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.compact-roster-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.compact-roster-list .crew-item {
+  padding: 7px;
+  border-radius: 12px;
+}
+
+.compact-roster-list .crew-item-main {
+  font-size: 0.78rem;
+}
+
+.compact-roster-list .crew-item-meta {
+  font-size: 0.66rem;
+  line-height: 1.15;
+}
+
+@media (max-width: 700px) {
+  .responder-compact-grid {
+    grid-template-columns: 1fr 0.55fr;
+  }
+
+  .responder-compact-grid label:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .crew-role-compact-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .compact-crew-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .compact-main-button {
+    min-height: 36px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .crew-role-compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .compact-crew-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   FIX EQUIPE COMPACTE - OVERFLOW + CARNET
+   ========================================================= */
+
+.team-compact-content,
+.team-compact-content *,
+.team-compact-content *::before,
+.team-compact-content *::after {
+  box-sizing: border-box;
+}
+
+.team-compact-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.team-compact-content .team-swipe-track,
+.team-compact-content .team-swipe-slide,
+.team-compact-content .team-subcard,
+.team-compact-content .team-compact-slide,
+.team-compact-content .responder-content,
+.team-compact-content .crew-content-v2,
+.team-compact-content label {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.team-compact-content input,
+.team-compact-content select,
+.team-compact-content textarea,
+.team-compact-content button {
+  max-width: 100%;
+}
+
+.responder-compact-grid input,
+.compact-crew-form input,
+.compact-crew-form select {
+  width: 100%;
+  min-width: 0;
+}
+
+.responder-compact-grid {
+  grid-template-columns: minmax(0, 1.3fr) minmax(88px, 0.7fr);
+  gap: 8px;
+}
+
+.responder-compact-grid label {
+  min-width: 0;
+}
+
+.responder-compact-grid label:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+#saveResponderBtn {
+  width: min(100%, 360px);
+}
+
+.team-compact-content .crew-details > summary,
+.team-compact-content details.crew-details > summary,
+.team-compact-content .compact-details > summary {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+  transform: none !important;
+}
+
+.compact-details {
+  display: block;
+  overflow: visible;
+  padding: 8px;
+}
+
 .compact-details[open] > summary {
-  margin-bottom: 7px;
+  margin-bottom: 8px;
+}
+
+.compact-form-title {
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.compact-crew-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+#saveCrewMemberBtn {
+  width: min(100%, 360px);
+  margin-top: 8px;
+}
+
+.compact-roster-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.team-compact-slide {
+  align-content: start;
+}
+
+.compact-swipe-track {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+@media (max-width: 430px) {
+  .responder-compact-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .compact-crew-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .team-compact-content .team-swipe-tab {
+    font-size: 0.72rem;
+  }
+}
+
+/* =========================================================
+   FIX POSITION TABS EQUIPE - SOUS LE TITRE, NON FLOTTANT
+   ========================================================= */
+
+.team-compact-content {
+  display: grid;
+  gap: 10px;
+}
+
+.team-compact-content .team-swipe-tabs,
+.team-compact-content .compact-tabs {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  transform: none !important;
+  order: 0;
+  margin: 8px 0 6px;
+  width: 100%;
+}
+
+.team-compact-content .team-swipe-shell,
+.team-compact-content .compact-swipe-shell {
+  order: 1;
+  margin-top: 0;
+}
+
+.team-swipe-track .team-swipe-tabs {
+  position: static !important;
+  display: none !important;
+}
+
+.team-block .collapsible-content {
+  padding-top: 8px;
+}
+
+.team-compact-content .team-subcard,
+.team-compact-content .team-compact-slide {
+  margin-top: 0;
+}
+
+.team-compact-content .team-swipe-track {
+  padding-top: 0;
+  align-items: flex-start;
+}
+
+.team-compact-content .team-swipe-slide {
+  align-self: flex-start;
+}
+
+/* =========================================================
+   PARCOURS / TRANSPORT / DESTINATION - VERSION COMPACTE
+   ========================================================= */
+
+.route-compact-content,
+.route-compact-content *,
+.route-compact-content *::before,
+.route-compact-content *::after {
+  box-sizing: border-box;
+}
+
+.route-compact-content {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.route-compact-content .route-swipe-tabs,
+.route-compact-content .route-compact-tabs {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+  transform: none !important;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+  margin: 6px 0 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.86);
+}
+
+.route-compact-content .route-swipe-tab {
+  min-height: 34px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.route-compact-content .route-swipe-tab.active {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.48);
+  color: #cffafe;
+}
+
+.route-compact-shell {
+  gap: 6px;
+}
+
+.route-compact-track {
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 2px 8px;
+  transition: height 0.18s ease;
+}
+
+.route-compact-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.route-compact-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.82);
 }
 
 .route-compact-card.complete {
@@ -5587,8 +5852,7 @@ body.vitals-sheet-open .identity-swipe-tabs {
 }
 
 .route-compact-title,
-.route-compact-details > summary,
-.identity-compact-title {
+.route-compact-details > summary {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -5596,14 +5860,12 @@ body.vitals-sheet-open .identity-swipe-tabs {
 }
 
 .route-compact-title strong,
-.route-compact-details > summary strong,
-.identity-compact-title strong {
+.route-compact-details > summary strong {
   font-size: 0.96rem;
   line-height: 1.1;
 }
 
-.route-step,
-.identity-step {
+.route-step {
   display: inline-grid;
   place-items: center;
   width: 28px;
@@ -5617,6 +5879,13 @@ body.vitals-sheet-open .identity-swipe-tabs {
 }
 
 .route-compact-details > summary {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
   list-style: none;
 }
 
@@ -5635,10 +5904,20 @@ body.vitals-sheet-open .identity-swipe-tabs {
   content: "▾";
 }
 
-.route-compact-content label,
-.identity-compact-content label,
-.responder-compact-grid label,
-.compact-crew-form label {
+.route-compact-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.route-compact-inline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.route-compact-content label {
   display: grid;
   gap: 5px;
   min-width: 0;
@@ -5647,22 +5926,544 @@ body.vitals-sheet-open .identity-swipe-tabs {
   font-weight: 900;
 }
 
+.route-compact-content input,
+.route-compact-content select,
+.route-compact-content textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+}
+
+.route-compact-content input[type="time"] {
+  min-height: 40px;
+  max-height: 42px;
+}
+
+.route-compact-content textarea {
+  resize: vertical;
+  min-height: 54px;
+}
+
+.route-mini-button {
+  min-height: 40px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  font-size: 0.8rem !important;
+  font-weight: 900 !important;
+  white-space: nowrap;
+}
+
+.route-compact-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.route-save-button {
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  font-size: 0.86rem !important;
+}
+
+.route-clear-button {
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  padding: 0 12px !important;
+}
+
 .route-compact-check {
   display: flex !important;
+  grid-template-columns: none !important;
   flex-direction: row;
   align-items: center;
   gap: 9px;
+  min-height: 40px;
+  padding: 8px 10px;
   border: 1px solid #334155;
   border-radius: 999px;
   background: rgba(2, 6, 23, 0.35);
 }
 
-.route-compact-check input,
+.route-compact-check input {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+}
+
+@media (max-width: 700px) {
+  .route-compact-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .route-swipe-nav {
+    display: none;
+  }
+
+  .route-compact-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .route-compact-inline {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .route-mini-button {
+    justify-self: start;
+  }
+
+  .route-compact-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* =========================================================
+   IDENTITE PATIENT - VERSION COMPACTE
+   ========================================================= */
+
+.identity-compact-content,
+.identity-compact-content *,
+.identity-compact-content *::before,
+.identity-compact-content *::after {
+  box-sizing: border-box;
+}
+
+.identity-compact-content {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.identity-compact-tabs {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+  transform: none !important;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+  margin: 6px 0 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.86);
+}
+
+.identity-swipe-tab {
+  min-height: 34px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.identity-swipe-tab.active {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.48);
+  color: #cffafe;
+}
+
+.identity-compact-shell {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: start;
+}
+
+.identity-compact-track {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  gap: 0;
+  padding: 0 2px 8px;
+  transition: height 0.18s ease;
+}
+
+.identity-compact-track::-webkit-scrollbar {
+  height: 0;
+}
+
+.identity-compact-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.identity-compact-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.identity-compact-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #e2e8f0;
+}
+
+.identity-compact-title strong {
+  font-size: 0.96rem;
+  line-height: 1.1;
+}
+
+.identity-step {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #bfdbfe;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.identity-compact-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.identity-compact-content label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.identity-compact-content input,
+.identity-compact-content select,
+.identity-compact-content textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+}
+
+.identity-compact-content textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.identity-compact-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.identity-save-button {
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  font-size: 0.86rem !important;
+}
+
+.identity-unknown-button {
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  padding: 0 12px !important;
+  font-size: 0.82rem !important;
+}
+
+.identity-swipe-nav {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  align-self: center;
+}
+
+.identity-compact-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.identity-compact-flags .antecedent-chip {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+}
+
 .identity-compact-flags .antecedent-chip input {
-  width: 20px !important;
-  height: 20px !important;
-  min-width: 20px !important;
-  padding: 0 !important;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  padding: 0;
+}
+
+@media (max-width: 700px) {
+  .identity-compact-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-swipe-nav {
+    display: none;
+  }
+
+  .identity-compact-two,
+  .identity-compact-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* =========================================================
+   CORRECTION DEBORDEMENTS INPUTS - PARCOURS / TRANSPORT
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.panel,
+.panel-content,
+.transport-block,
+.transport-content,
+.transport-swipe-shell,
+.transport-swipe-track,
+.transport-swipe-slide,
+.transport-card,
+.transport-card label,
+.transport-card .field,
+.transport-card .form-row,
+#missionRouteContent,
+.route-compact-content,
+.route-compact-shell,
+.route-compact-track,
+.route-compact-slide,
+.route-compact-card,
+.route-compact-card label,
+.route-compact-inline,
+.route-compact-two {
+  min-width: 0;
+}
+
+.transport-card,
+.transport-swipe-slide,
+.transport-content,
+.transport-block,
+.route-compact-card,
+.route-compact-slide,
+.route-compact-content,
+.mission-route-content {
+  overflow: hidden;
+}
+
+.transport-card input,
+.transport-card select,
+.transport-card textarea,
+.transport-content input,
+.transport-content select,
+.transport-content textarea,
+#missionRouteContent input,
+#missionRouteContent select,
+#missionRouteContent textarea,
+.route-compact-card input,
+.route-compact-card select,
+.route-compact-card textarea,
+.route-compact-content input,
+.route-compact-content select,
+.route-compact-content textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.transport-card input[type="text"],
+.transport-card input[type="time"],
+.transport-card input[type="number"],
+.transport-content input[type="text"],
+.transport-content input[type="time"],
+.transport-content input[type="number"],
+#missionRouteContent input[type="text"],
+#missionRouteContent input[type="time"],
+#missionRouteContent input[type="number"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.transport-card .two-cols,
+.transport-card .grid-2,
+.transport-card .form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.transport-card,
+.route-compact-card {
+  width: 100%;
+  max-width: 100%;
+  padding: 14px;
+  border-radius: 22px;
+  box-sizing: border-box;
+}
+
+.transport-card label,
+.route-compact-card label {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.transport-card input,
+.route-compact-card input {
+  height: 52px;
+}
+
+.transport-card,
+.transport-card > div,
+.transport-card > label,
+.route-compact-card,
+.route-compact-card > div,
+.route-compact-card > label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#journeyBlock input,
+#journeyBlock select,
+#journeyBlock textarea,
+#transportBlock input,
+#transportBlock select,
+#transportBlock textarea,
+#parcoursBlock input,
+#parcoursBlock select,
+#parcoursBlock textarea,
+#missionRouteContent input,
+#missionRouteContent select,
+#missionRouteContent textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: block;
+}
+
+#journeyBlock .panel,
+#transportBlock .panel,
+#parcoursBlock .panel,
+#journeyBlock .card,
+#transportBlock .card,
+#parcoursBlock .card,
+#missionRouteContent,
+#missionRouteContent .route-compact-card {
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* =========================================================
+   FIX IDENTITE - NOTES TROP HAUTES
+   ========================================================= */
+
+#patientIdentityContent,
+.patient-swipe-content,
+.patient-compact-content,
+.identity-compact-content {
+  min-height: 0 !important;
+  overflow: hidden;
+}
+
+#patientSwipeTrack,
+#identitySwipeTrack,
+.patient-swipe-track,
+.identity-swipe-track {
+  align-items: flex-start !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  min-height: 0 !important;
+  transition: height 0.18s ease;
+}
+
+.patient-swipe-slide,
+.identity-swipe-slide,
+.patient-compact-slide,
+.identity-compact-slide {
+  align-content: start !important;
+  align-self: flex-start !important;
+  min-height: 0 !important;
+}
+
+.patient-slide-card,
+.patient-compact-card,
+.identity-compact-card {
+  align-content: start !important;
+  min-height: 0 !important;
+}
+
+[data-patient-slide="2"] textarea,
+[data-identity-slide="2"] textarea {
+  min-height: 78px !important;
+  height: 86px !important;
+  max-height: 110px !important;
+  resize: vertical;
+}
+
+[data-patient-slide="2"],
+[data-identity-slide="2"] {
+  gap: 8px !important;
+}
+
+[data-patient-slide="2"] .patient-slide-card,
+[data-patient-slide="2"] .patient-compact-card,
+[data-patient-slide="2"] .identity-compact-card,
+[data-identity-slide="2"] .patient-slide-card,
+[data-identity-slide="2"] .patient-compact-card,
+[data-identity-slide="2"] .identity-compact-card {
+  gap: 9px !important;
+  padding: 10px !important;
+}
+
+#savePatientNotesBtn,
+#saveIdentityNotesBtn {
+  min-height: 40px !important;
+  margin-top: 2px !important;
+  border-radius: 999px !important;
+}
+
+/* =========================================================
+   IDENTITÉ — ROULETTES DATE DE NAISSANCE
+   ========================================================= */
+
+.birthdate-roller-block {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.32);
 }
 
 .identity-compact-subtitle {
@@ -5671,9 +6472,44 @@ body.vitals-sheet-open .identity-swipe-tabs {
   font-weight: 900;
 }
 
-.birthdate-summary,
-.antecedents-summary {
+.birthdate-roller-grid {
+  display: grid;
+  grid-template-columns: 0.75fr 1fr 1fr;
+  gap: 7px;
+}
+
+.birthdate-roller-grid label {
+  display: grid;
+  gap: 4px;
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.birthdate-roller-grid select {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  padding: 7px 9px;
+  font-size: 0.86rem;
+}
+
+.birthdate-summary {
   color: #94a3b8;
   font-size: 0.72rem;
   line-height: 1.25;
+}
+
+@media (max-width: 390px) {
+  .birthdate-roller-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .birthdate-roller-grid label:last-child {
+    grid-column: 1 / -1;
+  }
 }

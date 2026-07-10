@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v1";
+﻿const CACHE_NAME = "pisu-acr-cache-v1";
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
 const PISU_SAED_EVENT_STORAGE_KEY = "pisuStructuredEventsV2";
@@ -338,19 +338,26 @@ function notifyAdrenalineDue(label = "Adrénaline à réévaluer") {
 }
 
 function notifyCall15Required(reason = "Appel 15 exigé") {
-  if (!pisuSoundsEnabled) return;
+  /*
+    Important :
+    Si les sons sont OFF, on ne mémorise pas l’alerte.
+    Sinon, quand l’utilisateur active les sons après coup,
+    le bip ne partirait jamais.
+  */
+  if (!pisuSoundsEnabled) {
+    return;
+  }
 
-  const now = Date.now();
-  const key = typeof normalizeSAEDText === "function"
+  const key = normalizeSAEDText
     ? normalizeSAEDText(reason)
     : String(reason || "").toLowerCase();
 
-  if (key && key === lastCall15SoundKey && now - notifyCall15Required.lastPlayedAt < 1500) {
+  if (key && key === lastCall15SoundKey) {
     return;
   }
 
   lastCall15SoundKey = key;
-  notifyCall15Required.lastPlayedAt = now;
+
   playPisuSound("call15Required");
 
   if (typeof addLog === "function") {
@@ -366,116 +373,14 @@ function notifyCall15Required(reason = "Appel 15 exigé") {
   }
 }
 
-notifyCall15Required.lastPlayedAt = 0;
-
 let lastCall15UiAlertSignature = "";
 let lastImmediateCall15VisualSignature = "";
 let call15VisualObserver = null;
-let call15ActionContext = null;
-let call15ActionSequence = 0;
-
-const CALL15_ACTION_SELECTOR = [
-  "[data-action]",
-  "[data-acr-action]",
-  "[data-child-acr-action]",
-  "[data-dt-action]",
-  "[data-smoke-action]",
-  "[data-burn-action]",
-  "[data-seizure-action]",
-  "[data-anaphylaxis-action]",
-  "[data-hemo-action]",
-  "[data-hypo-action]",
-  "[data-asthma-action]",
-  "[data-analgesia-action]"
-].join(",");
-
-const CALL15_VISUAL_SELECTOR = [
-  'a[href="tel:15"]',
-  ".call15-alert",
-  ".call15-alert-red",
-  ".call15-alert-orange",
-  ".call15-required",
-  ".call15-immediate",
-  ".call15-blink",
-  ".blink-call15",
-  "[data-call15-alert]",
-  "[data-call15-required]",
-  "[data-call15-immediate]"
-].join(",");
-
-function isElementReallyVisible(element) {
-  if (!element || element.classList.contains("hidden")) return false;
-
-  const style = window.getComputedStyle(element);
-  if (
-    style.display === "none" ||
-    style.visibility === "hidden" ||
-    Number(style.opacity) === 0
-  ) {
-    return false;
-  }
-
-  const rect = element.getBoundingClientRect();
-  return rect.width > 0 && rect.height > 0;
-}
-
-function normalizeCall15Value(value) {
-  if (typeof normalizeSAEDText === "function") {
-    return normalizeSAEDText(value);
-  }
-
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getCall15VisualState() {
-  const candidates = Array.from(document.querySelectorAll(CALL15_VISUAL_SELECTOR));
-
-  const element = candidates.find(candidate => {
-    if (!isElementReallyVisible(candidate)) return false;
-
-    const protocolSection = candidate.closest("main > section[id]");
-    return !protocolSection || !protocolSection.classList.contains("hidden");
-  });
-
-  if (!element) {
-    return {
-      urgent: false,
-      signature: "",
-      reason: ""
-    };
-  }
-
-  const text = normalizeCall15Value(element.textContent);
-  const classes = normalizeCall15Value(element.className);
-  const explicitlyIdle = /(?:^|[ _-])(idle|done|rosc)(?:$|[ _-])/.test(classes);
-  const alertClass = /(?:^|[ _-])(alert|danger|urgent|immediate|required|blink)(?:$|[ _-])/.test(classes);
-  const alertData =
-    element.dataset.call15Alert === "true" ||
-    element.dataset.call15Required === "true" ||
-    element.dataset.call15Immediate === "true";
-  const immediateText =
-    text.includes("immediat") ||
-    text.includes("a faire") ||
-    text.includes("faire maintenant") ||
-    text.includes("appel 15 exige") ||
-    text.includes("appel 15 requis");
-
-  const urgent = !explicitlyIdle && (alertClass || alertData || immediateText);
-  const reason = element.textContent?.replace(/\s+/g, " ").trim() || "Appel 15 immédiat";
-
-  return {
-    urgent,
-    signature: `${classes}|${text}|${alertData}`,
-    reason
-  };
-}
 
 function getCurrentCall15ImmediateReason() {
+  /*
+    Source prioritaire : l’alerte constantes structurée.
+  */
   const latestAlert = typeof getLatestVitalsAlert === "function"
     ? getLatestVitalsAlert()
     : null;
@@ -495,55 +400,31 @@ function getCurrentCall15ImmediateReason() {
     );
   }
 
-  const state = getCall15VisualState();
-  return state.urgent ? state.reason : "";
-}
+  /*
+    Sécurité visuelle :
+    si un bouton / logo Appel 15 porte une classe d’alerte,
+    on le détecte aussi.
+  */
+  const activeCall15Element = document.querySelector(
+    [
+      ".call15-alert",
+      ".call15-alert-red",
+      ".call15-alert-orange",
+      ".call15-required",
+      ".call15-immediate",
+      ".call15-blink",
+      ".blink-call15",
+      "[data-call15-alert]",
+      "[data-call15-alert='true']",
+      "[data-call15-required='true']"
+    ].join(", ")
+  );
 
-function getProtocolActionLabel(action) {
-  const keys = [
-    "action",
-    "acrAction",
-    "childAcrAction",
-    "dtAction",
-    "smokeAction",
-    "burnAction",
-    "seizureAction",
-    "anaphylaxisAction",
-    "hemoAction",
-    "hypoAction",
-    "asthmaAction",
-    "analgesiaAction"
-  ];
-
-  for (const key of keys) {
-    if (action?.dataset?.[key]) return action.dataset[key];
+  if (activeCall15Element) {
+    return activeCall15Element.textContent?.trim() || "Appel 15 immédiat affiché";
   }
 
-  return action?.textContent?.replace(/\s+/g, " ").trim() || "Action protocole";
-}
-
-function scanImmediateCall15VisualAlert(options = {}) {
-  const state = getCall15VisualState();
-
-  if (!state.urgent) {
-    lastImmediateCall15VisualSignature = "";
-    return false;
-  }
-
-  const signature = state.signature || normalizeCall15Value(state.reason);
-
-  if (!options.force && signature === lastImmediateCall15VisualSignature) {
-    return false;
-  }
-
-  lastImmediateCall15VisualSignature = signature;
-
-  const reason = options.actionLabel
-    ? `${options.actionLabel} — ${state.reason}`
-    : state.reason;
-
-  window.pisuSounds?.notifyCall15Required?.(reason);
-  return true;
+  return "";
 }
 
 function notifyCall15IfImmediateVisible() {
@@ -554,108 +435,154 @@ function notifyCall15IfImmediateVisible() {
     return;
   }
 
-  if (!pisuSoundsEnabled) return;
+  if (!pisuSoundsEnabled) {
+    return;
+  }
 
-  const signature = normalizeCall15Value(reason);
-  if (signature && signature === lastCall15UiAlertSignature) return;
+  const signature = normalizeSAEDText
+    ? normalizeSAEDText(reason)
+    : String(reason).toLowerCase();
+
+  if (signature && signature === lastCall15UiAlertSignature) {
+    return;
+  }
 
   lastCall15UiAlertSignature = signature;
-  window.pisuSounds?.notifyCall15Required?.(reason);
+
+  window.pisuSounds?.notifyCall15Required(reason);
 }
 
-function inspectCall15AfterAction(sequence) {
-  if (!call15ActionContext || sequence !== call15ActionSequence) return;
+function isElementReallyVisible(element) {
+  if (!element) return false;
 
-  const after = getCall15VisualState();
-  const before = call15ActionContext.before;
-  const label = call15ActionContext.label;
-  const actionText = normalizeCall15Value(label);
+  const style = window.getComputedStyle(element);
 
-  const becameUrgent =
-    after.urgent &&
-    (!before.urgent || before.signature !== after.signature);
+  if (
+    style.display === "none" ||
+    style.visibility === "hidden" ||
+    Number(style.opacity) === 0
+  ) {
+    return false;
+  }
 
-  const actionExplicitlyUrgent =
-    actionText.includes("appel") &&
-    actionText.includes("15") &&
-    (
-      actionText.includes("immediat") ||
-      actionText.includes("urgence") ||
-      actionText.includes("exige") ||
-      actionText.includes("requis")
-    );
+  const rect = element.getBoundingClientRect();
 
-  if (!becameUrgent && !actionExplicitlyUrgent) return;
+  return rect.width > 0 && rect.height > 0;
+}
 
-  scanImmediateCall15VisualAlert({
-    force: true,
-    actionLabel: label
+function getImmediateCall15VisualReason() {
+  const candidates = Array.from(document.querySelectorAll("body *"));
+
+  const found = candidates.find(element => {
+    if (!isElementReallyVisible(element)) return false;
+
+    const rawText = String(element.textContent || "").trim();
+    const isFocusedTextBlock =
+      rawText.length <= 180 ||
+      element.matches("a, button, small, span, strong, em, b, p, label, summary");
+
+    const text = normalizeSAEDText
+      ? normalizeSAEDText(rawText)
+      : rawText.toLowerCase();
+
+    const hasCall15 =
+      text.includes("appel 15") ||
+      text.includes("centre 15") ||
+      text.includes("regulation") ||
+      text.includes("régulation");
+
+    const hasImmediate =
+      text.includes("immediat") ||
+      text.includes("immédiat") ||
+      text.includes("exige") ||
+      text.includes("exigé") ||
+      text.includes("prioritaire") ||
+      text.includes("urgence");
+
+    const hasAlertClass =
+      element.classList.contains("call15-alert") ||
+      element.classList.contains("call15-alert-red") ||
+      element.classList.contains("call15-alert-orange") ||
+      element.classList.contains("call15-required") ||
+      element.classList.contains("call15-immediate") ||
+      element.classList.contains("call15-blink") ||
+      element.classList.contains("blink-call15") ||
+      element.hasAttribute("data-call15-alert") ||
+      element.dataset.call15Alert === "true" ||
+      element.dataset.call15Required === "true" ||
+      element.dataset.call15Immediate === "true";
+
+    if (!hasAlertClass && !isFocusedTextBlock) return false;
+
+    return hasAlertClass || (hasCall15 && hasImmediate);
   });
 
-  call15ActionSequence += 1;
-  call15ActionContext = null;
+  if (!found) return "";
+
+  return found.textContent?.trim() || "Appel 15 immédiat affiché";
+}
+
+function scanImmediateCall15VisualAlert(options = {}) {
+  const reason = getImmediateCall15VisualReason();
+
+  if (!reason) {
+    lastImmediateCall15VisualSignature = "";
+    return;
+  }
+
+  const signature = normalizeSAEDText
+    ? normalizeSAEDText(reason)
+    : String(reason).toLowerCase();
+
+  if (!options.force && signature === lastImmediateCall15VisualSignature) {
+    return;
+  }
+
+  lastImmediateCall15VisualSignature = signature;
+
+  window.pisuSounds?.notifyCall15Required?.(reason);
 }
 
 function setupImmediateCall15SoundWatcher() {
   if (call15VisualObserver) return;
 
-  document.addEventListener("pointerdown", event => {
-    const action = event.target.closest?.(CALL15_ACTION_SELECTOR);
-    if (!action) return;
-
-    call15ActionContext = {
-      before: getCall15VisualState(),
-      label: getProtocolActionLabel(action),
-      at: Date.now()
-    };
-
-    if (pisuSoundsEnabled) {
-      // Important sur iPhone : reprise de l’AudioContext pendant le geste utilisateur.
-      resumePisuAudioContext?.();
-    }
-  }, true);
-
   document.addEventListener("click", event => {
-    const action = event.target.closest?.(CALL15_ACTION_SELECTOR);
-    if (!action) return;
+    const clickedAction = event.target.closest(
+      [
+        "[data-action]",
+        "[data-acr-action]",
+        "[data-child-acr-action]",
+        "[data-dt-action]",
+        "[data-smoke-action]",
+        "[data-burn-action]",
+        "[data-seizure-action]",
+        "[data-anaphylaxis-action]",
+        "[data-hemo-action]",
+        "[data-hypo-action]",
+        "[data-asthma-action]",
+        "[data-analgesia-action]"
+      ].join(", ")
+    );
 
-    if (!call15ActionContext) {
-      call15ActionContext = {
-        before: getCall15VisualState(),
-        label: getProtocolActionLabel(action),
-        at: Date.now()
-      };
-    }
+    if (!clickedAction) return;
 
-    const sequence = ++call15ActionSequence;
-
-    [40, 140, 320, 650].forEach(delay => {
-      window.setTimeout(() => inspectCall15AfterAction(sequence), delay);
-    });
+    window.setTimeout(() => {
+      scanImmediateCall15VisualAlert();
+    }, 120);
   });
-
-  const observedRoot = document.querySelector("main") || document.body;
 
   call15VisualObserver = new MutationObserver(() => {
-    if (!call15ActionContext) return;
-    if (Date.now() - call15ActionContext.at > 1600) return;
-
-    const sequence = call15ActionSequence;
-    window.setTimeout(() => inspectCall15AfterAction(sequence), 40);
+    window.setTimeout(() => {
+      scanImmediateCall15VisualAlert();
+    }, 80);
   });
 
-  call15VisualObserver.observe(observedRoot, {
+  call15VisualObserver.observe(document.body, {
     childList: true,
     subtree: true,
     attributes: true,
     characterData: true,
-    attributeFilter: [
-      "class",
-      "hidden",
-      "data-call15-alert",
-      "data-call15-required",
-      "data-call15-immediate"
-    ]
+    attributeFilter: ["class", "style", "hidden", "data-call15-alert", "data-call15-required", "data-call15-immediate"]
   });
 }
 
@@ -3765,416 +3692,499 @@ function setAppTitle(protocolId = "") {
     : APP_DEFAULT_TITLE;
 }
 
-/* =========================================================
-   MOTEUR DE SWIPE GÉNÉRIQUE V195
-   Remplace les quatre implémentations parallèles sans modifier
-   les actions ou la logique des protocoles.
-   ========================================================= */
-
-function clampSwipeIndex(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-class PisuSwipeController {
-  constructor(options) {
-    this.name = options.name;
-    this.track = document.querySelector(options.trackSelector);
-    this.slideSelector = options.slideSelector;
-    this.tabSelector = options.tabSelector || "";
-    this.prev = options.prevSelector ? document.querySelector(options.prevSelector) : null;
-    this.next = options.nextSelector ? document.querySelector(options.nextSelector) : null;
-    this.dots = options.dotsSelector ? document.querySelector(options.dotsSelector) : null;
-    this.datasetKey = options.datasetKey || "";
-    this.align = options.align || "start";
-    this.autoHeight = options.autoHeight !== false;
-    this.storageKey = `pisuSwipeIndex:${this.name}`;
-    this.tabs = this.tabSelector
-      ? Array.from(document.querySelectorAll(this.tabSelector))
-      : [];
-    this.frame = 0;
-    this.initialized = false;
-    this.resizeObserver = null;
-    this.mutationObserver = null;
-  }
-
-  getSlides() {
-    if (!this.track) return [];
-    return Array.from(this.track.querySelectorAll(this.slideSelector));
-  }
-
-  getCurrentIndex() {
-    const slides = this.getSlides();
-    if (!this.track || slides.length === 0) return 0;
-
-    const trackCenter = this.track.scrollLeft + this.track.clientWidth / 2;
-    let closestIndex = 0;
-    let closestDistance = Number.POSITIVE_INFINITY;
-
-    slides.forEach((slide, index) => {
-      const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
-      const distance = Math.abs(slideCenter - trackCenter);
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestIndex = index;
-      }
-    });
-
-    return closestIndex;
-  }
-
-  getTabTarget(tab, fallbackIndex) {
-    const raw = this.datasetKey ? tab?.dataset?.[this.datasetKey] : "";
-    const value = Number(raw);
-    return Number.isFinite(value) ? value : fallbackIndex;
-  }
-
-  getTargetLeft(index) {
-    const slide = this.getSlides()[index];
-    if (!this.track || !slide) return 0;
-
-    if (this.align === "center") {
-      return slide.offsetLeft - (this.track.clientWidth - slide.offsetWidth) / 2;
-    }
-
-    return slide.offsetLeft;
-  }
-
-  scrollTo(index, behavior = "smooth") {
-    const slides = this.getSlides();
-    if (!this.track || slides.length === 0) return;
-
-    const safeIndex = clampSwipeIndex(index, 0, slides.length - 1);
-    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-
-    this.track.scrollTo({
-      left: this.getTargetLeft(safeIndex),
-      top: 0,
-      behavior: reducedMotion ? "auto" : behavior
-    });
-
-    try {
-      sessionStorage.setItem(this.storageKey, String(safeIndex));
-    } catch {
-      // La mémorisation est un confort non bloquant.
-    }
-
-    this.scheduleUpdate();
-    window.setTimeout(() => this.update(), behavior === "smooth" ? 230 : 40);
-  }
-
-  updateHeight(index = this.getCurrentIndex()) {
-    if (!this.autoHeight || !this.track) return;
-
-    const slide = this.getSlides()[index];
-    if (!slide) return;
-
-    const height = Math.ceil(slide.scrollHeight);
-    if (height > 0) {
-      this.track.style.height = `${height}px`;
-    }
-  }
-
-  updateControls(index = this.getCurrentIndex()) {
-    const slides = this.getSlides();
-    const lastIndex = Math.max(0, slides.length - 1);
-
-    if (this.prev) this.prev.disabled = index <= 0;
-    if (this.next) this.next.disabled = index >= lastIndex;
-
-    this.tabs.forEach((tab, tabIndex) => {
-      const active = this.getTabTarget(tab, tabIndex) === index;
-      tab.classList.toggle("active", active);
-      tab.setAttribute("aria-selected", String(active));
-      tab.setAttribute("tabindex", active ? "0" : "-1");
-    });
-
-    this.dots?.querySelectorAll(".protocol-swipe-dot").forEach((dot, dotIndex) => {
-      const active = dotIndex === index;
-      dot.classList.toggle("active", active);
-      dot.setAttribute("aria-current", active ? "true" : "false");
-    });
-  }
-
-  update() {
-    if (!this.track) return;
-    const index = this.getCurrentIndex();
-    this.updateControls(index);
-    this.updateHeight(index);
-  }
-
-  scheduleUpdate() {
-    window.cancelAnimationFrame(this.frame);
-    this.frame = window.requestAnimationFrame(() => this.update());
-  }
-
-  buildDots() {
-    if (!this.dots) return;
-
-    this.dots.innerHTML = "";
-
-    this.getSlides().forEach((slide, index) => {
-      const dot = document.createElement("button");
-      dot.type = "button";
-      dot.className = "protocol-swipe-dot";
-      dot.setAttribute("aria-label", `Afficher le protocole ${index + 1}`);
-      dot.addEventListener("click", () => this.scrollTo(index));
-      this.dots.appendChild(dot);
-    });
-  }
-
-  bindControls() {
-    if (this.tabs.length > 0) {
-      this.tabs[0].parentElement?.setAttribute("role", "tablist");
-
-      this.tabs.forEach((tab, index) => {
-        tab.setAttribute("role", "tab");
-        tab.addEventListener("click", () => {
-          this.scrollTo(this.getTabTarget(tab, index));
-        });
-      });
-    }
-
-    this.prev?.addEventListener("click", () => {
-      this.scrollTo(this.getCurrentIndex() - 1);
-    });
-
-    this.next?.addEventListener("click", () => {
-      this.scrollTo(this.getCurrentIndex() + 1);
-    });
-  }
-
-  bindTrack() {
-    if (!this.track) return;
-
-    let scrollTimer = null;
-
-    this.track.addEventListener("scroll", () => {
-      window.clearTimeout(scrollTimer);
-      scrollTimer = window.setTimeout(() => this.update(), 60);
-    }, { passive: true });
-
-    this.track.addEventListener("keydown", event => {
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        this.scrollTo(this.getCurrentIndex() + 1);
-      } else if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        this.scrollTo(this.getCurrentIndex() - 1);
-      } else if (event.key === "Home") {
-        event.preventDefault();
-        this.scrollTo(0);
-      } else if (event.key === "End") {
-        event.preventDefault();
-        this.scrollTo(this.getSlides().length - 1);
-      }
-    });
-  }
-
-  bindObservers() {
-    if (window.ResizeObserver && this.track) {
-      this.resizeObserver = new ResizeObserver(() => this.scheduleUpdate());
-      this.resizeObserver.observe(this.track);
-      this.getSlides().forEach(slide => this.resizeObserver.observe(slide));
-    }
-
-    if (window.MutationObserver && this.track) {
-      this.mutationObserver = new MutationObserver(() => {
-        this.getSlides().forEach(slide => this.resizeObserver?.observe(slide));
-        this.scheduleUpdate();
-      });
-
-      this.mutationObserver.observe(this.track, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ["class", "open", "hidden", "style", "aria-expanded"]
-      });
-    }
-  }
-
-  restorePosition() {
-    let savedIndex = 0;
-
-    try {
-      savedIndex = Number(sessionStorage.getItem(this.storageKey) || 0);
-    } catch {
-      savedIndex = 0;
-    }
-
-    if (Number.isFinite(savedIndex) && savedIndex > 0) {
-      this.scrollTo(savedIndex, "auto");
-    } else {
-      this.update();
-    }
-  }
-
-  init() {
-    if (!this.track || this.initialized) return this;
-
-    this.initialized = true;
-    this.buildDots();
-    this.bindControls();
-    this.bindTrack();
-    this.bindObservers();
-    this.restorePosition();
-
-    return this;
-  }
-}
-
-const pisuSwipeControllers = {};
-
-function getPisuSwipeController(name) {
-  if (pisuSwipeControllers[name]) return pisuSwipeControllers[name];
-
-  const configs = {
-    protocol: {
-      name: "protocol",
-      trackSelector: "#protocolSwipeTrack",
-      slideSelector: "[data-open-protocol]",
-      prevSelector: "#protocolSwipePrev",
-      nextSelector: "#protocolSwipeNext",
-      dotsSelector: "#protocolSwipeDots",
-      align: "center",
-      autoHeight: false
-    },
-    team: {
-      name: "team",
-      trackSelector: "#teamSwipeTrack",
-      slideSelector: "[data-team-slide]",
-      tabSelector: "[data-team-slide-target]",
-      prevSelector: "#teamSwipePrev",
-      nextSelector: "#teamSwipeNext",
-      datasetKey: "teamSlideTarget"
-    },
-    route: {
-      name: "route",
-      trackSelector: "#routeSwipeTrack",
-      slideSelector: "[data-route-slide]",
-      tabSelector: "[data-route-slide-target]",
-      prevSelector: "#routeSwipePrev",
-      nextSelector: "#routeSwipeNext",
-      datasetKey: "routeSlideTarget"
-    },
-    identity: {
-      name: "identity",
-      trackSelector: "#identitySwipeTrack",
-      slideSelector: "[data-identity-slide]",
-      tabSelector: "[data-identity-slide-target]",
-      prevSelector: "#identitySwipePrev",
-      nextSelector: "#identitySwipeNext",
-      datasetKey: "identitySlideTarget"
-    }
-  };
-
-  const config = configs[name];
-  if (!config) return null;
-
-  pisuSwipeControllers[name] = new PisuSwipeController(config);
-  return pisuSwipeControllers[name];
-}
-
-function refreshAllPisuSwipes() {
-  Object.values(pisuSwipeControllers).forEach(controller => controller?.update());
-}
-
 function getProtocolSwipeCards() {
-  return getPisuSwipeController("protocol")?.getSlides() || [];
+  if (!protocolSwipeTrack) return [];
+  return Array.from(protocolSwipeTrack.querySelectorAll("[data-open-protocol]"));
 }
 
 function getCurrentProtocolSwipeIndex() {
-  return getPisuSwipeController("protocol")?.getCurrentIndex() || 0;
+  const cards = getProtocolSwipeCards();
+
+  if (cards.length === 0 || !protocolSwipeTrack) return 0;
+
+  const trackRect = protocolSwipeTrack.getBoundingClientRect();
+  const trackCenter = trackRect.left + trackRect.width / 2;
+
+  let closestIndex = 0;
+  let closestDistance = Infinity;
+
+  cards.forEach((card, index) => {
+    const cardRect = card.getBoundingClientRect();
+    const cardCenter = cardRect.left + cardRect.width / 2;
+    const distance = Math.abs(cardCenter - trackCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
 }
 
 function scrollToProtocolSwipeIndex(index) {
-  getPisuSwipeController("protocol")?.scrollTo(index);
+  const cards = getProtocolSwipeCards();
+
+  if (!protocolSwipeTrack || cards.length === 0) return;
+
+  const safeIndex = Math.max(0, Math.min(index, cards.length - 1));
+  const card = cards[safeIndex];
+
+  card.scrollIntoView({
+    behavior: "smooth",
+    inline: "center",
+    block: "nearest"
+  });
 }
 
 function updateProtocolSwipeUi() {
-  getPisuSwipeController("protocol")?.update();
+  const cards = getProtocolSwipeCards();
+  const index = getCurrentProtocolSwipeIndex();
+
+  if (protocolSwipePrev) {
+    protocolSwipePrev.disabled = index <= 0;
+  }
+
+  if (protocolSwipeNext) {
+    protocolSwipeNext.disabled = index >= cards.length - 1;
+  }
+
+  protocolSwipeDots?.querySelectorAll(".protocol-swipe-dot").forEach((dot, dotIndex) => {
+    dot.classList.toggle("active", dotIndex === index);
+  });
 }
 
 function setupProtocolSwipeMenu() {
-  getPisuSwipeController("protocol")?.init();
+  if (!protocolSwipeTrack) return;
+
+  const cards = getProtocolSwipeCards();
+
+  if (protocolSwipeDots) {
+    protocolSwipeDots.innerHTML = "";
+
+    cards.forEach((card, index) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "protocol-swipe-dot";
+      dot.setAttribute("aria-label", `Afficher protocole ${index + 1}`);
+      dot.addEventListener("click", () => {
+        scrollToProtocolSwipeIndex(index);
+      });
+
+      protocolSwipeDots.appendChild(dot);
+    });
+  }
+
+  protocolSwipePrev?.addEventListener("click", () => {
+    scrollToProtocolSwipeIndex(getCurrentProtocolSwipeIndex() - 1);
+  });
+
+  protocolSwipeNext?.addEventListener("click", () => {
+    scrollToProtocolSwipeIndex(getCurrentProtocolSwipeIndex() + 1);
+  });
+
+  let scrollTimer = null;
+
+  protocolSwipeTrack.addEventListener("scroll", () => {
+    window.clearTimeout(scrollTimer);
+
+    scrollTimer = window.setTimeout(() => {
+      updateProtocolSwipeUi();
+    }, 80);
+  });
+
+  protocolSwipeTrack.addEventListener("keydown", event => {
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      scrollToProtocolSwipeIndex(getCurrentProtocolSwipeIndex() + 1);
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      scrollToProtocolSwipeIndex(getCurrentProtocolSwipeIndex() - 1);
+    }
+  });
+
+  updateProtocolSwipeUi();
 }
 
 function getTeamSwipeSlides() {
-  return getPisuSwipeController("team")?.getSlides() || [];
+  if (!teamSwipeTrack) return [];
+  return Array.from(teamSwipeTrack.querySelectorAll("[data-team-slide]"));
 }
 
 function getCurrentTeamSwipeIndex() {
-  return getPisuSwipeController("team")?.getCurrentIndex() || 0;
+  const slides = getTeamSwipeSlides();
+
+  if (!teamSwipeTrack || slides.length === 0) return 0;
+
+  const trackRect = teamSwipeTrack.getBoundingClientRect();
+  const trackCenter = trackRect.left + trackRect.width / 2;
+
+  let closestIndex = 0;
+  let closestDistance = Infinity;
+
+  slides.forEach((slide, index) => {
+    const rect = slide.getBoundingClientRect();
+    const center = rect.left + rect.width / 2;
+    const distance = Math.abs(center - trackCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
 }
 
 function scrollToTeamSlide(index, behavior = "smooth") {
-  getPisuSwipeController("team")?.scrollTo(index, behavior);
+  const slides = getTeamSwipeSlides();
+
+  if (!teamSwipeTrack || slides.length === 0) return;
+
+  const safeIndex = Math.max(0, Math.min(index, slides.length - 1));
+
+  slides[safeIndex].scrollIntoView({
+    behavior,
+    inline: "start",
+    block: "nearest"
+  });
+
+  window.setTimeout(updateTeamSwipeUi, 220);
 }
 
 function updateTeamSwipeHeight() {
-  getPisuSwipeController("team")?.updateHeight();
+  if (!teamSwipeTrack) return;
+
+  const slides = getTeamSwipeSlides();
+
+  if (slides.length === 0) return;
+
+  const index = getCurrentTeamSwipeIndex();
+  const activeSlide = slides[index];
+
+  if (!activeSlide) return;
+
+  window.requestAnimationFrame(() => {
+    const height = activeSlide.scrollHeight;
+
+    if (height > 0) {
+      teamSwipeTrack.style.height = `${height + 6}px`;
+    }
+  });
 }
 
 function updateTeamSwipeUi() {
-  getPisuSwipeController("team")?.update();
+  const slides = getTeamSwipeSlides();
+  const index = getCurrentTeamSwipeIndex();
+
+  if (teamSwipePrev) {
+    teamSwipePrev.disabled = index <= 0;
+  }
+
+  if (teamSwipeNext) {
+    teamSwipeNext.disabled = index >= slides.length - 1;
+  }
+
+  teamSwipeTabs.forEach(tab => {
+    const targetIndex = Number(tab.dataset.teamSlideTarget);
+    tab.classList.toggle("active", targetIndex === index);
+  });
+
+  updateTeamSwipeHeight();
 }
 
 function setupTeamSwipeFeature() {
-  getPisuSwipeController("team")?.init();
+  if (!teamSwipeTrack) return;
+
+  teamSwipePrev?.addEventListener("click", () => {
+    scrollToTeamSlide(getCurrentTeamSwipeIndex() - 1);
+  });
+
+  teamSwipeNext?.addEventListener("click", () => {
+    scrollToTeamSlide(getCurrentTeamSwipeIndex() + 1);
+  });
+
+  teamSwipeTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const targetIndex = Number(tab.dataset.teamSlideTarget);
+
+      if (!Number.isFinite(targetIndex)) return;
+
+      scrollToTeamSlide(targetIndex);
+    });
+  });
+
+  let scrollTimer = null;
+
+  teamSwipeTrack.addEventListener("scroll", () => {
+    window.clearTimeout(scrollTimer);
+
+    scrollTimer = window.setTimeout(() => {
+      updateTeamSwipeUi();
+    }, 80);
+  });
+
+  document.querySelectorAll(".team-compact-content details").forEach(details => {
+    details.addEventListener("toggle", () => {
+      window.setTimeout(() => {
+        updateTeamSwipeUi?.();
+      }, 80);
+    });
+  });
+
+  updateTeamSwipeUi();
 }
 
 function getRouteSwipeSlides() {
-  return getPisuSwipeController("route")?.getSlides() || [];
+  if (!routeSwipeTrack) return [];
+  return Array.from(routeSwipeTrack.querySelectorAll("[data-route-slide]"));
 }
 
 function getCurrentRouteSwipeIndex() {
-  return getPisuSwipeController("route")?.getCurrentIndex() || 0;
+  const slides = getRouteSwipeSlides();
+
+  if (!routeSwipeTrack || slides.length === 0) return 0;
+
+  const trackRect = routeSwipeTrack.getBoundingClientRect();
+  const trackCenter = trackRect.left + trackRect.width / 2;
+
+  let closestIndex = 0;
+  let closestDistance = Infinity;
+
+  slides.forEach((slide, index) => {
+    const rect = slide.getBoundingClientRect();
+    const center = rect.left + rect.width / 2;
+    const distance = Math.abs(center - trackCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
 }
 
 function scrollToRouteSlide(index, behavior = "smooth") {
-  getPisuSwipeController("route")?.scrollTo(index, behavior);
+  const slides = getRouteSwipeSlides();
+
+  if (!routeSwipeTrack || slides.length === 0) return;
+
+  const safeIndex = Math.max(0, Math.min(index, slides.length - 1));
+
+  slides[safeIndex].scrollIntoView({
+    behavior,
+    inline: "start",
+    block: "nearest"
+  });
+
+  window.setTimeout(updateRouteSwipeUi, 220);
 }
 
 function updateRouteSwipeHeight() {
-  getPisuSwipeController("route")?.updateHeight();
+  if (!routeSwipeTrack) return;
+
+  const slides = getRouteSwipeSlides();
+
+  if (slides.length === 0) return;
+
+  const index = getCurrentRouteSwipeIndex();
+  const activeSlide = slides[index];
+
+  if (!activeSlide) return;
+
+  window.requestAnimationFrame(() => {
+    const height = activeSlide.scrollHeight;
+
+    if (height > 0) {
+      routeSwipeTrack.style.height = `${height + 6}px`;
+    }
+  });
 }
 
 function updateRouteSwipeUi() {
-  getPisuSwipeController("route")?.update();
+  const slides = getRouteSwipeSlides();
+  const index = getCurrentRouteSwipeIndex();
+
+  if (routeSwipePrev) {
+    routeSwipePrev.disabled = index <= 0;
+  }
+
+  if (routeSwipeNext) {
+    routeSwipeNext.disabled = index >= slides.length - 1;
+  }
+
+  routeSwipeTabs.forEach(tab => {
+    const targetIndex = Number(tab.dataset.routeSlideTarget);
+    tab.classList.toggle("active", targetIndex === index);
+  });
+
+  updateRouteSwipeHeight();
 }
 
 function setupRouteSwipeFeature() {
-  getPisuSwipeController("route")?.init();
+  if (!routeSwipeTrack) return;
+
+  routeSwipePrev?.addEventListener("click", () => {
+    scrollToRouteSlide(getCurrentRouteSwipeIndex() - 1);
+  });
+
+  routeSwipeNext?.addEventListener("click", () => {
+    scrollToRouteSlide(getCurrentRouteSwipeIndex() + 1);
+  });
+
+  routeSwipeTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const targetIndex = Number(tab.dataset.routeSlideTarget);
+
+      if (!Number.isFinite(targetIndex)) return;
+
+      scrollToRouteSlide(targetIndex);
+    });
+  });
+
+  let scrollTimer = null;
+
+  routeSwipeTrack.addEventListener("scroll", () => {
+    window.clearTimeout(scrollTimer);
+
+    scrollTimer = window.setTimeout(() => {
+      updateRouteSwipeUi();
+    }, 80);
+  });
+
+  document.querySelectorAll(".route-compact-content details").forEach(details => {
+    details.addEventListener("toggle", () => {
+      window.setTimeout(() => {
+        updateRouteSwipeUi?.();
+      }, 80);
+    });
+  });
+
+  updateRouteSwipeUi();
 }
 
 function getIdentitySwipeSlides() {
-  return getPisuSwipeController("identity")?.getSlides() || [];
+  if (!identitySwipeTrack) return [];
+  return Array.from(identitySwipeTrack.querySelectorAll("[data-identity-slide]"));
 }
 
 function getCurrentIdentitySwipeIndex() {
-  return getPisuSwipeController("identity")?.getCurrentIndex() || 0;
-}
+  if (!identitySwipeTrack) return 0;
 
-function scrollToIdentitySlide(index, behavior = "smooth") {
-  getPisuSwipeController("identity")?.scrollTo(index, behavior);
+  const slides = getIdentitySwipeSlides();
+  if (slides.length === 0) return 0;
+
+  const left = identitySwipeTrack.scrollLeft;
+  const width = identitySwipeTrack.clientWidth || 1;
+
+  return Math.max(0, Math.min(slides.length - 1, Math.round(left / width)));
 }
 
 function updateIdentitySwipeHeight() {
-  getPisuSwipeController("identity")?.updateHeight();
-}
+  if (!identitySwipeTrack) return;
 
-function updateIdentitySwipeUi() {
-  getPisuSwipeController("identity")?.update();
-}
+  const slides = getIdentitySwipeSlides();
+  if (!slides.length) return;
 
-function setupIdentitySwipeFeature() {
-  getPisuSwipeController("identity")?.init();
+  const index = getCurrentIdentitySwipeIndex();
+  const activeSlide = slides[index];
+  if (!activeSlide) return;
+
+  window.requestAnimationFrame(() => {
+    const height = Math.ceil(activeSlide.scrollHeight);
+
+    if (height > 0) {
+      identitySwipeTrack.style.height = `${height + 6}px`;
+    }
+  });
 }
 
 function setupIdentityNotesHeightRefresh() {
-  [patientNoteInput, patientAntecedentsNoteInput].forEach(field => {
-    field?.addEventListener("input", updateIdentitySwipeUi);
+  [
+    document.getElementById("patientNote"),
+    document.getElementById("patientAntecedentsNote"),
+    document.getElementById("patientIdentityRemark"),
+    document.getElementById("patientFreeNote")
+  ].forEach(field => {
+    field?.addEventListener("input", () => {
+      updatePatientSwipeUi?.();
+      updateIdentitySwipeUi?.();
+    });
   });
+}
+
+function updateIdentitySwipeUi() {
+  const slides = getIdentitySwipeSlides();
+  const index = getCurrentIdentitySwipeIndex();
+
+  if (identitySwipePrev) {
+    identitySwipePrev.disabled = index <= 0;
+  }
+
+  if (identitySwipeNext) {
+    identitySwipeNext.disabled = index >= slides.length - 1;
+  }
+
+  identitySwipeTabs.forEach(tab => {
+    const targetIndex = Number(tab.dataset.identitySlideTarget);
+    tab.classList.toggle("active", targetIndex === index);
+  });
+
+  updateIdentitySwipeHeight();
+}
+
+function scrollToIdentitySlide(index, behavior = "smooth") {
+  const slides = getIdentitySwipeSlides();
+  if (!identitySwipeTrack || !slides.length) return;
+
+  const safeIndex = Math.max(0, Math.min(index, slides.length - 1));
+
+  slides[safeIndex].scrollIntoView({
+    behavior,
+    inline: "start",
+    block: "nearest"
+  });
+
+  window.setTimeout(updateIdentitySwipeUi, 220);
+}
+
+function setupIdentitySwipeFeature() {
+  if (!identitySwipeTrack) return;
+
+  identitySwipeTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const index = Number(tab.dataset.identitySlideTarget);
+
+      if (!Number.isFinite(index)) return;
+
+      scrollToIdentitySlide(index);
+    });
+  });
+
+  identitySwipePrev?.addEventListener("click", () => {
+    scrollToIdentitySlide(getCurrentIdentitySwipeIndex() - 1);
+  });
+
+  identitySwipeNext?.addEventListener("click", () => {
+    scrollToIdentitySlide(getCurrentIdentitySwipeIndex() + 1);
+  });
+
+  let scrollTimer = null;
+
+  identitySwipeTrack.addEventListener("scroll", () => {
+    window.clearTimeout(scrollTimer);
+
+    scrollTimer = window.setTimeout(() => {
+      updateIdentitySwipeUi();
+    }, 80);
+  });
+
+  window.addEventListener("resize", updateIdentitySwipeUi);
+
+  updateIdentitySwipeUi();
 }
 
 function getPatientSwipeSlides() {
