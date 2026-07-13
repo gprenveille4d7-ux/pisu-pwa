@@ -7,6 +7,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = file => fs.readFileSync(path.join(root, file), "utf8");
 const index = read("index.html");
 const app = read("app.js");
+const saed = read("saed.js");
+const versionSource = read("version.js");
 const worker = read("service-worker.js");
 
 const localAssets = [
@@ -27,6 +29,10 @@ const cacheVersion = worker.match(/CACHE_NAME\s*=\s*["']pisu-acr-cache-v(\d+)["'
 assert.ok(cacheVersion, "Version du cache PWA introuvable");
 assert.match(index, new RegExp(`style\\.css\\?v=${cacheVersion}`), "Version CSS non synchronisée");
 assert.match(index, new RegExp(`app\\.js\\?v=${cacheVersion}`), "Version JavaScript non synchronisée");
+assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du module SAED non synchronisée");
+assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.6["']/, "Version applicative centralisée introuvable");
+assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 
 const protocolFiles = [
   "acr-adulte.js",
@@ -61,6 +67,15 @@ assert.doesNotMatch(
 for (const requiredId of ["missionResumeBanner", "missionResumeProtocol", "missionResumeDuration", "resumeMissionBtn"]) {
   assert.match(index, new RegExp(`id=["']${requiredId}["']`), `Élément de reprise absent : ${requiredId}`);
 }
+for (const requiredId of ["appVersion", "floatingSaedBtn", "saedSheet", "saedSituationContent", "saedVitalsEvolution", "saedDemandDetail"]) {
+  assert.match(index, new RegExp(`id=["']${requiredId}["']`), `Élément SAED absent : ${requiredId}`);
+}
+assert.match(saed, /pisuSaedRequestV1/, "Stockage de la demande SAED absent");
+assert.match(saed, /buildVitalRows/, "Comparaison initiale / actuelle des constantes absente");
+assert.match(saed, /buildChronology/, "Chronologie SAED absente");
+assert.match(app, /saedRequest:\s*window\.pisuSAED/, "Demande SAED absente du transfert de mission");
+assert.match(app, /data-open-operational-saed/, "Accès SAED absent des protocoles");
+assert.doesNotMatch(app, /Copier mini SAED/, "L’ancien résumé mini SAED reste exposé");
 assert.match(app, /pisuMissionStateV1/, "État de reprise de mission absent");
 assert.match(app, /RAPID_ACTION_GUARD_MS\s*=\s*900/, "Protection anti-double-clic absente");
 
