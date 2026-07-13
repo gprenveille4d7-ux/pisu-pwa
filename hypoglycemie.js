@@ -152,14 +152,16 @@
     protocol?.classList.add("hidden");
   }
 
-  function resetHypoglycemiaProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole hypoglycémie ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetHypoglycemiaProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole hypoglycémie ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logHypo("reset protocole hypoglycémie annulé");
-      return;
+      if (!confirmation) {
+        logHypo("reset protocole hypoglycémie annulé");
+        return;
+      }
     }
 
     glycemiaStatus.textContent = "À vérifier";
@@ -180,8 +182,14 @@
 
     updateHypoglycemiaDoses();
 
-    logHypo("protocole hypoglycémie remis à zéro");
+    if (!options.silent) {
+      logHypo("protocole hypoglycémie remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetHypoglycemiaProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   openBtn?.addEventListener("click", openProtocol);
   closeBtn?.addEventListener("click", closeProtocol);

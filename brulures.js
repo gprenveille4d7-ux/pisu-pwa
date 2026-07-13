@@ -100,14 +100,16 @@
     protocol?.classList.add("hidden");
   }
 
-  function resetBurnsProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole brûlures ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetBurnsProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole brûlures ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logBurn("reset protocole brûlures annulé");
-      return;
+      if (!confirmation) {
+        logBurn("reset protocole brûlures annulé");
+        return;
+      }
     }
 
     acrStatus.textContent = "À vérifier";
@@ -122,8 +124,14 @@
       delete button.dataset.clickCount;
     });
 
-    logBurn("protocole brûlures remis à zéro");
+    if (!options.silent) {
+      logBurn("protocole brûlures remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetBurnsProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   openBtn?.addEventListener("click", openProtocol);
   closeBtn?.addEventListener("click", closeProtocol);
