@@ -5,7 +5,7 @@ Prototype d’aide-mémoire PISU destiné à un usage professionnel ou de format
 ## Version auditée
 
 - Version de l’application : `v5.6` (source unique : `version.js`)
-- Cache PWA : `v204`
+- Cache PWA : `v205`
 - 11 protocoles reliés au cycle de mission
 - Journal et SAED opérationnel structurés
 - Reprise d’une mission après rechargement
