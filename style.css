@@ -6526,3 +6526,55 @@ body.vitals-sheet-open .identity-swipe-tabs {
     min-height: 44px;
   }
 }
+
+/* CORRECTIFS MOBILES — accès SAED et tension bilatérale compacte */
+@media (max-width: 700px) {
+  body.protocol-mode .floating-saed-button {
+    right: calc(16px + var(--safe-right, env(safe-area-inset-right, 0px))) !important;
+    bottom: calc(84px + var(--safe-bottom, env(safe-area-inset-bottom, 0px))) !important;
+  }
+
+  .vitals-bp-block {
+    gap: 4px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .vitals-bp-title {
+    font-size: 0.74rem;
+  }
+
+  .vitals-bp-column-headings {
+    display: grid;
+    grid-template-columns: 50px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    color: #94a3b8;
+    font-size: 0.66rem;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .vitals-bp-line {
+    grid-template-columns: 50px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .vitals-bp-side {
+    grid-column: auto;
+    align-self: center;
+    padding-bottom: 0;
+    font-size: 0.75rem;
+  }
+
+  .vitals-bp-line label {
+    display: block;
+  }
+
+  .vitals-bp-line select {
+    min-height: 44px;
+    padding: 6px;
+    border-radius: 9px;
+  }
+}
