@@ -1,4 +1,5 @@
-const CACHE_NAME = "pisu-acr-cache-v199";
+const CACHE_NAME = "pisu-acr-cache-v204";
+const APP_VERSION = String(globalThis.PISU_APP_VERSION || "").trim();
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
 const PISU_SAED_EVENT_STORAGE_KEY = "pisuStructuredEventsV2";
@@ -889,6 +890,7 @@ const logContent = document.getElementById("logContent");
 const offlineStatus = document.getElementById("offlineStatus");
 const installBtn = document.getElementById("installBtn");
 const appTitle = document.getElementById("appTitle");
+const appVersion = document.getElementById("appVersion");
 const appHeader = document.querySelector("body > header, header.app-header, .app-header");
 const floatingBackMenuBtn = document.getElementById("floatingBackMenuBtn");
 const protocolSwipeTrack = document.getElementById("protocolSwipeTrack");
@@ -1018,6 +1020,7 @@ const importHandoffBox = document.getElementById("importHandoffBox");
 const importHandoffCode = document.getElementById("importHandoffCode");
 const confirmImportHandoffBtn = document.getElementById("confirmImportHandoffBtn");
 const floatingVitalsBtn = document.getElementById("floatingVitalsBtn");
+const floatingSaedBtn = document.getElementById("floatingSaedBtn");
 const vitalsOverlay = document.getElementById("vitalsOverlay");
 const vitalsSheet = document.getElementById("vitalsSheet");
 const closeVitalsSheetBtn = document.getElementById("closeVitalsSheetBtn");
@@ -1366,6 +1369,8 @@ function addLog(text, structuredOptions = {}) {
       inferStructuredEvent(text, eventOptions)
     );
   }
+
+  window.pisuSAED?.refreshIfOpen?.();
 }
 
 function addLogToDom(time, text) {
@@ -3125,7 +3130,7 @@ function exportTextLegacy() {
     "",
     `Export généré le : ${new Date().toLocaleString("fr-FR")}`,
     `Version export : ${SAED_STRUCTURED_EXPORT_VERSION}`,
-    "Version application : prototype à valider",
+    `Version application : ${APP_VERSION ? `v${APP_VERSION}` : "non renseignée"}`,
     "",
     "========================================",
     "1. SYNTHÈSE RAPIDE",
@@ -3368,7 +3373,7 @@ function exportText() {
     "",
     `Export généré le : ${new Date().toLocaleString("fr-FR")}`,
     `Version export : ${SAED_STRUCTURED_EXPORT_VERSION}`,
-    "Version application : prototype à valider",
+    `Version application : ${APP_VERSION ? `v${APP_VERSION}` : "non renseignée"}`,
     "",
     ...buildStructuredSAEDLines(),
     "========================================",
@@ -3583,6 +3588,7 @@ function resetMissionCompletely() {
   resetMissionRoute?.();
   resetAllVisualValidations?.();
   clearVitalsHistory?.();
+  window.pisuSAED?.reset?.();
   clearProtocolScrollMemory?.();
   resetMissionHandoffUi?.();
   startNewMissionState();
@@ -3622,6 +3628,7 @@ document.getElementById("clearLog").addEventListener("click", () => {
     resetMissionHandoffUi?.();
     resetAllVisualValidations();
     clearVitalsHistory();
+    window.pisuSAED?.reset?.();
 
     if (logEl) logEl.innerHTML = "";
     remaining = 120;
@@ -5221,64 +5228,30 @@ function injectProtocolMiniSAEDBlocks() {
     block.className = "mini-saed-block";
     block.innerHTML = `
       <div class="mini-saed-title">
-        <strong>Mini SAED / rapport protocole</strong>
-        <small>Résumé concis exportable en .txt</small>
+        <strong>Transmission SAED opérationnelle</strong>
+        <small>Préremplie avec les données utiles de la mission</small>
       </div>
 
-      <textarea data-mini-saed-output="${page.id}" rows="8" readonly></textarea>
+      <p>Ouvre le même écran SAED complet : situation, antécédents utiles, évolution, actions réalisées et demande explicite.</p>
 
       <div class="mini-saed-actions">
-        <button type="button" class="secondary validation-button" data-mini-saed-refresh="${page.id}">
-          Actualiser
-        </button>
-
-        <button type="button" class="secondary validation-button" data-mini-saed-copy="${page.id}">
-          Copier mini SAED
-        </button>
-
-        <button type="button" class="primary validation-button" data-mini-saed-export="${page.id}">
-          Exporter .txt
+        <button type="button" class="primary validation-button" data-open-operational-saed="${page.id}">
+          Ouvrir le SAED opérationnel
         </button>
       </div>
     `;
 
     page.appendChild(block);
-    refreshProtocolMiniSAED(page.id);
   });
 
-  if (document.body.dataset.miniSaedListenerReady === "true") return;
-  document.body.dataset.miniSaedListenerReady = "true";
+  if (document.body.dataset.operationalSaedListenerReady === "true") return;
+  document.body.dataset.operationalSaedListenerReady = "true";
 
   document.addEventListener("click", event => {
-    const refreshBtn = event.target.closest("[data-mini-saed-refresh]");
-    const copyBtn = event.target.closest("[data-mini-saed-copy]");
-    const exportBtn = event.target.closest("[data-mini-saed-export]");
+    const openBtn = event.target.closest("[data-open-operational-saed]");
+    if (!openBtn) return;
 
-    if (refreshBtn) {
-      const protocolId = refreshBtn.dataset.miniSaedRefresh;
-      refreshProtocolMiniSAED(protocolId);
-      markButtonValidated?.(refreshBtn, "Actualisé ✓");
-      return;
-    }
-
-    if (copyBtn) {
-      const protocolId = copyBtn.dataset.miniSaedCopy;
-      const text = buildMiniSAEDText(protocolId);
-
-      navigator.clipboard?.writeText(text);
-      refreshProtocolMiniSAED(protocolId);
-      markButtonValidated?.(copyBtn, "Copié ✓");
-      return;
-    }
-
-    if (exportBtn) {
-      const protocolId = exportBtn.dataset.miniSaedExport;
-      const text = buildMiniSAEDText(protocolId);
-
-      refreshProtocolMiniSAED(protocolId);
-      downloadTextFile(getProtocolMiniSAEDFilename(protocolId), text);
-      markButtonValidated?.(exportBtn, "Exporté ✓");
-    }
+    window.pisuSAED?.open?.();
   });
 }
 
@@ -5330,7 +5303,7 @@ function decodeMissionPayload(codeOrUrl) {
 function buildMissionPayload() {
   return {
     type: "pisu-mission-transfer",
-    version: 8,
+    version: 9,
     createdAt: new Date().toISOString(),
     responder: getResponderIdentity(),
     patient: getPatientSnapshot(),
@@ -5341,7 +5314,8 @@ function buildMissionPayload() {
     vitalsAlert: getLatestVitalsAlert(),
     events: getStructuredEvents(),
     log: getLog(),
-    missionState: getMissionState()
+    missionState: getMissionState(),
+    saedRequest: window.pisuSAED?.getRequest?.() || null
   };
 }
 
@@ -5506,6 +5480,7 @@ function importMissionPayloadFromText(text) {
 
   localStorage.setItem("pisuLog", JSON.stringify(payload.log || []));
   applyMissionStateSnapshot(payload.missionState || {});
+  window.pisuSAED?.applyRequest?.(payload.saedRequest || null);
   loadLog();
 
   const originResponder = formatResponderIdentity(payload.responder || {});
@@ -6773,6 +6748,7 @@ function updateVitalsFloatingButtonState(isOpen) {
 }
 
 function openVitalsSheet() {
+  window.pisuSAED?.close?.();
   populateVitalsSelects();
   renderVitalsHistory();
 
@@ -7476,6 +7452,7 @@ function hasAcceptedCurrentCharter() {
 
 function showUserCharter() {
   closeVitalsSheet?.();
+  window.pisuSAED?.close?.();
 
   userCharterOverlay?.classList.remove("hidden");
   document.body.classList.remove("charter-pending");
@@ -7483,6 +7460,7 @@ function showUserCharter() {
   document.body.classList.add("modal-open", "charter-open");
 
   floatingVitalsBtn?.setAttribute("hidden", "");
+  floatingSaedBtn?.setAttribute("hidden", "");
 
   if (charterVersionText) {
     charterVersionText.textContent = `Version charte : ${CHARTER_VERSION}`;
@@ -7503,6 +7481,7 @@ function hideUserCharter() {
   document.body.classList.add("vitals-floating-ready");
 
   floatingVitalsBtn?.removeAttribute("hidden");
+  floatingSaedBtn?.removeAttribute("hidden");
 }
 
 function acceptUserCharter() {
@@ -7647,6 +7626,15 @@ function restoreCounterBadges() {
       button.classList.add("action-done");
     }
   });
+}
+
+if (appVersion) {
+  if (APP_VERSION) {
+    appVersion.textContent = `v${APP_VERSION}`;
+    appVersion.setAttribute("aria-label", `Version de l’application ${APP_VERSION}`);
+  } else {
+    appVersion.hidden = true;
+  }
 }
 
 restoreCounterBadges();
