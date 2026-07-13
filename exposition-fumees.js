@@ -100,14 +100,16 @@
     protocol?.classList.add("hidden");
   }
 
-  function resetSmokeExposureProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole exposition aux fumées ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetSmokeExposureProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole exposition aux fumées ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logSmoke("reset protocole exposition aux fumées annulé");
-      return;
+      if (!confirmation) {
+        logSmoke("reset protocole exposition aux fumées annulé");
+        return;
+      }
     }
 
     acrStatus.textContent = "À vérifier";
@@ -122,8 +124,14 @@
       delete button.dataset.clickCount;
     });
 
-    logSmoke("protocole exposition aux fumées remis à zéro");
+    if (!options.silent) {
+      logSmoke("protocole exposition aux fumées remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetSmokeExposureProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   openBtn?.addEventListener("click", openProtocol);
   closeBtn?.addEventListener("click", closeProtocol);

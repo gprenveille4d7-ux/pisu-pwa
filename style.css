@@ -5518,6 +5518,39 @@ body.vitals-sheet-open .identity-swipe-tabs {
   }
 }
 
+.rapid-action-status {
+  position: fixed;
+  left: 50%;
+  bottom: calc(88px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)));
+  z-index: 10050;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 10px 14px;
+  border: 1px solid rgba(251, 191, 36, 0.8);
+  border-radius: 999px;
+  background: #111827;
+  color: #fef3c7;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 10px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.rapid-action-status.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.rapid-action-blocked {
+  outline: 3px solid rgba(251, 191, 36, 0.9) !important;
+  outline-offset: 2px;
+}
+
 /* =========================================================
    DÉTAILS VISUELS CONSERVÉS APRÈS CONSOLIDATION
    ========================================================= */
@@ -5676,4 +5709,131 @@ body.vitals-sheet-open .identity-swipe-tabs {
   color: #94a3b8;
   font-size: 0.72rem;
   line-height: 1.25;
+}
+
+.mission-resume-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 2px solid #38bdf8;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(3, 105, 161, 0.34), rgba(15, 23, 42, 0.96));
+  box-shadow: 0 14px 34px rgba(2, 132, 199, 0.2);
+}
+
+.mission-resume-banner.hidden {
+  display: none;
+}
+
+.mission-resume-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mission-resume-kicker {
+  color: #7dd3fc;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+}
+
+.mission-resume-copy strong {
+  overflow: hidden;
+  color: #f8fafc;
+  font-size: 1.05rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mission-resume-copy > span:last-child {
+  color: #bae6fd;
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+}
+
+.mission-resume-button {
+  min-height: 50px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 14px;
+  background: #e0f2fe;
+  color: #0c4a6e;
+  font-size: 0.92rem;
+  font-weight: 950;
+  line-height: 1.15;
+  touch-action: manipulation;
+}
+
+@media (max-width: 480px) {
+  .mission-resume-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mission-resume-button {
+    width: 100%;
+  }
+}
+
+/* Stabilité iPhone et cibles tactiles prioritaires. */
+.protocol-swipe-dot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  background: transparent;
+}
+
+.protocol-swipe-dot::after {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #475569;
+  content: "";
+}
+
+.protocol-swipe-dot.active,
+.protocol-swipe-dot[aria-current="true"] {
+  width: 24px;
+  background: transparent;
+}
+
+.protocol-swipe-dot.active::after,
+.protocol-swipe-dot[aria-current="true"]::after {
+  width: 18px;
+  background: var(--pisu-ui-accent, #38bdf8);
+}
+
+@media (max-width: 700px) {
+  .team-block input:not([type="checkbox"]):not([type="radio"]),
+  .team-block select,
+  .team-block textarea,
+  .start-block .mission-route-subblock input:not([type="checkbox"]):not([type="radio"]),
+  .start-block .mission-route-subblock select,
+  .start-block .mission-route-subblock textarea,
+  .identity-block input:not([type="checkbox"]):not([type="radio"]),
+  .identity-block select,
+  .identity-block textarea,
+  .vitals-sheet input:not([type="checkbox"]):not([type="radio"]),
+  .vitals-sheet select,
+  .vitals-sheet textarea {
+    font-size: 16px !important;
+  }
+
+  .sound-toggle-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .floating-vitals-button {
+    min-height: 44px;
+  }
 }

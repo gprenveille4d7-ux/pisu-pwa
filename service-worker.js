@@ -1,9 +1,9 @@
-const CACHE_NAME = "pisu-acr-cache-v195";
+const CACHE_NAME = "pisu-acr-cache-v199";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./style.css?v=195",
-  "./app.js?v=195",
+  "./style.css?v=199",
+  "./app.js?v=199",
   "./acr-adulte.js",
   "./acr-enfant.js",
   "./douleur-thoracique.js",
@@ -38,9 +38,17 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      caches.match("./index.html").then(cached => cached || fetch(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).catch(() => caches.match("./index.html"));
+      return cached || fetch(event.request);
     })
   );
 });

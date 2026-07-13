@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v1";
+const CACHE_NAME = "pisu-acr-cache-v199";
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
 const PISU_SAED_EVENT_STORAGE_KEY = "pisuStructuredEventsV2";
@@ -7,6 +7,7 @@ const SAED_STRUCTURED_EXPORT_VERSION = "saed-structured-v2";
 const VITALS_ALERT_STORAGE_KEY = "pisuLatestVitalsAlert";
 const PATIENT_ANTECEDENTS_STORAGE_KEY = "pisuPatientAntecedents";
 const MISSION_ROUTE_STORAGE_KEY = "pisuMissionRoute";
+const MISSION_STATE_STORAGE_KEY = "pisuMissionStateV1";
 const APP_DEFAULT_TITLE = "Protocole PISU";
 const PROTOCOL_TITLES = {
   acrAdultProtocol: "Arrêt cardiaque adulte",
@@ -895,6 +896,10 @@ const protocolSwipePrev = document.getElementById("protocolSwipePrev");
 const protocolSwipeNext = document.getElementById("protocolSwipeNext");
 const protocolSwipeDots = document.getElementById("protocolSwipeDots");
 const newMissionResetBtn = document.getElementById("newMissionResetBtn");
+const missionResumeBanner = document.getElementById("missionResumeBanner");
+const missionResumeProtocol = document.getElementById("missionResumeProtocol");
+const missionResumeDuration = document.getElementById("missionResumeDuration");
+const resumeMissionBtn = document.getElementById("resumeMissionBtn");
 const patientNameInput = document.getElementById("patientName");
 const patientAgeInput = document.getElementById("patientAge");
 const patientSexInput = document.getElementById("patientSex");
@@ -1077,6 +1082,53 @@ const ACTION_FEEDBACK_SELECTOR = [
   "#analgesiaCall15Btn"
 ].join(", ");
 
+const RAPID_ACTION_GUARD_MS = 900;
+const rapidActionTimestamps = new WeakMap();
+let rapidActionStatusTimer = null;
+
+function showRapidActionGuardFeedback(button) {
+  let status = document.getElementById("rapidActionStatus");
+
+  if (!status) {
+    status = document.createElement("div");
+    status.id = "rapidActionStatus";
+    status.className = "rapid-action-status";
+    status.setAttribute("role", "status");
+    status.setAttribute("aria-live", "assertive");
+    status.setAttribute("aria-atomic", "true");
+    document.body.appendChild(status);
+  }
+
+  status.textContent = "Action déjà prise en compte";
+  status.classList.add("visible");
+
+  button?.classList.add("rapid-action-blocked");
+
+  window.clearTimeout(rapidActionStatusTimer);
+  rapidActionStatusTimer = window.setTimeout(() => {
+    status.classList.remove("visible");
+    button?.classList.remove("rapid-action-blocked");
+  }, 1200);
+}
+
+function preventRapidActionReplay(event) {
+  const button = event.target.closest(ACTION_FEEDBACK_SELECTOR);
+
+  if (!button || button.closest(".protocols-block")) return;
+
+  const now = Date.now();
+  const lastActivation = rapidActionTimestamps.get(button) || 0;
+
+  if (now - lastActivation < RAPID_ACTION_GUARD_MS) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    showRapidActionGuardFeedback(button);
+    return;
+  }
+
+  rapidActionTimestamps.set(button, now);
+}
+
 const CALL15_BUTTON_SELECTOR = [
   "#call15Btn",
   "#childAcrCall15Btn",
@@ -1119,8 +1171,161 @@ function nowLabel() {
   });
 }
 
+let missionResumeInterval = null;
+
+function getMissionState() {
+  try {
+    const state = JSON.parse(localStorage.getItem(MISSION_STATE_STORAGE_KEY) || "null");
+
+    if (!state || !Number.isFinite(Date.parse(state.startedAt))) {
+      return null;
+    }
+
+    return state;
+  } catch {
+    return null;
+  }
+}
+
+function saveMissionState(state) {
+  try {
+    localStorage.setItem(MISSION_STATE_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // La reprise est une aide de confort : son échec ne doit jamais bloquer une action.
+  }
+
+  return state;
+}
+
+function startNewMissionState(options = {}) {
+  const now = new Date().toISOString();
+
+  return saveMissionState({
+    version: 1,
+    startedAt: options.startedAt || now,
+    updatedAt: now,
+    activeProtocolId: options.activeProtocolId || ""
+  });
+}
+
+function touchMissionState(options = {}) {
+  const current = getMissionState() || startNewMissionState();
+  const activeProtocolId = options.activeProtocolId || current.activeProtocolId || "";
+
+  return saveMissionState({
+    ...current,
+    updatedAt: new Date().toISOString(),
+    activeProtocolId
+  });
+}
+
+function applyMissionStateSnapshot(snapshot = {}) {
+  const startedAt = Number.isFinite(Date.parse(snapshot.startedAt))
+    ? snapshot.startedAt
+    : new Date().toISOString();
+  const activeProtocolId = document.getElementById(snapshot.activeProtocolId)
+    ? snapshot.activeProtocolId
+    : "";
+
+  return startNewMissionState({ startedAt, activeProtocolId });
+}
+
+function clearMissionState() {
+  try {
+    localStorage.removeItem(MISSION_STATE_STORAGE_KEY);
+  } catch {
+    // Le reste de la remise à zéro doit continuer même si le stockage est indisponible.
+  }
+
+  window.clearInterval(missionResumeInterval);
+  missionResumeInterval = null;
+  missionResumeBanner?.classList.add("hidden");
+}
+
+function shouldTrackMissionActivity(text, options = {}) {
+  if (options.skipMissionActivity) return false;
+
+  return !String(text || "").startsWith("Charte utilisateur");
+}
+
+function formatMissionElapsed(startedAt) {
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - Date.parse(startedAt)) / 1000));
+  const hours = Math.floor(elapsedSeconds / 3600);
+  const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+  const seconds = elapsedSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours} h ${String(minutes).padStart(2, "0")} min`;
+  }
+
+  return `${String(minutes).padStart(2, "0")} min ${String(seconds).padStart(2, "0")} s`;
+}
+
+function updateMissionResumeBanner() {
+  if (!missionResumeBanner) return false;
+
+  const state = getMissionState();
+  const hasMissionLog = getLog().length > 0;
+
+  if (!state || !hasMissionLog) {
+    missionResumeBanner.classList.add("hidden");
+    return false;
+  }
+
+  missionResumeProtocol.textContent =
+    PROTOCOL_TITLES[state.activeProtocolId] || "Mission PISU";
+  missionResumeDuration.textContent = formatMissionElapsed(state.startedAt);
+  missionResumeBanner.classList.remove("hidden");
+  return true;
+}
+
+function stopMissionResumeTicker() {
+  window.clearInterval(missionResumeInterval);
+  missionResumeInterval = null;
+}
+
+function startMissionResumeTicker() {
+  stopMissionResumeTicker();
+
+  if (!updateMissionResumeBanner()) return;
+
+  missionResumeInterval = window.setInterval(updateMissionResumeBanner, 1000);
+}
+
+function resumeCurrentMission() {
+  const state = getMissionState();
+
+  stopMissionResumeTicker();
+  missionResumeBanner?.classList.add("hidden");
+
+  if (state?.activeProtocolId && document.getElementById(state.activeProtocolId)) {
+    showProtocolPage(state.activeProtocolId);
+  }
+
+  addLog("Mission en cours reprise après réouverture");
+}
+
+function setupMissionResumeFeature() {
+  resumeMissionBtn?.addEventListener("click", resumeCurrentMission);
+
+  if (document.visibilityState === "visible") {
+    startMissionResumeTicker();
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      stopMissionResumeTicker();
+      return;
+    }
+
+    if (!missionResumeBanner?.classList.contains("hidden")) {
+      startMissionResumeTicker();
+    }
+  });
+}
+
 function loadLog() {
-  const saved = JSON.parse(localStorage.getItem("pisuLog") || "[]");
+  const saved = getLog();
   logEl.innerHTML = "";
   saved.forEach(item => addLogToDom(item.time, item.text));
 }
@@ -1130,7 +1335,12 @@ function saveLog(items) {
 }
 
 function getLog() {
-  return JSON.parse(localStorage.getItem("pisuLog") || "[]");
+  try {
+    const items = JSON.parse(localStorage.getItem("pisuLog") || "[]");
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
 }
 
 function addLog(text, structuredOptions = {}) {
@@ -1139,6 +1349,10 @@ function addLog(text, structuredOptions = {}) {
   items.push(item);
   saveLog(items);
   addLogToDom(item.time, item.text);
+
+  if (shouldTrackMissionActivity(text, structuredOptions)) {
+    touchMissionState();
+  }
 
   if (!structuredOptions?.skipStructuredSAED) {
     const eventOptions = {
@@ -3339,9 +3553,13 @@ function resetAllVisualValidations() {
   });
 }
 
+function notifyProtocolMissionReset() {
+  window.dispatchEvent(new CustomEvent("pisu:mission-reset"));
+}
+
 function resetMissionCompletely() {
   const confirmation = window.confirm(
-    "Créer une nouvelle mission ?\n\nCela efface le patient, le journal, les QR codes, les validations et les compteurs.\n\nL’intervenant reste enregistré."
+    "Créer une nouvelle mission ?\n\nCela efface le patient, le journal, les codes de transfert, les validations et les compteurs.\n\nL’intervenant reste enregistré."
   );
 
   if (!confirmation) {
@@ -3350,6 +3568,10 @@ function resetMissionCompletely() {
 
   window.pisuSounds?.stopRcpMetronome();
   window.pisuSounds?.resetAlertMemory();
+  notifyProtocolMissionReset();
+
+  clearInterval(timerInterval);
+  timerInterval = null;
 
   localStorage.removeItem("pisuLog");
 
@@ -3363,6 +3585,7 @@ function resetMissionCompletely() {
   clearVitalsHistory?.();
   clearProtocolScrollMemory?.();
   resetMissionHandoffUi?.();
+  startNewMissionState();
 
   if (logEl) {
     logEl.innerHTML = "";
@@ -3385,7 +3608,13 @@ function resetMissionCompletely() {
 
 document.getElementById("clearLog").addEventListener("click", () => {
   if (confirm("Effacer le journal de cette mission ?")) {
+    notifyProtocolMissionReset();
+
+    clearInterval(timerInterval);
+    timerInterval = null;
+
     localStorage.removeItem("pisuLog");
+    clearMissionState();
 
     clearAllProtocolCounters();
     clearStructuredEvents();
@@ -3438,19 +3667,33 @@ window.addEventListener("online", updateOnlineStatus);
 window.addEventListener("offline", updateOnlineStatus);
 
 function updateOnlineStatus() {
+  if (!offlineStatus) return;
+
+  const offlineReady = Boolean(navigator.serviceWorker?.controller);
+
+  if (offlineReady) {
+    offlineStatus.textContent = navigator.onLine
+      ? "Application prête hors ligne · connexion détectée"
+      : "Hors ligne · données locales disponibles";
+    return;
+  }
+
   offlineStatus.textContent = navigator.onLine
-    ? "En ligne — l'app sera disponible hors ligne après le premier chargement."
-    : "Hors ligne — mode cache actif.";
+    ? "Préparation du mode hors ligne…"
+    : "Hors ligne non préparé · reconnecter une fois pour installer l'application";
 }
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js")
     .then(() => {
       updateOnlineStatus();
+      navigator.serviceWorker.ready.then(updateOnlineStatus);
     })
     .catch(() => {
       offlineStatus.textContent = "Service worker non actif en local. Tester via GitHub Pages ou localhost.";
     });
+
+  navigator.serviceWorker.addEventListener("controllerchange", updateOnlineStatus);
 }
 
 function getGlobalCounterKey(button) {
@@ -3658,6 +3901,8 @@ document.addEventListener("click", event => {
 
   delete button.dataset.longPressCorrected;
 }, true);
+
+document.addEventListener("click", preventRapidActionReplay, true);
 
 document.addEventListener("click", event => {
   const clickedElement = event.target.closest(ACTION_FEEDBACK_SELECTOR);
@@ -4291,6 +4536,7 @@ function showProtocolPage(protocolId) {
   targetProtocol.classList.remove("hidden");
 
   currentProtocolPageId = protocolId;
+  touchMissionState({ activeProtocolId: protocolId });
 
   setAppTitle(protocolId);
 
@@ -5084,7 +5330,7 @@ function decodeMissionPayload(codeOrUrl) {
 function buildMissionPayload() {
   return {
     type: "pisu-mission-transfer",
-    version: 7,
+    version: 8,
     createdAt: new Date().toISOString(),
     responder: getResponderIdentity(),
     patient: getPatientSnapshot(),
@@ -5094,7 +5340,8 @@ function buildMissionPayload() {
     vitals: getVitalsEntries(),
     vitalsAlert: getLatestVitalsAlert(),
     events: getStructuredEvents(),
-    log: getLog()
+    log: getLog(),
+    missionState: getMissionState()
   };
 }
 
@@ -5176,23 +5423,13 @@ function createMissionHandoff() {
   }
 
   if (handoffQrImage) {
-    if (transferUrl.length > 2400) {
-      handoffQrImage.classList.add("hidden");
+    handoffQrImage.removeAttribute("src");
+    handoffQrImage.classList.add("hidden");
+  }
 
-      if (handoffWarning) {
-        handoffWarning.textContent =
-          "Journal trop long pour un QR fiable : utilise plutôt le bouton Copier le code.";
-      }
-    } else {
-      handoffQrImage.src =
-        `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(transferUrl)}`;
-      handoffQrImage.classList.remove("hidden");
-
-      if (handoffWarning) {
-        handoffWarning.textContent =
-          "QR disponible si internet est actif. Le code texte reste la solution de secours.";
-      }
-    }
+  if (handoffWarning) {
+    handoffWarning.textContent =
+      "Transfert hors ligne : aucune donnée de mission n'est envoyée à un service externe. Copiez ce code sur l'autre appareil.";
   }
 
   addLog("Code de transfert mission généré");
@@ -5268,6 +5505,7 @@ function importMissionPayloadFromText(text) {
   }
 
   localStorage.setItem("pisuLog", JSON.stringify(payload.log || []));
+  applyMissionStateSnapshot(payload.missionState || {});
   loadLog();
 
   const originResponder = formatResponderIdentity(payload.responder || {});
@@ -7310,7 +7548,7 @@ function getLegalNoticeHtml() {
     <p>Application d’aide-mémoire et de traçabilité locale autour de protocoles PISU. Elle ne constitue pas une prescription médicale autonome.</p>
 
     <h3>Données</h3>
-    <p>Les données saisies peuvent inclure des informations de prise en charge. Elles sont destinées à rester locales dans l’appareil, sauf action volontaire de l’utilisateur : export, copie ou transfert QR.</p>
+    <p>Les données saisies peuvent inclure des informations de prise en charge. Elles sont destinées à rester locales dans l’appareil, sauf action volontaire de l’utilisateur : export, copie ou transfert par code.</p>
 
     <h3>Prototype</h3>
     <p>Cette version doit être relue, validée et autorisée avant toute utilisation institutionnelle.</p>
@@ -7439,6 +7677,7 @@ setupPisuSoundFeature();
 setupImmediateCall15SoundWatcher?.();
 setupVitalsFeature();
 setupUserCharterFeature();
+setupMissionResumeFeature();
 installStructuredSAEDEngine();
 injectProtocolMiniSAEDBlocks?.();
 checkMissionHashImport();

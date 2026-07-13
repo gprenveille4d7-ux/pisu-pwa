@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=195">
+  <link rel="stylesheet" href="./style.css?v=199">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -89,6 +89,18 @@
     <section class="panel warning">
       <strong>Version test - à valider.</strong>
       <span>Ne pas utiliser comme protocole officiel sans validation médicale / institutionnelle.</span>
+    </section>
+
+    <section id="missionResumeBanner" class="mission-resume-banner hidden" aria-live="polite">
+      <div class="mission-resume-copy">
+        <span class="mission-resume-kicker">MISSION EN COURS</span>
+        <strong id="missionResumeProtocol">Mission PISU</strong>
+        <span id="missionResumeDuration">00 min 00 s</span>
+      </div>
+
+      <button id="resumeMissionBtn" class="mission-resume-button" type="button">
+        Reprendre l’intervention
+      </button>
     </section>
 
     <section class="panel team-block collapsible-panel">
@@ -2892,7 +2904,7 @@
     <section class="panel handoff-block collapsible-panel">
       <div class="panel-title collapsible-title">
         <button id="toggleHandoffBtn" class="collapse-toggle" type="button" aria-expanded="false" aria-controls="handoffContent">
-          <span>Transfert mission / QR code</span>
+          <span>Transfert mission hors ligne</span>
           <span class="collapse-chevron">▾</span>
         </button>
       </div>
@@ -2901,7 +2913,7 @@
 
       <div id="handoffContent" class="collapsible-content">
         <div class="export-actions">
-        <button id="createHandoffBtn" class="secondary">Créer QR / code</button>
+        <button id="createHandoffBtn" class="secondary">Créer le code</button>
         <button id="showImportHandoffBtn" class="secondary">Importer code</button>
       </div>
 
@@ -2909,8 +2921,6 @@
         <p>
           Ce code permet à un collègue de reprendre la mission avec le journal en cours.
         </p>
-
-        <img id="handoffQrImage" class="handoff-qr hidden" alt="QR code transfert mission">
 
         <textarea id="handoffCode" readonly rows="5" placeholder="Code de transfert"></textarea>
 
@@ -2941,7 +2951,7 @@
       </div>
 
       <p class="new-mission-text">
-        Remet à zéro le patient, le journal, les QR codes et les validations.
+        Remet à zéro le patient, le journal, les codes de transfert et les validations.
         L’intervenant reste enregistré.
       </p>
 
@@ -3138,7 +3148,7 @@
     </section>
   </div>
 
-  <script src="./app.js?v=195"></script>
+  <script src="./app.js?v=199"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>

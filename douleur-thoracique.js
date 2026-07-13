@@ -162,14 +162,16 @@
     });
   });
 
-  function resetChestPainProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole douleur thoracique ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetChestPainProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole douleur thoracique ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logDt("reset protocole douleur thoracique annulé");
-      return;
+      if (!confirmation) {
+        logDt("reset protocole douleur thoracique annulé");
+        return;
+      }
     }
 
     gravityStatus.textContent = "À évaluer";
@@ -183,8 +185,14 @@
       delete button.dataset.clickCount;
     });
 
-    logDt("protocole douleur thoracique remis à zéro");
+    if (!options.silent) {
+      logDt("protocole douleur thoracique remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetChestPainProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   resetChestPainProtocolBtn?.addEventListener("click", resetChestPainProtocolWithSecurity);
 })();
