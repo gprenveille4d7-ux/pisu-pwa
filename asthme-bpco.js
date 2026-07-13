@@ -185,14 +185,16 @@
     protocol?.classList.add("hidden");
   }
 
-  function resetAsthmaProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole asthme / BPCO ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetAsthmaProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole asthme / BPCO ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logAsthma("reset protocole asthme / BPCO annulé");
-      return;
+      if (!confirmation) {
+        logAsthma("reset protocole asthme / BPCO annulé");
+        return;
+      }
     }
 
     selectedType = "";
@@ -215,8 +217,14 @@
 
     updateAsthmaDoses();
 
-    logAsthma("protocole asthme / BPCO remis à zéro");
+    if (!options.silent) {
+      logAsthma("protocole asthme / BPCO remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetAsthmaProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   openBtn?.addEventListener("click", openProtocol);
   closeBtn?.addEventListener("click", closeProtocol);

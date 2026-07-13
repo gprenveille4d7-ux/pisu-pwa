@@ -185,14 +185,16 @@
     flashAttention(adrenalineBtn, 4);
   }
 
-  function resetAnaphylaxisProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole anaphylaxie ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetAnaphylaxisProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole anaphylaxie ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logAnaphylaxis("reset protocole anaphylaxie annulé");
-      return;
+      if (!confirmation) {
+        logAnaphylaxis("reset protocole anaphylaxie annulé");
+        return;
+      }
     }
 
     gravityStatus.textContent = "À évaluer";
@@ -214,8 +216,14 @@
 
     updateAnaphylaxisDoses();
 
-    logAnaphylaxis("protocole anaphylaxie remis à zéro");
+    if (!options.silent) {
+      logAnaphylaxis("protocole anaphylaxie remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetAnaphylaxisProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   openBtn?.addEventListener("click", openProtocol);
   closeBtn?.addEventListener("click", closeProtocol);

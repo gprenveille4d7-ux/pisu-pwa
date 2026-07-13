@@ -148,14 +148,16 @@
     protocol?.classList.add("hidden");
   }
 
-  function resetHemorrhageProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole hémorragie sévère ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetHemorrhageProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole hémorragie sévère ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logHemorrhage("reset protocole hémorragie sévère annulé");
-      return;
+      if (!confirmation) {
+        logHemorrhage("reset protocole hémorragie sévère annulé");
+        return;
+      }
     }
 
     mStatus.textContent = "Saignement";
@@ -175,8 +177,14 @@
 
     updateHemorrhageDoses();
 
-    logHemorrhage("protocole hémorragie sévère remis à zéro");
+    if (!options.silent) {
+      logHemorrhage("protocole hémorragie sévère remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetHemorrhageProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   openBtn?.addEventListener("click", openProtocol);
   closeBtn?.addEventListener("click", closeProtocol);

@@ -183,14 +183,16 @@
     protocol?.classList.add("hidden");
   }
 
-  function resetAnalgesiaProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole antalgie ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetAnalgesiaProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole antalgie ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logAnalgesia("reset protocole antalgie annulé");
-      return;
+      if (!confirmation) {
+        logAnalgesia("reset protocole antalgie annulé");
+        return;
+      }
     }
 
     gravityStatus.textContent = "À évaluer";
@@ -211,8 +213,14 @@
 
     updateAnalgesiaDoses();
 
-    logAnalgesia("protocole antalgie remis à zéro");
+    if (!options.silent) {
+      logAnalgesia("protocole antalgie remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetAnalgesiaProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   openBtn?.addEventListener("click", openProtocol);
   closeBtn?.addEventListener("click", closeProtocol);

@@ -150,14 +150,16 @@
     protocol?.classList.add("hidden");
   }
 
-  function resetSeizureProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole crise convulsive ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetSeizureProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole crise convulsive ?\n\nCette action réinitialise les statuts et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logSeizure("reset protocole crise convulsive annulé");
-      return;
+      if (!confirmation) {
+        logSeizure("reset protocole crise convulsive annulé");
+        return;
+      }
     }
 
     gravityStatus.textContent = "À évaluer";
@@ -178,8 +180,14 @@
       delete button.dataset.clickCount;
     });
 
-    logSeizure("protocole crise convulsive remis à zéro");
+    if (!options.silent) {
+      logSeizure("protocole crise convulsive remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetSeizureProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   openBtn?.addEventListener("click", openProtocol);
   closeBtn?.addEventListener("click", closeProtocol);

@@ -412,14 +412,16 @@
     });
   });
 
-  function resetAcrProtocolWithSecurity() {
-    const confirmation = window.confirm(
-      "Remettre à zéro le protocole ACR adulte ?\n\nCette action réinitialise les compteurs et les validations du protocole, mais conserve le journal mission."
-    );
+  function resetAcrProtocolWithSecurity(options = {}) {
+    if (!options.skipConfirmation) {
+      const confirmation = window.confirm(
+        "Remettre à zéro le protocole ACR adulte ?\n\nCette action réinitialise les compteurs et les validations du protocole, mais conserve le journal mission."
+      );
 
-    if (!confirmation) {
-      logAcr("reset protocole ACR adulte annulé");
-      return;
+      if (!confirmation) {
+        logAcr("reset protocole ACR adulte annulé");
+        return;
+      }
     }
 
     clearInterval(acrTimerInterval);
@@ -457,8 +459,14 @@
 
     setCall15State("alert");
 
-    logAcr("protocole ACR adulte remis à zéro");
+    if (!options.silent) {
+      logAcr("protocole ACR adulte remis à zéro");
+    }
   }
+
+  window.addEventListener("pisu:mission-reset", () => {
+    resetAcrProtocolWithSecurity({ skipConfirmation: true, silent: true });
+  });
 
   updateAcrTimer();
   updateCeeCounter();
