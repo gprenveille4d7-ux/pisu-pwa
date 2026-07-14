@@ -5828,6 +5828,7 @@ body.charter-open .sound-toggle-button {
   scroll-padding: 14px;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
   padding: 4px 4px 12px;
   scrollbar-width: none;
 }
@@ -6119,6 +6120,7 @@ body.charter-open .sound-toggle-button {
   scroll-snap-type: x mandatory !important;
   scroll-behavior: smooth;
   overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   transition: height 180ms ease;

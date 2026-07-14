@@ -4063,7 +4063,7 @@ function setAppTitle(protocolId = "") {
 }
 
 /* =========================================================
-   MOTEUR DE SWIPE GÉNÉRIQUE V195
+   MOTEUR DE SWIPE GÉNÉRIQUE V5.9
    Remplace les quatre implémentations parallèles sans modifier
    les actions ou la logique des protocoles.
    ========================================================= */
@@ -4089,6 +4089,9 @@ class PisuSwipeController {
       ? Array.from(document.querySelectorAll(this.tabSelector))
       : [];
     this.frame = 0;
+    this.forceLayoutUpdate = false;
+    this.activeIndex = -1;
+    this.pendingIndex = null;
     this.initialized = false;
     this.resizeObserver = null;
     this.mutationObserver = null;
@@ -4137,15 +4140,44 @@ class PisuSwipeController {
     return slide.offsetLeft;
   }
 
+  getNavigationIndex() {
+    if (Number.isFinite(this.pendingIndex)) return this.pendingIndex;
+    if (this.activeIndex >= 0) return this.activeIndex;
+    return this.getCurrentIndex();
+  }
+
+  commitActiveIndex(index, options = {}) {
+    const slides = this.getSlides();
+    if (slides.length === 0) return 0;
+
+    const safeIndex = clampSwipeIndex(index, 0, slides.length - 1);
+    const changed = this.activeIndex !== safeIndex;
+
+    if (changed) {
+      this.activeIndex = safeIndex;
+      this.updateControls(safeIndex);
+    }
+
+    if (changed || options.forceLayout) {
+      this.updateHeight(safeIndex);
+    }
+
+    return safeIndex;
+  }
+
   scrollTo(index, behavior = "smooth") {
     const slides = this.getSlides();
     if (!this.track || slides.length === 0) return;
 
     const safeIndex = clampSwipeIndex(index, 0, slides.length - 1);
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const targetLeft = this.getTargetLeft(safeIndex);
+
+    this.pendingIndex = safeIndex;
+    this.commitActiveIndex(safeIndex, { forceLayout: true });
 
     this.track.scrollTo({
-      left: this.getTargetLeft(safeIndex),
+      left: targetLeft,
       top: 0,
       behavior: reducedMotion ? "auto" : behavior
     });
@@ -4157,7 +4189,6 @@ class PisuSwipeController {
     }
 
     this.scheduleUpdate();
-    window.setTimeout(() => this.update(), behavior === "smooth" ? 230 : 40);
   }
 
   updateHeight(index = this.getCurrentIndex()) {
@@ -4167,8 +4198,10 @@ class PisuSwipeController {
     if (!slide) return;
 
     const height = Math.ceil(slide.scrollHeight);
-    if (height > 0) {
-      this.track.style.height = `${height}px`;
+    const nextHeight = `${height}px`;
+
+    if (height > 0 && this.track.style.height !== nextHeight) {
+      this.track.style.height = nextHeight;
     }
   }
 
@@ -4193,16 +4226,30 @@ class PisuSwipeController {
     });
   }
 
-  update() {
+  update(options = {}) {
     if (!this.track) return;
-    const index = this.getCurrentIndex();
-    this.updateControls(index);
-    this.updateHeight(index);
+    const observedIndex = this.getCurrentIndex();
+
+    if (this.pendingIndex === observedIndex) {
+      this.pendingIndex = null;
+    }
+
+    this.commitActiveIndex(
+      Number.isFinite(this.pendingIndex) ? this.pendingIndex : observedIndex,
+      { forceLayout: Boolean(options.forceLayout) }
+    );
   }
 
-  scheduleUpdate() {
-    window.cancelAnimationFrame(this.frame);
-    this.frame = window.requestAnimationFrame(() => this.update());
+  scheduleUpdate(forceLayout = false) {
+    this.forceLayoutUpdate ||= forceLayout;
+    if (this.frame) return;
+
+    this.frame = window.requestAnimationFrame(() => {
+      const shouldForceLayout = this.forceLayoutUpdate;
+      this.frame = 0;
+      this.forceLayoutUpdate = false;
+      this.update({ forceLayout: shouldForceLayout });
+    });
   }
 
   buildDots() {
@@ -4233,31 +4280,43 @@ class PisuSwipeController {
     }
 
     this.prev?.addEventListener("click", () => {
-      this.scrollTo(this.getCurrentIndex() - 1);
+      this.scrollTo(this.getNavigationIndex() - 1);
     });
 
     this.next?.addEventListener("click", () => {
-      this.scrollTo(this.getCurrentIndex() + 1);
+      this.scrollTo(this.getNavigationIndex() + 1);
     });
   }
 
   bindTrack() {
     if (!this.track) return;
 
-    let scrollTimer = null;
-
     this.track.addEventListener("scroll", () => {
-      window.clearTimeout(scrollTimer);
-      scrollTimer = window.setTimeout(() => this.update(), 60);
+      this.scheduleUpdate();
     }, { passive: true });
+
+    this.track.addEventListener("scrollend", () => {
+      this.pendingIndex = null;
+      this.update({ forceLayout: true });
+    }, { passive: true });
+
+    const cancelPendingNavigation = () => {
+      if (!Number.isFinite(this.pendingIndex)) return;
+      this.pendingIndex = null;
+      this.scheduleUpdate();
+    };
+
+    this.track.addEventListener("pointerdown", cancelPendingNavigation, { passive: true });
+    this.track.addEventListener("touchstart", cancelPendingNavigation, { passive: true });
+    this.track.addEventListener("wheel", cancelPendingNavigation, { passive: true });
 
     this.track.addEventListener("keydown", event => {
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        this.scrollTo(this.getCurrentIndex() + 1);
+        this.scrollTo(this.getNavigationIndex() + 1);
       } else if (event.key === "ArrowLeft") {
         event.preventDefault();
-        this.scrollTo(this.getCurrentIndex() - 1);
+        this.scrollTo(this.getNavigationIndex() - 1);
       } else if (event.key === "Home") {
         event.preventDefault();
         this.scrollTo(0);
@@ -4270,7 +4329,7 @@ class PisuSwipeController {
 
   bindObservers() {
     if (window.ResizeObserver && this.track) {
-      this.resizeObserver = new ResizeObserver(() => this.scheduleUpdate());
+      this.resizeObserver = new ResizeObserver(() => this.scheduleUpdate(true));
       this.resizeObserver.observe(this.track);
       this.getSlides().forEach(slide => this.resizeObserver.observe(slide));
     }
@@ -4278,7 +4337,7 @@ class PisuSwipeController {
     if (window.MutationObserver && this.track) {
       this.mutationObserver = new MutationObserver(() => {
         this.getSlides().forEach(slide => this.resizeObserver?.observe(slide));
-        this.scheduleUpdate();
+        this.scheduleUpdate(true);
       });
 
       this.mutationObserver.observe(this.track, {
