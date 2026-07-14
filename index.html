@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=199">
+  <link rel="stylesheet" href="./style.css?v=210">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -75,7 +75,10 @@
     <div>
       <p class="eyebrow">Prototype hors ligne</p>
       <div class="app-title-row">
-        <h1 id="appTitle">Protocole PISU</h1>
+        <div class="app-title-lockup">
+          <h1 id="appTitle">Protocole PISU</h1>
+          <span id="appVersion" class="app-version" aria-label="Version de l’application"></span>
+        </div>
 
         <button id="soundToggleBtn" class="sound-toggle-button" type="button" aria-pressed="false" aria-label="Activer les sons">
           🔇
@@ -291,11 +294,12 @@
       </div>
 
       <details class="mission-route-subblock" id="missionRouteDetails">
-        <summary>Parcours / Transport / Destination</summary>
-
-        <small id="missionRouteSummary" class="collapse-summary">
-          Départ, destination et arrivée à renseigner.
-        </small>
+        <summary class="route-panel-summary">
+          <span class="route-panel-summary-copy">
+            <strong>Parcours / Transport / Destination</strong>
+            <small id="missionRouteSummary" class="collapse-summary">Suite de mission à organiser.</small>
+          </span>
+        </summary>
 
         <div id="missionRouteContent" class="mission-route-content route-swipe-content route-compact-content">
           <div class="route-swipe-tabs route-compact-tabs" aria-label="Navigation parcours transport destination">
@@ -319,22 +323,46 @@
 
             <div id="routeSwipeTrack" class="route-swipe-track route-compact-track">
               <section class="route-swipe-slide route-compact-slide" data-route-slide="0">
-                <div id="routeDepartureCard" class="route-compact-card">
+                <div id="routeOriginCard" class="route-compact-card route-location-card">
                   <div class="route-compact-title">
                     <span class="route-step">1</span>
+                    <strong>Parcours</strong>
+                  </div>
+
+                  <div class="route-location-row">
+                    <div class="route-location-copy">
+                      <span>Lieu de prise en charge</span>
+                      <strong id="routeOriginSummary">Position non mémorisée</strong>
+                      <small id="routeOriginCoordinates">Le GPS « Arrivée sur les lieux » sera réutilisé ici.</small>
+                    </div>
+
+                    <button id="routeCaptureLocationBtn" class="secondary route-location-button" type="button">
+                      Localiser
+                    </button>
+                  </div>
+                </div>
+
+                <div id="routeDepartureCard" class="route-compact-card">
+                  <div class="route-compact-title">
+                    <span class="route-step route-step-time" aria-hidden="true">→</span>
                     <strong>Départ des lieux</strong>
                   </div>
 
-                  <div class="route-compact-inline">
+                  <div class="route-milestone-row">
+                    <button class="route-now-btn validation-button route-milestone-button" type="button" data-route-stamp="departure">
+                      Départ maintenant
+                    </button>
+
+                    <time id="routeDepartureDisplay" class="route-time-display">Non horodaté</time>
+                  </div>
+
+                  <details class="route-time-correction">
+                    <summary>Corriger l’heure</summary>
                     <label>
-                      Heure départ
+                      Heure de départ
                       <input id="routeDepartureTime" type="time">
                     </label>
-
-                    <button class="route-now-btn validation-button route-mini-button" type="button" data-route-stamp="departure">
-                      Maintenant
-                    </button>
-                  </div>
+                  </details>
                 </div>
 
                 <details id="routeJunctionCompactDetails" class="route-compact-card route-compact-details">
@@ -380,9 +408,43 @@
                     <strong>Transport</strong>
                   </div>
 
+                  <fieldset class="route-choice-group">
+                    <legend>Situation actuelle</legend>
+                    <input id="routeTransportStatus" type="hidden">
+                    <div class="route-choice-grid route-choice-grid-four" data-route-choice-group="transportStatus">
+                      <button type="button" data-route-choice="Prévu" aria-pressed="false">Prévu</button>
+                      <button type="button" data-route-choice="En cours" aria-pressed="false">En cours</button>
+                      <button type="button" data-route-choice="Terminé" aria-pressed="false">Terminé</button>
+                      <button type="button" data-route-choice="Sans transport" aria-pressed="false">Sans transport</button>
+                    </div>
+                  </fieldset>
+
+                  <fieldset class="route-choice-group">
+                    <legend>Moyen</legend>
+                    <input id="routeTransportVector" type="hidden">
+                    <div class="route-choice-grid" data-route-choice-group="transportVector">
+                      <button type="button" data-route-choice="UMH" aria-pressed="false">UMH</button>
+                      <button type="button" data-route-choice="VSAV" aria-pressed="false">VSAV</button>
+                      <button type="button" data-route-choice="Ambulance privée" aria-pressed="false">Ambulance</button>
+                      <button type="button" data-route-choice="HéliSMUR" aria-pressed="false">HéliSMUR</button>
+                      <button type="button" data-route-choice="Autre" aria-pressed="false">Autre</button>
+                    </div>
+                  </fieldset>
+
+                  <fieldset class="route-choice-group">
+                    <legend>Accompagnement</legend>
+                    <input id="routeTransportMode" type="hidden">
+                    <div class="route-choice-grid" data-route-choice-group="transportMode">
+                      <button type="button" data-route-choice="Transport médicalisé" aria-pressed="false">Médicalisé</button>
+                      <button type="button" data-route-choice="Transport paramédicalisé" aria-pressed="false">Paramédicalisé</button>
+                      <button type="button" data-route-choice="Transport non médicalisé" aria-pressed="false">Non médicalisé</button>
+                      <button type="button" data-route-choice="Autre" aria-pressed="false">Autre</button>
+                    </div>
+                  </fieldset>
+
                   <div class="route-compact-two">
                     <label>
-                      Type
+                      Contexte
                       <select id="routeTransportType">
                         <option value="">Non renseigné</option>
                         <option value="Primaire">Primaire</option>
@@ -390,32 +452,6 @@
                         <option value="Jonction">Jonction</option>
                         <option value="Renfort / relève">Renfort / relève</option>
                         <option value="Retour base">Retour base</option>
-                        <option value="Autre">Autre</option>
-                      </select>
-                    </label>
-
-                    <label>
-                      Vecteur
-                      <select id="routeTransportVector">
-                        <option value="">Non renseigné</option>
-                        <option value="UMH">UMH</option>
-                        <option value="VSAV">VSAV</option>
-                        <option value="Ambulance privée">Ambulance privée</option>
-                        <option value="HéliSMUR">HéliSMUR</option>
-                        <option value="Véhicule léger médical">Véhicule léger médical</option>
-                        <option value="Autre">Autre</option>
-                      </select>
-                    </label>
-
-                    <label>
-                      Modalité
-                      <select id="routeTransportMode">
-                        <option value="">Non renseignée</option>
-                        <option value="Transport médicalisé">Transport médicalisé</option>
-                        <option value="Transport paramédicalisé">Transport paramédicalisé</option>
-                        <option value="Transport non médicalisé">Transport non médicalisé</option>
-                        <option value="Couché brancardisé">Couché brancardisé</option>
-                        <option value="Assis">Assis</option>
                         <option value="Autre">Autre</option>
                       </select>
                     </label>
@@ -431,14 +467,12 @@
                     </label>
                   </div>
 
-                  <label>
-                    Équipe / accompagnant
-                    <input id="routeTransportTeam" type="text" placeholder="IDE + médecin, IDE seul, VSAV...">
-                  </label>
+                  <input id="routeTransportTeam" type="hidden">
+                  <p id="routeCrewReuseSummary" class="route-reuse-note">L’équipage mission sera réutilisé automatiquement.</p>
 
                   <label>
                     Note transport
-                    <textarea id="routeTransportNote" rows="2" placeholder="Stable, aggravation, difficulté d’accès..."></textarea>
+                    <textarea id="routeTransportNote" rows="2" placeholder="Information logistique utile uniquement..."></textarea>
                   </label>
                 </div>
               </section>
@@ -450,8 +484,10 @@
                     <strong>Destination</strong>
                   </div>
 
+                  <p class="route-question">Où va le patient ?</p>
+
                   <label>
-                    Destination
+                    Établissement / lieu
                     <input id="routeDestinationName" type="text" placeholder="CH Falaise, CHU Caen, domicile...">
                   </label>
 
@@ -463,20 +499,25 @@
 
                 <div id="routeArrivalCard" class="route-compact-card">
                   <div class="route-compact-title">
-                    <span class="route-step">4</span>
+                    <span class="route-step route-step-time" aria-hidden="true">✓</span>
                     <strong>Arrivée</strong>
                   </div>
 
-                  <div class="route-compact-inline">
+                  <div class="route-milestone-row">
+                    <button class="route-now-btn validation-button route-milestone-button" type="button" data-route-stamp="arrival">
+                      Arrivée maintenant
+                    </button>
+
+                    <time id="routeArrivalDisplay" class="route-time-display">Non horodaté</time>
+                  </div>
+
+                  <details class="route-time-correction">
+                    <summary>Corriger l’heure</summary>
                     <label>
-                      Heure arrivée
+                      Heure d’arrivée
                       <input id="routeArrivalTime" type="time">
                     </label>
-
-                    <button class="route-now-btn validation-button route-mini-button" type="button" data-route-stamp="arrival">
-                      Maintenant
-                    </button>
-                  </div>
+                  </details>
 
                   <label class="route-check route-compact-check">
                     <input id="routeTransmissionDone" type="checkbox">
@@ -493,7 +534,7 @@
 
           <div class="route-compact-actions">
             <button id="saveMissionRouteBtn" class="primary validation-button route-save-button" type="button">
-              Enregistrer parcours
+              Parcours à jour
             </button>
 
             <button id="clearMissionRouteBtn" class="secondary danger route-clear-button" type="button">
@@ -818,6 +859,8 @@
 
       <div id="protocolSwipeDots" class="protocol-swipe-dots" aria-hidden="true"></div>
     </section>
+
+    <section id="missionRoutePanel" class="panel mission-route-panel" aria-label="Parcours, transport et destination"></section>
 
     <section id="acrAdultProtocol" class="panel acr-protocol hidden">
       <div class="panel-title">
@@ -2965,11 +3008,122 @@
     ← Menu
   </button>
 
-  <button id="floatingVitalsBtn" class="floating-vitals-button" type="button" aria-expanded="false" hidden>
-    📊 Constantes
-  </button>
+    <button id="floatingVitalsBtn" class="floating-vitals-button" type="button" aria-expanded="false" hidden>
+      📊 Constantes
+    </button>
 
-  <div id="vitalsOverlay" class="vitals-overlay hidden"></div>
+    <button id="floatingSaedBtn" class="floating-saed-button" type="button" aria-expanded="false" hidden>
+      SAED
+    </button>
+
+    <div id="saedOverlay" class="saed-overlay hidden"></div>
+
+    <section id="saedSheet" class="saed-sheet hidden" aria-label="Transmission SAED" aria-modal="true" role="dialog">
+      <header class="saed-sheet-header">
+        <div>
+          <p class="eyebrow">Mode transmission</p>
+          <h2>SAED opérationnel</h2>
+          <small id="saedUpdatedAt">Actualisation à l’ouverture</small>
+        </div>
+
+        <button id="closeSaedSheetBtn" class="ghost" type="button">Fermer</button>
+      </header>
+
+      <div class="saed-sheet-content">
+        <div id="saedPriorityBanner" class="saed-priority-banner" aria-live="polite"></div>
+
+        <section class="saed-section saed-section-s" aria-labelledby="saedSituationTitle">
+          <div class="saed-section-heading">
+            <span class="saed-letter">S</span>
+            <div>
+              <h3 id="saedSituationTitle">Situation</h3>
+              <small>Qui appelle, pour qui, pourquoi maintenant</small>
+            </div>
+          </div>
+          <div id="saedSituationContent" class="saed-section-body"></div>
+        </section>
+
+        <section id="saedAntecedentsSection" class="saed-section saed-section-a" aria-labelledby="saedAntecedentsTitle">
+          <div class="saed-section-heading">
+            <span class="saed-letter">A</span>
+            <div>
+              <h3 id="saedAntecedentsTitle">Antécédents / contexte</h3>
+              <small>Uniquement les éléments renseignés</small>
+            </div>
+          </div>
+          <div id="saedAntecedentsContent" class="saed-section-body"></div>
+        </section>
+
+        <section class="saed-section saed-section-e" aria-labelledby="saedEvaluationTitle">
+          <div class="saed-section-heading">
+            <span class="saed-letter">E</span>
+            <div>
+              <h3 id="saedEvaluationTitle">Évaluation</h3>
+              <small>Initial → actions → évolution → actuel</small>
+            </div>
+          </div>
+
+          <div id="saedCurrentAlert"></div>
+          <div id="saedVitalsEvolution" class="saed-vitals-evolution"></div>
+          <div id="saedCounters" class="saed-counter-row"></div>
+          <div id="saedActionsContent" class="saed-actions-content"></div>
+        </section>
+
+        <section class="saed-section saed-section-d" aria-labelledby="saedDemandTitle">
+          <div class="saed-section-heading">
+            <span class="saed-letter">D</span>
+            <div>
+              <h3 id="saedDemandTitle">Demande / décision attendue</h3>
+              <small>La demande du professionnel, sans décision automatique</small>
+            </div>
+          </div>
+
+          <div id="saedDemandSummary" class="saed-demand-summary"></div>
+
+          <div id="saedDemandChoices" class="saed-demand-choices" aria-label="Objet de la demande">
+            <button type="button" data-saed-demand="Avis médical">Avis médical</button>
+            <button type="button" data-saed-demand="Validation d’une conduite">Validation conduite</button>
+            <button type="button" data-saed-demand="Prescription">Prescription</button>
+            <button type="button" data-saed-demand="Renfort médical">Renfort médical</button>
+            <button type="button" data-saed-demand="Orientation">Orientation</button>
+            <button type="button" data-saed-demand="Destination">Destination</button>
+            <button type="button" data-saed-demand="Autre demande">Autre</button>
+          </div>
+
+          <label class="saed-demand-detail">
+            Motif précis de l’appel maintenant
+            <textarea id="saedDemandDetail" rows="3" placeholder="Ex : préciser la question ou la décision attendue, sans ressaisir les données déjà présentes."></textarea>
+          </label>
+
+          <button id="saveSaedDemandBtn" class="primary saed-save-demand" type="button">
+            Enregistrer la demande
+          </button>
+
+          <div id="saedRouteContent" class="saed-route-content"></div>
+        </section>
+
+        <section id="saedChronologySection" class="saed-chronology-section" aria-labelledby="saedChronologyTitle">
+          <div class="saed-secondary-heading">
+            <h3 id="saedChronologyTitle">Chronologie utile</h3>
+            <small>Événements cliniques réellement enregistrés</small>
+          </div>
+          <ol id="saedChronologyContent" class="saed-timeline"></ol>
+        </section>
+
+        <details id="saedMissionContext" class="saed-mission-context">
+          <summary>Repères intervenant, équipage et transport</summary>
+          <div id="saedMissionContextContent"></div>
+        </details>
+
+        <div class="saed-sheet-actions">
+          <button id="refreshSaedBtn" class="secondary" type="button">Actualiser</button>
+          <button id="copySaedBtn" class="secondary" type="button">Copier SAED</button>
+          <button id="downloadSaedBtn" class="primary" type="button">Exporter .txt</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="vitalsOverlay" class="vitals-overlay hidden"></div>
 
   <section id="vitalsSheet" class="vitals-sheet hidden" aria-label="Saisie des constantes">
     <div class="vitals-sheet-header">
@@ -3011,20 +3165,23 @@
 
       <div class="vitals-bp-block">
         <div class="vitals-bp-title">Tension artérielle</div>
+        <div class="vitals-bp-column-headings" aria-hidden="true">
+          <span></span>
+          <span>SYS</span>
+          <span>DIA</span>
+        </div>
 
         <div class="vitals-bp-line">
           <div class="vitals-bp-side">Gauche</div>
 
           <label>
-            SYS
-            <select id="vitalsTasLeft" data-vital-default="120">
+            <select id="vitalsTasLeft" data-vital-default="120" aria-label="Tension systolique gauche">
               <option value="">Non renseignée</option>
             </select>
           </label>
 
           <label>
-            DIA
-            <select id="vitalsTadLeft" data-vital-default="70">
+            <select id="vitalsTadLeft" data-vital-default="70" aria-label="Tension diastolique gauche">
               <option value="">Non renseignée</option>
             </select>
           </label>
@@ -3034,15 +3191,13 @@
           <div class="vitals-bp-side">Droite</div>
 
           <label>
-            SYS
-            <select id="vitalsTasRight" data-vital-default="120">
+            <select id="vitalsTasRight" data-vital-default="120" aria-label="Tension systolique droite">
               <option value="">Non renseignée</option>
             </select>
           </label>
 
           <label>
-            DIA
-            <select id="vitalsTadRight" data-vital-default="70">
+            <select id="vitalsTadRight" data-vital-default="70" aria-label="Tension diastolique droite">
               <option value="">Non renseignée</option>
             </select>
           </label>
@@ -3148,7 +3303,9 @@
     </section>
   </div>
 
-  <script src="./app.js?v=199"></script>
+  <script src="./version.js?v=210"></script>
+  <script src="./saed.js?v=210"></script>
+  <script src="./app.js?v=210"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>
