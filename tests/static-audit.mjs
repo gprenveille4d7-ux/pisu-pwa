@@ -35,7 +35,7 @@ assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du mod
 assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.14["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.15["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 
@@ -123,6 +123,31 @@ assert.match(app, /addEventListener\("touchend",\s*finishTouchGesture/, "Verroui
 assert.match(style, /\.mission-route-panel \.route-swipe-track\.pisu-swipe-programmatic-motion\s*\{[\s\S]*?scroll-behavior:\s*auto\s*!important;[\s\S]*?scroll-snap-type:\s*none\s*!important;/, "Neutralisation temporaire du snap pendant l’animation absente");
 assert.match(style, /touch-action:\s*pan-x pan-y/, "Gestes horizontal et vertical non explicitement préservés");
 assert.match(saed, /pisuSaedRequestV1/, "Stockage de la demande SAED absent");
+assert.match(app, /function getProtocolDefinition\(protocolId\)/, "Definition contextuelle des protocoles absente");
+assert.match(app, /window\.getProtocolDefinition\s*=\s*getProtocolDefinition/, "Definition protocolaire non exposee au SAED");
+assert.match(saed, /const PROTOCOL_VITAL_FOCUS\s*=\s*\{/, "Focalisation des constantes par protocole absente");
+for (const protocolId of [
+  "acrAdultProtocol",
+  "childAcrProtocol",
+  "chestPainProtocol",
+  "smokeExposureProtocol",
+  "burnsProtocol",
+  "seizureProtocol",
+  "anaphylaxisProtocol",
+  "hemorrhageProtocol",
+  "hypoglycemiaProtocol",
+  "asthmaBpcoProtocol",
+  "analgesiaProtocol"
+]) {
+  assert.match(saed, new RegExp(protocolId), `Protocole absent du moteur SAED contextuel : ${protocolId}`);
+}
+assert.match(saed, /function buildClinicalCallReason\(model\)/, "Construction du pourquoi maintenant absente");
+assert.match(saed, /function buildEvaluationSummary\(model\)/, "Synthese actions evolution absente");
+assert.match(saed, /function buildDemandProposal\(model,\s*demandType/, "Proposition contextuelle D absente");
+assert.match(saed, /validated:\s*Boolean\(request\?\.validated\s*&&\s*type\s*&&\s*detail\)/, "Validation explicite de la demande absente");
+assert.match(saed, /Repère de prise en charge disponible/, "Separation du repere GPS absente");
+assert.match(saed, /Orientation \/ transport renseigné/, "Etat orientation transport absent");
+assert.match(saed, /model\.requestComplete[\s\S]*?!demandDraftDirty/, "Le vert D ne depend pas de la validation professionnelle");
 assert.match(saed, /buildVitalRows/, "Comparaison initiale / actuelle des constantes absente");
 assert.match(saed, /buildChronology/, "Chronologie SAED absente");
 assert.match(app, /saedRequest:\s*window\.pisuSAED/, "Demande SAED absente du transfert de mission");

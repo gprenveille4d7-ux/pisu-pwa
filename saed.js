@@ -32,6 +32,9 @@
   const downloadButton = document.getElementById("downloadSaedBtn");
 
   let selectedDemandType = "";
+  let demandDraftDirty = false;
+  let demandDraftProtocolId = "";
+  let lastSuggestedDemandDetail = "";
 
   function safeCall(name, fallback, ...args) {
     try {
@@ -71,35 +74,54 @@
     });
   }
 
+  function emptyRequest() {
+    return {
+      type: "",
+      detail: "",
+      protocolId: "",
+      validated: false,
+      updatedAt: ""
+    };
+  }
+
   function readRequest() {
     try {
       const request = JSON.parse(localStorage.getItem(REQUEST_STORAGE_KEY) || "null");
 
       if (!request || typeof request !== "object") {
-        return { type: "", detail: "", updatedAt: "" };
+        return emptyRequest();
       }
 
+      const type = String(request.type || "").trim();
+      const detail = String(request.detail || "").trim();
+
       return {
-        type: String(request.type || "").trim(),
-        detail: String(request.detail || "").trim(),
+        type,
+        detail,
+        protocolId: String(request.protocolId || "").trim(),
+        validated: Boolean(request?.validated && type && detail),
         updatedAt: String(request.updatedAt || "").trim()
       };
     } catch {
       localStorage.removeItem(REQUEST_STORAGE_KEY);
-      return { type: "", detail: "", updatedAt: "" };
+      return emptyRequest();
     }
   }
 
   function storeRequest(request) {
+    const type = String(request?.type || "").trim();
+    const detail = String(request?.detail || "").trim();
     const normalized = {
-      type: String(request?.type || "").trim(),
-      detail: String(request?.detail || "").trim(),
+      type,
+      detail,
+      protocolId: String(request?.protocolId || "").trim(),
+      validated: Boolean(request?.validated && type && detail),
       updatedAt: String(request?.updatedAt || new Date().toISOString())
     };
 
     if (!normalized.type && !normalized.detail) {
       localStorage.removeItem(REQUEST_STORAGE_KEY);
-      return { type: "", detail: "", updatedAt: "" };
+      return emptyRequest();
     }
 
     localStorage.setItem(REQUEST_STORAGE_KEY, JSON.stringify(normalized));
@@ -113,19 +135,40 @@
       storeRequest(request);
     }
 
+    selectedDemandType = "";
+    demandDraftDirty = false;
+    demandDraftProtocolId = "";
+    lastSuggestedDemandDetail = "";
+
     refreshIfOpen();
   }
 
   function reset() {
     localStorage.removeItem(REQUEST_STORAGE_KEY);
     selectedDemandType = "";
+    demandDraftDirty = false;
+    demandDraftProtocolId = "";
+    lastSuggestedDemandDetail = "";
 
     if (demandDetail) demandDetail.value = "";
     refreshIfOpen();
   }
 
+  function isRequestComplete(request, protocolId = "") {
+    if (!request?.type || !request?.detail || request?.validated !== true) return false;
+
+    const requestProtocolId = String(request.protocolId || "").trim();
+    const currentProtocolId = String(protocolId || "").trim();
+
+    if (requestProtocolId && currentProtocolId && requestProtocolId !== currentProtocolId) {
+      return false;
+    }
+
+    return true;
+  }
+
   function formatRequest(request = readRequest()) {
-    return [request.type, request.detail].filter(Boolean).join(" — ");
+    return String(request?.detail || request?.type || "").trim();
   }
 
   function getActiveEvents() {
@@ -142,13 +185,20 @@
       .reverse()
       .find(event => event.protocolId || event.protocole);
     const protocolId = missionState?.activeProtocolId || latestProtocolEvent?.protocolId || "";
-    const protocolLabel = protocolId
-      ? safeCall("getProtocolLabel", "", protocolId)
-      : String(latestProtocolEvent?.protocole || "").trim();
+    const definition = protocolId
+      ? safeCall("getProtocolDefinition", null, protocolId)
+      : null;
+    const protocolLabel = definition?.label || (
+      protocolId
+        ? safeCall("getProtocolLabel", "", protocolId)
+        : String(latestProtocolEvent?.protocole || "").trim()
+    );
 
     return {
       id: protocolId,
-      label: protocolLabel && protocolLabel !== "Mission PISU" ? protocolLabel : ""
+      label: protocolLabel && protocolLabel !== "Mission PISU" ? protocolLabel : "",
+      intro: String(definition?.intro || "").trim(),
+      demand: String(definition?.demand || "").trim()
     };
   }
 
@@ -264,6 +314,174 @@
     }).filter(Boolean);
   }
 
+  const PROTOCOL_VITAL_FOCUS = {
+    acrAdultProtocol: ["gcs", "fc", "spo2"],
+    childAcrProtocol: ["gcs", "fc", "spo2"],
+    chestPainProtocol: ["pain", "ta", "fc", "spo2"],
+    smokeExposureProtocol: ["spo2", "gcs", "fr"],
+    burnsProtocol: ["pain", "ta", "fc", "gcs"],
+    seizureProtocol: ["gcs", "glycemia", "spo2", "fc"],
+    anaphylaxisProtocol: ["ta", "spo2", "fr", "fc"],
+    hemorrhageProtocol: ["ta", "fc", "gcs", "spo2"],
+    hypoglycemiaProtocol: ["glycemia", "gcs", "fc"],
+    asthmaBpcoProtocol: ["spo2", "fr", "fc", "gcs"],
+    analgesiaProtocol: ["pain", "gcs", "fr", "spo2"]
+  };
+
+  function getProtocolVitalRows(vitalRows, protocolId) {
+    const focusKeys = PROTOCOL_VITAL_FOCUS[protocolId] || [];
+
+    return focusKeys
+      .map(key => vitalRows.find(row => row.key === key))
+      .filter(Boolean);
+  }
+
+  function formatVitalMeasurement(row, measurement = row?.latest) {
+    if (!row || !measurement?.value) return "";
+
+    return `${row.label} ${measurement.value}${row.unit ? ` ${row.unit}` : ""}`;
+  }
+
+  function isEventForProtocol(event, protocolId) {
+    if (!protocolId) return true;
+    if (event?.protocolId) return event.protocolId === protocolId;
+
+    const eventProtocol = normalizeText(event?.protocole);
+    const protocolLabel = normalizeText(safeCall("getProtocolLabel", "", protocolId));
+
+    return Boolean(eventProtocol && protocolLabel && eventProtocol === protocolLabel);
+  }
+
+  function getProtocolScopedEvents(events, protocolId) {
+    if (!protocolId) return events;
+    return events.filter(event => isEventForProtocol(event, protocolId));
+  }
+
+  function buildClinicalCallReason(model) {
+    const parts = [];
+    const situationEvent = model.situationEvents[model.situationEvents.length - 1];
+
+    if (situationEvent) {
+      parts.push(
+        String(
+          situationEvent.libelleCourt ||
+          situationEvent.phraseSAED ||
+          situationEvent.libelleLong ||
+          ""
+        ).trim()
+      );
+    } else if (model.protocol?.intro) {
+      parts.push(model.protocol.intro.replace(/[.!?]+$/, ""));
+    } else if (model.protocol?.label) {
+      parts.push(model.protocol.label);
+    }
+
+    const focusedRows = getProtocolVitalRows(model.vitalRows, model.protocol?.id);
+    focusedRows.forEach(row => {
+      const line = formatVitalMeasurement(row);
+      if (line) parts.push(line);
+    });
+
+    const callAlert = model.call15Alert || model.alert || {};
+    const alertReasons = Array.isArray(callAlert?.reasons) ? callAlert.reasons : [];
+    const contextualAlertReasons = alertReasons
+      .map(reason => {
+        const parts = String(reason || "")
+          .split(/\s*:\s*/)
+          .map(part => part.trim())
+          .filter(Boolean);
+
+        return parts.length > 1 ? parts[parts.length - 1] : (parts[0] || "");
+      })
+      .filter(Boolean);
+
+    if (callAlert?.level && callAlert.level !== "none") {
+      const alertLabel = String(callAlert.level).toUpperCase();
+      parts.push(
+        contextualAlertReasons.length > 0
+          ? `Alerte ${alertLabel} PISU : ${contextualAlertReasons.join(" · ")}`
+          : `Alerte ${alertLabel} PISU`
+      );
+    }
+
+    if (model.actionEvents.length > 0) {
+      parts.push("Prise en charge en cours");
+    }
+
+    return parts.filter(Boolean).join(" — ");
+  }
+
+  function buildEvaluationSummary(model) {
+    const parts = [];
+    const actionLabels = model.actionEvents
+      .slice(-4)
+      .map(event => String(event?.libelleCourt || eventText(event) || "").trim())
+      .filter(Boolean);
+
+    if (actionLabels.length > 0) {
+      parts.push(`Actions enregistrées : ${actionLabels.join(" ; ")}`);
+    }
+
+    const focusedRows = getProtocolVitalRows(model.vitalRows, model.protocol?.id);
+    const evolutionLines = focusedRows
+      .filter(row => (
+        row.hasEvolution &&
+        normalizeText(row.initial?.value) !== normalizeText(row.latest?.value)
+      ))
+      .map(row => (
+        `${row.label} ${row.initial.value}${row.unit ? ` ${row.unit}` : ""}` +
+        ` → ${row.latest.value}${row.unit ? ` ${row.unit}` : ""}`
+      ));
+
+    if (evolutionLines.length > 0) {
+      parts.push(`Évolution : ${evolutionLines.join(" ; ")}`);
+    } else {
+      const currentLines = focusedRows
+        .map(row => formatVitalMeasurement(row))
+        .filter(Boolean);
+
+      if (currentLines.length > 0) {
+        parts.push(`État actuel enregistré : ${currentLines.join(" ; ")}`);
+      }
+    }
+
+    return parts.join(" — ");
+  }
+
+  function buildDemandProposal(model, demandType = selectedDemandType) {
+    const type = String(demandType || "").trim();
+    const protocolLabel = model.protocol?.label || "la situation clinique enregistrée";
+
+    if (!type) return "";
+
+    if (type === "Avis médical") {
+      return model.protocol?.demand ||
+        `Demande d’avis médical régulateur concernant ${protocolLabel}, selon l’évolution clinique et le contexte renseigné.`;
+    }
+
+    if (type === "Validation d’une conduite") {
+      return `Validation médicale demandée concernant la conduite en cours pour ${protocolLabel}, au regard de l’évolution clinique et des éléments enregistrés.`;
+    }
+
+    if (type === "Prescription") {
+      return `Prescription médicale demandée pour la poursuite de la prise en charge de ${protocolLabel}, en tenant compte des traitements déjà réalisés et de l’évolution enregistrée.`;
+    }
+
+    if (type === "Renfort médical") {
+      return `Évaluation d’un renfort médical demandée devant ${protocolLabel}, selon les éléments de gravité et l’évolution clinique enregistrés.`;
+    }
+
+    if (type === "Orientation") {
+      return `Orientation à discuter devant ${protocolLabel}, selon l’évolution clinique, la surveillance nécessaire et le contexte renseigné.`;
+    }
+
+    if (type === "Destination") {
+      return `Décision de destination demandée devant ${protocolLabel}, selon l’évolution clinique, les traitements réalisés et les besoins de surveillance renseignés.`;
+    }
+
+    return "";
+  }
+
   function eventText(event) {
     const primary = String(event?.libelleLong || event?.libelleCourt || event?.phraseSAED || "").trim();
     const additions = [];
@@ -331,9 +549,11 @@
     );
   }
 
-  function getSituationEvents(events) {
+  function getSituationEvents(events, protocolId = "") {
+    const scopedEvents = getProtocolScopedEvents(events, protocolId);
+
     return uniqueEvents(
-      events
+      scopedEvents
         .filter(event => event?.sectionSAED === "S")
         .filter(event => event?.visibleSAED !== false)
         .filter(event => !["constante", "alerte_constantes"].includes(event?.categorie))
@@ -413,6 +633,69 @@
     return lines;
   }
 
+  function buildOriginLines(route) {
+    const origin = [route?.originLabel, route?.originCoordinates]
+      .filter(Boolean)
+      .join(" — ");
+
+    return origin ? [`Lieu de prise en charge : ${origin}`] : [];
+  }
+
+  function hasOrientationTransportData(route) {
+    return Boolean(
+      route?.destinationName ||
+      route?.destinationService ||
+      route?.transportStatus ||
+      route?.transportType ||
+      route?.transportVector ||
+      route?.transportMode ||
+      route?.transportMonitoring
+    );
+  }
+
+  function buildOrientationTransportLines(route) {
+    if (!hasOrientationTransportData(route)) return [];
+
+    const lines = [];
+    const destination = [route?.destinationName, route?.destinationService]
+      .filter(Boolean)
+      .join(" — ");
+    const transport = [
+      route?.transportStatus,
+      route?.transportType,
+      route?.transportVector,
+      route?.transportMode,
+      route?.transportMonitoring
+    ].filter(Boolean).join(" — ");
+
+    if (destination) lines.push(`Destination : ${destination}`);
+    if (transport) lines.push(`Transport : ${transport}`);
+    if (route?.departureTime) lines.push(`Départ des lieux : ${route.departureTime}`);
+
+    if (route?.junctionEnabled) {
+      const junction = [
+        route.junctionTime ? `à ${route.junctionTime}` : "",
+        route.junctionPlace,
+        route.junctionWith ? `avec ${route.junctionWith}` : ""
+      ].filter(Boolean).join(" — ");
+
+      lines.push(`Jonction : ${junction || "prévue / réalisée"}`);
+    }
+
+    if (route?.arrivalTime) lines.push(`Arrivée : ${route.arrivalTime}`);
+
+    if (route?.transmissionDone) {
+      lines.push(
+        `Transmission à l’équipe receveuse réalisée` +
+        `${route?.transmissionTime ? ` à ${route.transmissionTime}` : ""}`
+      );
+    }
+
+    if (route?.note) lines.push(`Note transport : ${route.note}`);
+
+    return lines;
+  }
+
   function readCounter(key) {
     const value = Number(localStorage.getItem(key) || "0");
     return Number.isFinite(value) && value > 0 ? value : 0;
@@ -456,12 +739,20 @@
     const route = safeCall("getMissionRouteSnapshot", {});
     const missionState = safeCall("getMissionState", null);
     const alert = safeCall("getLatestVitalsAlert", { level: "none", reasons: [] });
+    const call15Alert = safeCall("getEffectiveCall15Alert", alert);
     const request = readRequest();
     const protocol = getProtocolContext(events, missionState);
     const routeLines = buildRouteLines(route);
-    const actionEvents = getActionEvents(events);
+    const originLines = buildOriginLines(route);
+    const routeDecisionLines = buildOrientationTransportLines(route);
+    const actionEvents = getActionEvents(
+      getProtocolScopedEvents(events, protocol.id)
+    );
+    const vitalRows = buildVitalRows(safeVitals);
+    const situationEvents = getSituationEvents(events, protocol.id);
+    const requestComplete = isRequestComplete(request, protocol.id);
 
-    return {
+    const model = {
       events,
       patient,
       antecedents,
@@ -471,41 +762,60 @@
       crew: Array.isArray(crew) ? crew : [],
       route,
       routeLines,
+      originLines,
+      routeDecisionLines,
+      routeHasOrientationTransport: hasOrientationTransportData(route),
       missionState,
       alert,
+      call15Alert,
       request,
-      requestLine: formatRequest(request),
+      requestComplete,
+      requestLine: requestComplete ? formatRequest(request) : "",
+      requestDraftLine: formatRequest(request),
       protocol,
       antecedentLines: buildAntecedentLines(antecedents, patient),
-      vitalRows: buildVitalRows(safeVitals),
+      vitalRows,
       vitalsEntries: safeVitals,
       latestVitals: safeVitals[safeVitals.length - 1] || null,
       actionEvents,
-      situationEvents: getSituationEvents(events),
+      situationEvents,
       chronology: buildChronology(events, safeVitals),
       counters: buildCounters(protocol.id)
     };
-  }
 
+    model.callReasonLine = buildClinicalCallReason(model);
+    model.evaluationSummary = buildEvaluationSummary(model);
+    model.demandProposal = buildDemandProposal(
+      model,
+      selectedDemandType || (
+        request.protocolId === protocol.id ? request.type : ""
+      )
+    );
+
+    return model;
+  }
   function listHtml(lines, className = "saed-plain-list") {
     return `<ul class="${className}">${lines.map(line => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`;
   }
 
   function renderPriority(model) {
-    const alertReasons = Array.isArray(model.alert?.reasons) ? model.alert.reasons : [];
-    const requestText = model.requestLine || "Objet de l’appel à préciser";
-    const alertText = alertReasons.length > 0 ? alertReasons.join(" · ") : "";
+    const callReasonText = model.callReasonLine ||
+      model.protocol?.intro ||
+      "Éléments cliniques à renseigner avant la transmission";
+    const demandStatus = model.requestComplete
+      ? `D — Demande validée : ${model.requestLine}`
+      : "D — Demande à choisir, préciser puis valider par le professionnel";
 
     priorityBanner.className = "saed-priority-banner";
 
     if (model.alert?.level === "red") priorityBanner.classList.add("is-red");
     if (model.alert?.level === "orange") priorityBanner.classList.add("is-orange");
-    if (!model.requestLine) priorityBanner.classList.add("needs-input");
+    if (!model.requestComplete) priorityBanner.classList.add("needs-input");
 
     priorityBanner.innerHTML = `
-      <span>APPEL MAINTENANT</span>
-      <strong>${escapeHtml(requestText)}</strong>
-      ${alertText ? `<small>${escapeHtml(alertText)}</small>` : ""}
+      <span>POURQUOI L’APPEL MAINTENANT</span>
+      <strong>${escapeHtml(callReasonText)}</strong>
+      <small>${escapeHtml(demandStatus)}</small>
     `;
   }
 
@@ -528,12 +838,12 @@
           <strong>${escapeHtml(model.protocol.label || "Motif principal à préciser")}</strong>
           ${missionStart ? `<small>Prise en charge depuis ${escapeHtml(missionStart)}</small>` : ""}
         </article>
-        <article class="saed-fact-card wide saed-call-reason ${model.requestLine ? "" : "is-missing"}">
+        <article class="saed-fact-card wide saed-call-reason ${model.callReasonLine ? "" : "is-missing"}">
           <span>Pourquoi l’équipe appelle maintenant</span>
-          <strong>${escapeHtml(model.requestLine || "Demande non précisée")}</strong>
+          <strong>${escapeHtml(model.callReasonLine || "Éléments cliniques à renseigner")}</strong>
         </article>
       </div>
-      ${situationLines.length > 0 ? `<div class="saed-current-status"><strong>Situation clinique enregistrée</strong>${listHtml(situationLines)}</div>` : ""}
+      ${situationLines.length > 0 ? `<div class="saed-current-status"><strong>Éléments cliniques enregistrés</strong>${listHtml(situationLines)}</div>` : ""}
     `;
   }
 
@@ -607,22 +917,31 @@
 
   function renderActions(model) {
     const visibleActions = model.actionEvents.slice(-MAX_ACTIONS_IN_EVALUATION);
+    const hasContent = Boolean(model.evaluationSummary || visibleActions.length > 0);
 
-    actionsContent.hidden = visibleActions.length === 0;
-    actionsContent.innerHTML = visibleActions.length > 0
+    actionsContent.hidden = !hasContent;
+    actionsContent.innerHTML = hasContent
       ? `
-          <div class="saed-subheading">
-            <strong>Actions / traitements enregistrés</strong>
-            ${model.actionEvents.length > visibleActions.length ? `<small>${model.actionEvents.length - visibleActions.length} événement(s) antérieur(s) dans la chronologie</small>` : ""}
-          </div>
-          <ol class="saed-action-list">
-            ${visibleActions.map(event => `
-              <li>
-                <time>${escapeHtml(String(event.heure || "--:--").slice(0, 5))}</time>
-                <span>${escapeHtml(eventText(event))}</span>
-              </li>
-            `).join("")}
-          </ol>
+          ${model.evaluationSummary ? `
+            <div class="saed-current-status">
+              <strong>Synthèse actions / évolution</strong>
+              <p>${escapeHtml(model.evaluationSummary)}</p>
+            </div>
+          ` : ""}
+          ${visibleActions.length > 0 ? `
+            <div class="saed-subheading">
+              <strong>Actions / traitements enregistrés</strong>
+              ${model.actionEvents.length > visibleActions.length ? `<small>${model.actionEvents.length - visibleActions.length} événement(s) antérieur(s) dans la chronologie</small>` : ""}
+            </div>
+            <ol class="saed-action-list">
+              ${visibleActions.map(event => `
+                <li>
+                  <time>${escapeHtml(String(event.heure || "--:--").slice(0, 5))}</time>
+                  <span>${escapeHtml(eventText(event))}</span>
+                </li>
+              `).join("")}
+            </ol>
+          ` : ""}
         `
       : "";
   }
@@ -636,18 +955,81 @@
   }
 
   function renderDemand(model) {
-    selectedDemandType = model.request.type;
-    if (demandDetail) demandDetail.value = model.request.detail;
+    const storedRequestMatchesProtocol = Boolean(
+      model.request.protocolId &&
+      model.request.protocolId === model.protocol.id
+    );
+
+    if (demandDraftProtocolId !== model.protocol.id) {
+      demandDraftProtocolId = model.protocol.id;
+      demandDraftDirty = false;
+      lastSuggestedDemandDetail = "";
+      selectedDemandType = storedRequestMatchesProtocol ? model.request.type : "";
+
+      if (demandDetail) {
+        demandDetail.value = storedRequestMatchesProtocol ? model.request.detail : "";
+      }
+    }
+
+    const proposal = buildDemandProposal(model, selectedDemandType);
+    const currentDetail = String(demandDetail?.value || "").trim();
+
+    if (
+      demandDetail &&
+      selectedDemandType &&
+      proposal &&
+      (
+        !currentDetail ||
+        currentDetail === lastSuggestedDemandDetail
+      )
+    ) {
+      demandDetail.value = proposal;
+      lastSuggestedDemandDetail = proposal;
+    }
+
     renderDemandChoiceState();
 
-    demandSummary.className = `saed-demand-summary ${model.requestLine ? "is-complete" : "is-missing"}`;
-    demandSummary.innerHTML = model.requestLine
-      ? `<span>Demande actuelle</span><strong>${escapeHtml(model.requestLine)}</strong>`
-      : `<span>Demande actuelle</span><strong>À préciser avant l’appel</strong>`;
+    const draftDetail = String(demandDetail?.value || "").trim();
+    const validatedCurrentRequest = Boolean(
+      model.requestComplete &&
+      storedRequestMatchesProtocol &&
+      !demandDraftDirty &&
+      selectedDemandType === model.request.type &&
+      draftDetail === model.request.detail
+    );
 
-    routeContent.hidden = model.routeLines.length === 0;
-    routeContent.innerHTML = model.routeLines.length > 0
-      ? `<strong>Orientation / transport déjà renseigné</strong>${listHtml(model.routeLines)}`
+    demandSummary.className = `saed-demand-summary ${validatedCurrentRequest ? "is-complete" : "is-missing"}`;
+
+    if (validatedCurrentRequest) {
+      demandSummary.innerHTML = `
+        <span>Demande validée par le professionnel</span>
+        <strong>${escapeHtml(model.requestLine)}</strong>
+      `;
+    } else if (selectedDemandType && draftDetail) {
+      demandSummary.innerHTML = `
+        <span>Formulation proposée — à valider</span>
+        <strong>${escapeHtml(draftDetail)}</strong>
+        <small>Cette formulation reste un brouillon tant que « Valider la demande » n’a pas été utilisé.</small>
+      `;
+    } else {
+      demandSummary.innerHTML = `
+        <span>Demande à construire</span>
+        <strong>Choisir ce qui est demandé au médecin puis valider la formulation</strong>
+      `;
+    }
+
+    const routeLines = model.routeDecisionLines.length > 0
+      ? model.routeDecisionLines
+      : model.originLines;
+    const routeTitle = model.routeDecisionLines.length > 0
+      ? "Orientation / transport renseigné"
+      : model.originLines.length > 0
+        ? "Repère de prise en charge disponible"
+        : "";
+
+    routeContent.hidden = routeLines.length === 0;
+    routeContent.innerHTML = routeLines.length > 0
+      ? `<strong>${escapeHtml(routeTitle)}</strong>${listHtml(routeLines)}`
       : "";
   }
 
@@ -720,22 +1102,48 @@
   }
 
   function saveDemand() {
+    const model = buildModel();
     const detail = String(demandDetail?.value || "").trim();
+
+    if (!selectedDemandType) {
+      window.alert("Choisir d’abord ce qui est demandé au médecin.");
+      return;
+    }
+
+    if (!detail) {
+      window.alert("Préciser ou valider la formulation de la demande avant l’appel.");
+      return;
+    }
+
     const previous = readRequest();
     const request = storeRequest({
       type: selectedDemandType,
       detail,
+      protocolId: model.protocol.id,
+      validated: true,
       updatedAt: new Date().toISOString()
     });
     const requestText = formatRequest(request);
 
-    if (requestText && requestText !== formatRequest(previous)) {
-      safeCall("addLog", null, `Demande SAED enregistrée : ${requestText}`, {
-        protocole: "Mission PISU",
+    demandDraftDirty = false;
+    demandDraftProtocolId = model.protocol.id;
+    lastSuggestedDemandDetail = "";
+
+    if (
+      requestText &&
+      (
+        requestText !== formatRequest(previous) ||
+        previous.validated !== true ||
+        previous.protocolId !== request.protocolId
+      )
+    ) {
+      safeCall("addLog", null, `Demande SAED validée (${request.type}) : ${requestText}`, {
+        protocole: model.protocol.label || "Mission PISU",
+        protocolId: model.protocol.id || "",
         categorie: "transmission",
         sousCategorie: "demande_regulation",
-        libelleCourt: `Demande : ${requestText}`,
-        libelleLong: `Demande SAED : ${requestText}`,
+        libelleCourt: `Demande validée : ${requestText}`,
+        libelleLong: `Demande SAED validée par le professionnel : ${requestText}`,
         sectionSAED: "D",
         priorite: "haute",
         type: "transmission",
@@ -758,8 +1166,7 @@
 
     if (model.protocol.label) lines.push(`Motif / protocole : ${model.protocol.label}`);
     if (missionStart) lines.push(`Prise en charge depuis ${missionStart}`);
-    lines.push(`Appel maintenant : ${model.requestLine || "objet à préciser"}`);
-    model.situationEvents.forEach(event => lines.push(eventText(event)));
+    lines.push(`Pourquoi maintenant : ${model.callReasonLine || "éléments cliniques à préciser"}`);
 
     return lines;
   }
@@ -785,6 +1192,10 @@
 
     lines.push("E — ÉVALUATION");
 
+    if (model.evaluationSummary) {
+      lines.push(`- Synthèse actions / évolution : ${model.evaluationSummary}`);
+    }
+
     const alertReasons = Array.isArray(model.alert?.reasons) ? model.alert.reasons : [];
     if (alertReasons.length > 0) lines.push(`- Anomalie PISU identifiée : ${alertReasons.join(" ; ")}`);
 
@@ -806,8 +1217,13 @@
     lines.push(
       "",
       "D — DEMANDE / DÉCISION ATTENDUE",
-      `- ${model.requestLine || "Demande à préciser par le professionnel"}`,
-      ...model.routeLines.map(line => `- ${line}`)
+      `- ${model.requestComplete ? model.requestLine : "Demande à valider par le professionnel"}`,
+      ...(
+        !model.requestComplete && model.requestDraftLine
+          ? [`- Proposition non validée : ${model.requestDraftLine}`]
+          : []
+      ),
+      ...model.routeDecisionLines.map(line => `- ${line}`)
     );
 
     if (model.chronology.length > 0) {
@@ -868,7 +1284,23 @@
     selectedDemandType = selectedDemandType === button.dataset.saedDemand
       ? ""
       : button.dataset.saedDemand;
-    renderDemandChoiceState();
+    demandDraftDirty = true;
+
+    if (!selectedDemandType) {
+      const currentDetail = String(demandDetail?.value || "").trim();
+
+      if (demandDetail && currentDetail === lastSuggestedDemandDetail) {
+        demandDetail.value = "";
+      }
+
+      lastSuggestedDemandDetail = "";
+    }
+
+    renderDemand(buildModel());
+  });
+
+  demandDetail?.addEventListener("input", () => {
+    demandDraftDirty = true;
   });
 
   document.addEventListener("keydown", event => {

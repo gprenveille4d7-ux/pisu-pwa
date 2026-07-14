@@ -1468,6 +1468,17 @@ function getProtocolLabel(protocolId) {
   return PISU_PROTOCOLS[protocolId]?.label || PROTOCOL_TITLES[protocolId] || "Mission PISU";
 }
 
+function getProtocolDefinition(protocolId) {
+  const definition = PISU_PROTOCOLS[protocolId];
+
+  return {
+    id: protocolId || "",
+    label: definition?.label || getProtocolLabel(protocolId),
+    intro: String(definition?.intro || "").trim(),
+    demand: String(definition?.demand || "").trim()
+  };
+}
+
 function getActionTemplate(protocolId, actionKey) {
   return PISU_SAED_ACTIONS[protocolId]?.[actionKey] ||
     PISU_SAED_ACTIONS.common?.[actionKey] ||
@@ -1563,6 +1574,7 @@ function installStructuredSAEDEngine() {
   window.getStructuredEvents = getStructuredEvents;
   window.clearStructuredEvents = clearStructuredEvents;
   window.saveStructuredEvent = saveStructuredEvent;
+  window.getProtocolDefinition = getProtocolDefinition;
 }
 
 function normalizeProtocolName(value) {
