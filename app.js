@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v230";
+const CACHE_NAME = "pisu-acr-cache-v231";
 const APP_VERSION = String(globalThis.PISU_APP_VERSION || "").trim();
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
@@ -1185,6 +1185,8 @@ function nowLabel() {
 }
 
 let missionResumeInterval = null;
+const LEGACY_RESET_MISSION_LOG_TEXT =
+  "Nouvelle mission créée — journal, SAED, patient, constantes et parcours remis à zéro";
 
 function getMissionState() {
   try {
@@ -1243,6 +1245,105 @@ function applyMissionStateSnapshot(snapshot = {}) {
   return startNewMissionState({ startedAt, activeProtocolId });
 }
 
+function normalizeLegacyResetMissionText(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isLegacyResetMissionLogItem(item) {
+  return normalizeLegacyResetMissionText(item?.text) === LEGACY_RESET_MISSION_LOG_TEXT;
+}
+
+function isLegacyResetMissionStructuredEvent(event) {
+  return [event?.text, event?.libelleCourt, event?.libelleLong]
+    .some(value => normalizeLegacyResetMissionText(value) === LEGACY_RESET_MISSION_LOG_TEXT);
+}
+
+function hasMeaningfulPatientEvidence(patient = getPatientSnapshot()) {
+  return Boolean(
+    patient?.name ||
+    patient?.birthDate ||
+    patient?.birthDateIso ||
+    patient?.ageValue ||
+    patient?.sex ||
+    patient?.category ||
+    patient?.weight ||
+    patient?.note
+  );
+}
+
+function hasMeaningfulMissionEvidence(options = {}) {
+  const hasOwn = key => Object.prototype.hasOwnProperty.call(options, key);
+  const state = hasOwn("state") ? options.state : getMissionState();
+  const logItems = hasOwn("logItems") ? options.logItems : getLog();
+  const structuredEvents = hasOwn("structuredEvents")
+    ? options.structuredEvents
+    : getStructuredEvents();
+  const vitalsEntries = hasOwn("vitalsEntries") ? options.vitalsEntries : getVitalsEntries();
+  const patient = hasOwn("patient") ? options.patient : getPatientSnapshot();
+  const antecedents = hasOwn("antecedents")
+    ? options.antecedents
+    : getPatientAntecedentsSnapshot();
+  const missionCrew = hasOwn("missionCrew") ? options.missionCrew : getMissionCrew();
+  const route = hasOwn("route") ? options.route : getMissionRouteSnapshot();
+
+  return Boolean(
+    state?.activeProtocolId ||
+    logItems.some(item => !isLegacyResetMissionLogItem(item)) ||
+    structuredEvents.some(event => !isLegacyResetMissionStructuredEvent(event)) ||
+    vitalsEntries.length > 0 ||
+    hasMeaningfulPatientEvidence(patient) ||
+    hasPatientAntecedentsData(antecedents) ||
+    missionCrew.length > 0 ||
+    hasMissionRouteData(route)
+  );
+}
+
+function repairLegacyPhantomMissionState() {
+  const state = getMissionState();
+  const logItems = getLog();
+
+  if (
+    !state ||
+    state.activeProtocolId ||
+    logItems.length === 0 ||
+    !logItems.every(isLegacyResetMissionLogItem)
+  ) {
+    return false;
+  }
+
+  const structuredEvents = getStructuredEvents();
+
+  if (hasMeaningfulMissionEvidence({ state, logItems, structuredEvents })) {
+    return false;
+  }
+
+  try {
+    localStorage.removeItem("pisuLog");
+
+    const remainingEvents = structuredEvents.filter(
+      event => !isLegacyResetMissionStructuredEvent(event)
+    );
+
+    if (remainingEvents.length > 0) {
+      saveStructuredEvents(remainingEvents);
+    } else {
+      clearStructuredEvents();
+    }
+  } catch {
+    // La réparation doit rester sans effet de bord si le stockage iOS est indisponible.
+  }
+
+  if (logEl) {
+    logEl.innerHTML = "";
+  }
+
+  clearMissionState();
+  return true;
+}
+
 function clearMissionState() {
   try {
     localStorage.removeItem(MISSION_STATE_STORAGE_KEY);
@@ -1252,6 +1353,8 @@ function clearMissionState() {
 
   window.clearInterval(missionResumeInterval);
   missionResumeInterval = null;
+  if (missionResumeProtocol) missionResumeProtocol.textContent = "";
+  if (missionResumeDuration) missionResumeDuration.textContent = "";
   missionResumeBanner?.classList.add("hidden");
 }
 
@@ -1278,9 +1381,11 @@ function updateMissionResumeBanner() {
   if (!missionResumeBanner) return false;
 
   const state = getMissionState();
-  const hasMissionLog = getLog().length > 0;
+  const hasMissionEvidence = hasMeaningfulMissionEvidence({ state });
 
-  if (!state || !hasMissionLog) {
+  if (!state || !hasMissionEvidence) {
+    if (missionResumeProtocol) missionResumeProtocol.textContent = "";
+    if (missionResumeDuration) missionResumeDuration.textContent = "";
     missionResumeBanner.classList.add("hidden");
     return false;
   }
@@ -1319,6 +1424,7 @@ function resumeCurrentMission() {
 }
 
 function setupMissionResumeFeature() {
+  repairLegacyPhantomMissionState();
   resumeMissionBtn?.addEventListener("click", resumeCurrentMission);
 
   if (document.visibilityState === "visible") {
@@ -6877,6 +6983,11 @@ const VITALS_ROLLER_SELECT_IDS = Object.freeze([
   "vitalsGlycemia"
 ]);
 const VITALS_ROLLER_DRAG_THRESHOLD_PX = 6;
+const VITALS_ROLLER_SLOW_VELOCITY_PX_PER_MS = 0.15;
+const VITALS_ROLLER_FAST_VELOCITY_PX_PER_MS = 0.9;
+const VITALS_ROLLER_MAX_ADAPTIVE_GAIN = 14;
+const VITALS_ROLLER_SMALL_LIST_SIZE = 16;
+const VITALS_ROLLER_LARGE_LIST_SIZE = 241;
 
 let vitalsRollerElements = null;
 let vitalsRollerRowSequence = 0;
@@ -6892,10 +7003,50 @@ const vitalsRollerState = {
   pointerTarget: null,
   startY: 0,
   startIndex: 0,
+  lastPointerY: 0,
+  lastPointerTime: 0,
+  smoothedPointerVelocity: 0,
   maxMovement: 0,
   gestureListenersAttached: false,
   globalListenersAttached: false
 };
+
+function smoothVitalsRollerGain(value) {
+  const bounded = Math.min(1, Math.max(0, value));
+  return bounded * bounded * (3 - 2 * bounded);
+}
+
+function getVitalsRollerAdaptiveGain(optionCount, pointerVelocity) {
+  if (optionCount <= VITALS_ROLLER_SMALL_LIST_SIZE) return 1;
+
+  const listRange = VITALS_ROLLER_LARGE_LIST_SIZE - VITALS_ROLLER_SMALL_LIST_SIZE;
+  const listRatio = Math.min(
+    1,
+    Math.max(0, (optionCount - VITALS_ROLLER_SMALL_LIST_SIZE) / listRange)
+  );
+  const maximumGain = 1 +
+    (VITALS_ROLLER_MAX_ADAPTIVE_GAIN - 1) * Math.pow(listRatio, 0.8);
+  const velocityRatio = (
+    pointerVelocity - VITALS_ROLLER_SLOW_VELOCITY_PX_PER_MS
+  ) / (
+    VITALS_ROLLER_FAST_VELOCITY_PX_PER_MS -
+    VITALS_ROLLER_SLOW_VELOCITY_PX_PER_MS
+  );
+  const velocityGain = smoothVitalsRollerGain(velocityRatio);
+
+  return Math.min(
+    VITALS_ROLLER_MAX_ADAPTIVE_GAIN,
+    Math.max(1, 1 + (maximumGain - 1) * velocityGain)
+  );
+}
+
+function getVitalsRollerPointerTime(event) {
+  const eventTime = Number(event?.timeStamp);
+
+  return Number.isFinite(eventTime) && eventTime >= 0
+    ? eventTime
+    : performance.now();
+}
 
 function populateOrderedRangeSelect(select, config) {
   if (!select) return;
@@ -7354,6 +7505,9 @@ function beginVitalsRollerGesture(event, captureTarget) {
   vitalsRollerState.pointerTarget = captureTarget;
   vitalsRollerState.startY = event.clientY;
   vitalsRollerState.startIndex = vitalsRollerState.currentVirtualIndex;
+  vitalsRollerState.lastPointerY = event.clientY;
+  vitalsRollerState.lastPointerTime = getVitalsRollerPointerTime(event);
+  vitalsRollerState.smoothedPointerVelocity = 0;
   vitalsRollerState.maxMovement = 0;
 
   try {
@@ -7371,14 +7525,26 @@ function handleVitalsRollerPointerMove(event) {
   event.preventDefault();
 
   const deltaY = event.clientY - vitalsRollerState.startY;
+  const incrementalDeltaY = event.clientY - vitalsRollerState.lastPointerY;
+  const pointerTime = getVitalsRollerPointerTime(event);
+  const elapsedTime = Math.max(8, pointerTime - vitalsRollerState.lastPointerTime);
+  const pointerVelocity = Math.abs(incrementalDeltaY) / elapsedTime;
   const rowHeight = vitalsRollerState.geometry?.rowHeight || 44;
+  vitalsRollerState.smoothedPointerVelocity =
+    vitalsRollerState.smoothedPointerVelocity * 0.2 + pointerVelocity * 0.8;
+  const adaptiveGain = getVitalsRollerAdaptiveGain(
+    vitalsRollerState.options.length,
+    vitalsRollerState.smoothedPointerVelocity
+  );
   vitalsRollerState.maxMovement = Math.max(
     vitalsRollerState.maxMovement,
     Math.abs(deltaY)
   );
   vitalsRollerState.currentVirtualIndex = clampVitalsRollerIndex(
-    vitalsRollerState.startIndex - deltaY / rowHeight
+    vitalsRollerState.currentVirtualIndex - incrementalDeltaY / rowHeight * adaptiveGain
   );
+  vitalsRollerState.lastPointerY = event.clientY;
+  vitalsRollerState.lastPointerTime = pointerTime;
   updateVitalsRollerPosition();
 }
 
@@ -7443,6 +7609,12 @@ function closeVitalsRoller() {
   vitalsRollerState.geometry = null;
   vitalsRollerState.activeIndex = -1;
   vitalsRollerState.currentVirtualIndex = 0;
+  vitalsRollerState.startY = 0;
+  vitalsRollerState.startIndex = 0;
+  vitalsRollerState.lastPointerY = 0;
+  vitalsRollerState.lastPointerTime = 0;
+  vitalsRollerState.smoothedPointerVelocity = 0;
+  vitalsRollerState.maxMovement = 0;
 }
 
 function openVitalsRoller(select, trigger, pointerEvent = null) {

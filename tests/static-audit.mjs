@@ -37,7 +37,7 @@ assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de v
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
 assert.match(app, new RegExp(`CACHE_NAME\\s*=\\s*["']pisu-acr-cache-v${cacheVersion}["']`), "Cache applicatif non synchronise");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.23["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.24["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 assert.match(worker, /async function fetchNetworkFirst\(request,\s*fallbackRequest\s*=\s*request\)/, "Stratégie réseau prioritaire absente");
@@ -218,7 +218,8 @@ const vitalsRollerOptionsSource = app.slice(
   app.indexOf("function getVitalsRollerTrigger")
 );
 assert.doesNotMatch(vitalsRollerOptionsSource, /\[\s*-?\d+(?:\.\d+)?\s*(?:,|\])/, "Une plage numerique a ete dupliquee dans la roulette");
-assert.match(app, /vitalsRollerState\.startIndex\s*-\s*deltaY\s*\/\s*rowHeight/, "Suivi continu du doigt par hauteur de ligne absent");
+assert.match(app, /currentVirtualIndex\s*-\s*incrementalDeltaY\s*\/\s*rowHeight\s*\*\s*adaptiveGain/, "Scrub incrémental adaptatif de la roulette absent");
+assert.doesNotMatch(app, /startIndex\s*-\s*deltaY\s*\/\s*rowHeight/, "L'ancien calcul absolu lent de la roulette est encore actif");
 assert.match(app, /const finalIndex\s*=\s*Math\.round\(vitalsRollerState\.currentVirtualIndex\)/, "Snap final de la roulette absent");
 assert.match(app, /select\.value\s*=\s*option\.value[\s\S]*?select\.dataset\.vitalsTouched\s*=\s*["']true["'][\s\S]*?new Event\(["']input["'],\s*\{\s*bubbles:\s*true\s*\}\)[\s\S]*?new Event\(["']change["'],\s*\{\s*bubbles:\s*true\s*\}\)/, "Validation de la roulette non reconnectee au select source");
 assert.match(app, /function clearVitalsForm\(\)[\s\S]*?syncVitalsRollerTriggers\(\)/, "Remise a zero visuelle des triggers absente");
@@ -339,6 +340,114 @@ const tasStartIndex = tasOptions.findIndex(option => option.value === "120");
 const tasVirtualIndexAfterThreeRows = tasStartIndex - (-3 * 48) / 48;
 const tasFinalOption = tasOptions[Math.round(tasVirtualIndexAfterThreeRows)];
 assert.equal(tasFinalOption?.value, "123", "Le geste TAS de trois lignes vers le haut n'aboutit pas a 123");
+
+const adaptiveVitalsRollerSource = app.slice(
+  app.indexOf("const VITALS_ROLLER_SLOW_VELOCITY_PX_PER_MS"),
+  app.indexOf("function populateOrderedRangeSelect")
+);
+const clampVitalsRollerSource = app.slice(
+  app.indexOf("function clampVitalsRollerIndex"),
+  app.indexOf("function createVitalsRollerElements")
+);
+const vitalsRollerGestureSource = app.slice(
+  app.indexOf("function beginVitalsRollerGesture"),
+  app.indexOf("function handleVitalsRollerPointerCancel")
+);
+const adaptiveRollerContext = {
+  performance: { now: () => 1 },
+  addVitalsRollerGestureListeners() {},
+  endVitalsRollerGesture() {},
+  updateVitalsRollerPosition() {},
+  commitCount: 0,
+  closeCount: 0,
+  commitVitalsRollerValue() { adaptiveRollerContext.commitCount += 1; },
+  closeVitalsRoller() { adaptiveRollerContext.closeCount += 1; }
+};
+
+vm.runInNewContext(
+  `const VITALS_ROLLER_DRAG_THRESHOLD_PX = 6;
+  ${adaptiveVitalsRollerSource}
+  ${clampVitalsRollerSource}
+  ${vitalsRollerGestureSource}
+
+  const gainCases = [];
+  for (const optionCount of [11, 13, 16, 61, 81, 117, 161, 231, 241]) {
+    for (const velocity of [0, 0.1, 0.3, 0.9, 2]) {
+      gainCases.push({ optionCount, velocity, gain: getVitalsRollerAdaptiveGain(optionCount, velocity) });
+    }
+  }
+
+  vitalsRollerState.select = {};
+  vitalsRollerState.options = Array.from({ length: 241 }, (_, index) => ({ value: String(index) }));
+  vitalsRollerState.geometry = { rowHeight: 48 };
+  vitalsRollerState.currentVirtualIndex = 80;
+  beginVitalsRollerGesture({ pointerId: 7, clientY: 400, timeStamp: 100 }, {});
+
+  for (let move = 1; move <= 8; move += 1) {
+    handleVitalsRollerPointerMove({
+      pointerId: 7,
+      clientY: 400 - move * 30,
+      timeStamp: 100 + move * 16,
+      preventDefault() {}
+    });
+  }
+
+  const fastIndex = vitalsRollerState.currentVirtualIndex;
+  handleVitalsRollerPointerMove({
+    pointerId: 7,
+    clientY: 164,
+    timeStamp: 278,
+    preventDefault() {}
+  });
+  const firstSlowReverseIndex = vitalsRollerState.currentVirtualIndex;
+  handleVitalsRollerPointerMove({
+    pointerId: 7,
+    clientY: 168,
+    timeStamp: 328,
+    preventDefault() {}
+  });
+  const secondSlowReverseIndex = vitalsRollerState.currentVirtualIndex;
+  handleVitalsRollerPointerUp({ pointerId: 7 });
+
+  adaptiveProbe = {
+    gainCases,
+    painFastGain: getVitalsRollerAdaptiveGain(11, 2),
+    gcsFastGain: getVitalsRollerAdaptiveGain(13, 2),
+    glycemiaFastGain: getVitalsRollerAdaptiveGain(117, 2),
+    tasSlowGain: getVitalsRollerAdaptiveGain(241, 0.1),
+    tasFastGain: getVitalsRollerAdaptiveGain(241, 2),
+    fastIndex,
+    firstSlowReverseIndex,
+    secondSlowReverseIndex,
+    commitCount,
+    closeCount
+  };`,
+  adaptiveRollerContext
+);
+
+const adaptiveProbe = adaptiveRollerContext.adaptiveProbe;
+assert.equal(adaptiveProbe.painFastGain, 1, "La douleur est accélérée malgré sa petite liste");
+assert.equal(adaptiveProbe.gcsFastGain, 1, "Le GCS est accéléré malgré sa petite liste");
+assert.ok(adaptiveProbe.glycemiaFastGain > 1, "La glycémie n'accélère pas lors d'un geste rapide");
+assert.equal(adaptiveProbe.tasSlowGain, 1, "La TAS lente ne conserve pas un réglage précis à une ligne");
+assert.ok(adaptiveProbe.tasFastGain >= 10, "La TAS rapide ne parcourt pas assez de valeurs");
+for (const gainCase of adaptiveProbe.gainCases) {
+  assert.ok(gainCase.gain >= 1, "Le gain adaptatif descend sous 1");
+  assert.ok(gainCase.gain <= 14, "Le gain adaptatif dépasse sa borne maximale");
+}
+assert.ok(adaptiveProbe.fastIndex - 80 >= 60, "Un geste rapide TAS ne traverse pas une grande partie de la plage");
+assert.ok(adaptiveProbe.fastIndex < 240, "Un geste rapide TAS dépasse la fin de plage");
+assert.ok(
+  Math.abs(adaptiveProbe.firstSlowReverseIndex - adaptiveProbe.fastIndex) < 1,
+  "Le premier ralentissement inverse produit encore un grand saut"
+);
+assert.ok(
+  Math.abs(adaptiveProbe.secondSlowReverseIndex - adaptiveProbe.firstSlowReverseIndex) < 0.5,
+  "Le réglage fin après inversion reste accéléré"
+);
+assert.equal(adaptiveProbe.commitCount, 1, "pointerup valide plusieurs fois la roulette");
+assert.equal(adaptiveProbe.closeCount, 1, "pointerup ferme plusieurs fois la roulette");
+assert.doesNotMatch(vitalsRollerGestureSource, /requestAnimationFrame|setTimeout|setInterval/, "Une inertie continue après pointerup");
 
 const commitVitalsRollerSource = app.slice(
   app.indexOf("function commitVitalsRollerValue"),
@@ -553,7 +662,7 @@ function runSaedRouteProbe(route) {
     })
   };
   const context = {
-    PISU_APP_VERSION: "5.23",
+    PISU_APP_VERSION: "5.24",
     window: windowProbe,
     document: documentProbe,
     localStorage: localStorageProbe,
@@ -684,6 +793,10 @@ const updateMissionResumeBannerSource = app.slice(
   app.indexOf("function updateMissionResumeBanner"),
   app.indexOf("function stopMissionResumeTicker")
 );
+const setupMissionResumeFeatureSource = app.slice(
+  app.indexOf("function setupMissionResumeFeature"),
+  app.indexOf("function loadLog")
+);
 
 assert.match(resetMissionSource, /clearMissionState\(\)/, "Le reset complet ne supprime pas l’état mission");
 assert.doesNotMatch(resetMissionSource, /startNewMissionState\(\)/, "Le reset complet recrée encore une mission vide");
@@ -693,8 +806,18 @@ assert.match(resetMissionSource, /markButtonValidated\(newMissionResetBtn,\s*["'
 assert.match(clearMissionStateSource, /localStorage\.removeItem\(MISSION_STATE_STORAGE_KEY\)/, "clearMissionState ne supprime pas la clé persistée");
 assert.match(clearMissionStateSource, /window\.clearInterval\(missionResumeInterval\)[\s\S]*?missionResumeInterval\s*=\s*null/, "clearMissionState n’arrête pas le ticker mission");
 assert.match(clearMissionStateSource, /missionResumeBanner\?\.classList\.add\(["']hidden["']\)/, "clearMissionState ne cache pas le bandeau mission");
+assert.match(clearMissionStateSource, /missionResumeProtocol\)\s*missionResumeProtocol\.textContent\s*=\s*["']["']/, "clearMissionState ne vide pas le protocole résiduel");
+assert.match(clearMissionStateSource, /missionResumeDuration\)\s*missionResumeDuration\.textContent\s*=\s*["']["']/, "clearMissionState ne vide pas la durée résiduelle");
 assert.match(touchMissionStateSource, /getMissionState\(\)\s*\|\|\s*startNewMissionState\(\)/, "La première activité réelle ne crée plus automatiquement la mission");
 assert.doesNotMatch(updateMissionResumeBannerSource, /startNewMissionState|touchMissionState|saveMissionState|localStorage\.setItem/, "Le rafraîchissement du bandeau peut créer une mission");
+assert.match(updateMissionResumeBannerSource, /hasMeaningfulMissionEvidence\(\{\s*state\s*\}\)/, "Le bandeau repose encore sur la seule présence du journal");
+assert.doesNotMatch(updateMissionResumeBannerSource, /getLog\(\)\.length/, "Le bandeau considère encore tout journal comme une vraie mission");
+assert.ok(
+  setupMissionResumeFeatureSource.indexOf("repairLegacyPhantomMissionState()") >= 0 &&
+  setupMissionResumeFeatureSource.indexOf("repairLegacyPhantomMissionState()") <
+    setupMissionResumeFeatureSource.indexOf("startMissionResumeTicker()"),
+  "La réparation du fantôme ne précède pas le premier démarrage du ticker"
+);
 
 const missionLifecycleSource = app.slice(
   app.indexOf("let missionResumeInterval"),
@@ -710,6 +833,13 @@ function createMissionLifecycleProbe(storage = new Map()) {
   const intervalCallbacks = new Map();
   const structuredEvents = [];
   const feedbackLabels = [];
+  const missionEvidence = {
+    vitalsEntries: [],
+    patient: {},
+    antecedents: {},
+    missionCrew: [],
+    route: {}
+  };
   let nextIntervalId = 1;
 
   const context = {
@@ -749,7 +879,19 @@ function createMissionLifecycleProbe(storage = new Map()) {
     clearInterval(id) { intervalCallbacks.delete(id); },
     timerInterval: null,
     clearStructuredEvents() { structuredEvents.length = 0; },
+    saveStructuredEvents(events) {
+      structuredEvents.splice(0, structuredEvents.length, ...events);
+    },
     getStructuredEvents() { return structuredEvents.slice(); },
+    getVitalsEntries() { return missionEvidence.vitalsEntries.slice(); },
+    getPatientSnapshot() { return { ...missionEvidence.patient }; },
+    getPatientAntecedentsSnapshot() { return { ...missionEvidence.antecedents }; },
+    hasPatientAntecedentsData(antecedents = {}) {
+      return Object.values(antecedents).some(Boolean);
+    },
+    getMissionCrew() { return missionEvidence.missionCrew.slice(); },
+    getMissionRouteSnapshot() { return { ...missionEvidence.route }; },
+    hasMissionRouteData(route = {}) { return Object.values(route).some(Boolean); },
     clearAllProtocolCounters() {},
     resetPatientIdentityFields() {},
     resetPatientAntecedentsFields() {},
@@ -789,6 +931,7 @@ function createMissionLifecycleProbe(storage = new Map()) {
     bannerClasses,
     intervalCallbacks,
     structuredEvents,
+    missionEvidence,
     feedbackLabels
   };
 }
@@ -819,6 +962,8 @@ assert.deepEqual(Array.from(activeMissionProbe.context.getLog()), [], "Le reset 
 assert.deepEqual(Array.from(activeMissionProbe.context.getStructuredEvents()), [], "Le reset complet laisse des événements structurés");
 assert.equal(activeMissionProbe.storage.has("pisuMissionStateV1"), false, "La clé mission subsiste après reset");
 assert.equal(activeMissionProbe.bannerClasses.has("hidden"), true, "Le bandeau mission reste visible après reset");
+assert.equal(activeMissionProbe.context.missionResumeProtocol.textContent, "", "Le protocole résiduel reste visible après reset");
+assert.equal(activeMissionProbe.context.missionResumeDuration.textContent, "", "La durée résiduelle reste visible après reset");
 assert.equal(activeMissionProbe.intervalCallbacks.size, 0, "Le ticker mission reste actif après reset");
 assert.deepEqual(activeMissionProbe.feedbackLabels, ["Nouvelle mission prête ✓"], "Le feedback UI du reset est incorrect");
 
@@ -835,6 +980,88 @@ assert.equal(reloadedMissionProbe.context.getMissionState(), null, "Le reload ap
 assert.deepEqual(Array.from(reloadedMissionProbe.context.getLog()), [], "Le reload après reset restaure un journal technique");
 assert.equal(reloadedMissionProbe.bannerClasses.has("hidden"), true, "Le bandeau revient après reload / réouverture PWA");
 assert.equal(reloadedMissionProbe.intervalCallbacks.size, 0, "Le reload démarre un ticker sans mission");
+
+const legacyResetText = "Nouvelle mission créée — journal, SAED, patient, constantes et parcours remis à zéro";
+const legacyMissionStartedAt = "2020-01-01T08:00:00.000Z";
+
+function createLegacyMissionStorage(logItems = [{ time: "12:00:00", text: legacyResetText }]) {
+  return new Map([
+    ["pisuMissionStateV1", JSON.stringify({
+      version: 1,
+      startedAt: legacyMissionStartedAt,
+      updatedAt: legacyMissionStartedAt,
+      activeProtocolId: ""
+    })],
+    ["pisuLog", JSON.stringify(logItems)]
+  ]);
+}
+
+const legacyGhostProbe = createMissionLifecycleProbe(createLegacyMissionStorage());
+legacyGhostProbe.context.missionResumeProtocol.textContent = "Mission PISU";
+legacyGhostProbe.context.missionResumeDuration.textContent = "99 h";
+assert.equal(legacyGhostProbe.context.repairLegacyPhantomMissionState(), true, "L'ancien état fantôme exact n'est pas réparé");
+assert.equal(legacyGhostProbe.context.getMissionState(), null, "L'état mission fantôme subsiste après migration");
+assert.deepEqual(Array.from(legacyGhostProbe.context.getLog()), [], "Le journal technique fantôme subsiste après migration");
+assert.equal(legacyGhostProbe.bannerClasses.has("hidden"), true, "Le bandeau fantôme reste visible après migration");
+assert.equal(legacyGhostProbe.context.missionResumeProtocol.textContent, "", "Le protocole fantôme reste affiché");
+assert.equal(legacyGhostProbe.context.missionResumeDuration.textContent, "", "La durée fantôme reste affichée");
+
+const realLogItems = [
+  { time: "12:00:00", text: legacyResetText },
+  { time: "12:01:00", text: "Constantes patient enregistrées" }
+];
+const realLogProbe = createMissionLifecycleProbe(createLegacyMissionStorage(realLogItems));
+assert.equal(realLogProbe.context.repairLegacyPhantomMissionState(), false, "Une mission avec une vraie ligne de journal est effacée");
+assert.ok(realLogProbe.context.getMissionState(), "L'état d'une mission avec journal réel est supprimé");
+assert.equal(realLogProbe.context.getLog().length, 2, "Le journal réel est modifié par la migration");
+
+const activeProtocolLegacyProbe = createMissionLifecycleProbe(createLegacyMissionStorage());
+activeProtocolLegacyProbe.context.saveMissionState({
+  version: 1,
+  startedAt: legacyMissionStartedAt,
+  updatedAt: legacyMissionStartedAt,
+  activeProtocolId: "chestPainProtocol"
+});
+assert.equal(activeProtocolLegacyProbe.context.repairLegacyPhantomMissionState(), false, "Une mission avec protocole actif est effacée");
+
+const meaningfulEvidenceCases = [
+  {
+    label: "événement structuré",
+    prepare(probe) { probe.structuredEvents.push({ libelleCourt: "Adrénaline administrée" }); }
+  },
+  {
+    label: "constantes",
+    prepare(probe) { probe.missionEvidence.vitalsEntries.push({ fc: "80" }); }
+  },
+  {
+    label: "patient",
+    prepare(probe) { probe.missionEvidence.patient.name = "Patient réel"; }
+  },
+  {
+    label: "antécédent",
+    prepare(probe) { probe.missionEvidence.antecedents.allergies = "Pénicilline"; }
+  },
+  {
+    label: "équipage",
+    prepare(probe) { probe.missionEvidence.missionCrew.push({ name: "Équipier" }); }
+  },
+  {
+    label: "parcours",
+    prepare(probe) { probe.missionEvidence.route.destinationName = "CHU"; }
+  }
+];
+
+for (const evidenceCase of meaningfulEvidenceCases) {
+  const evidenceProbe = createMissionLifecycleProbe(createLegacyMissionStorage());
+  evidenceCase.prepare(evidenceProbe);
+  assert.equal(
+    evidenceProbe.context.repairLegacyPhantomMissionState(),
+    false,
+    `Une mission légitime avec ${evidenceCase.label} est effacée`
+  );
+  assert.ok(evidenceProbe.context.getMissionState(), `L'état avec ${evidenceCase.label} n'est pas préservé`);
+  assert.equal(evidenceProbe.context.getLog().length, 1, `Le journal avec ${evidenceCase.label} est modifié`);
+}
 
 const firstRealActivityAt = Date.now();
 reloadedMissionProbe.context.addLog("Identité patient enregistrée après reset");
