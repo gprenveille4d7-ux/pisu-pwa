@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v226";
+const CACHE_NAME = "pisu-acr-cache-v227";
 const APP_VERSION = String(globalThis.PISU_APP_VERSION || "").trim();
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
@@ -6863,6 +6863,40 @@ function setupCollapsiblePanels() {
 }
 
 const VITALS_STORAGE_KEY = "pisuVitals";
+const VITALS_ROLLER_SELECT_IDS = Object.freeze([
+  "vitalsFc",
+  "vitalsTasLeft",
+  "vitalsTadLeft",
+  "vitalsTasRight",
+  "vitalsTadRight",
+  "vitalsSpo2",
+  "vitalsOxygenFlow",
+  "vitalsFr",
+  "vitalsTemp",
+  "vitalsGcs",
+  "vitalsPain",
+  "vitalsGlycemia"
+]);
+const VITALS_ROLLER_DRAG_THRESHOLD_PX = 6;
+
+let vitalsRollerElements = null;
+let vitalsRollerRowSequence = 0;
+
+const vitalsRollerState = {
+  select: null,
+  trigger: null,
+  options: [],
+  geometry: null,
+  activeIndex: -1,
+  currentVirtualIndex: 0,
+  pointerId: null,
+  pointerTarget: null,
+  startY: 0,
+  startIndex: 0,
+  maxMovement: 0,
+  gestureListenersAttached: false,
+  globalListenersAttached: false
+};
 
 function populateOrderedRangeSelect(select, config) {
   if (!select) return;
@@ -7043,6 +7077,499 @@ function populateVitalsSelects() {
     direction: "centered",
     suffix: "/10"
   });
+
+  syncVitalsRollerTriggers();
+}
+
+function getVitalsRollerSelects() {
+  return VITALS_ROLLER_SELECT_IDS
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+}
+
+function getVitalsRollerOptions(select) {
+  if (!select) return [];
+
+  return Array.from(select.options)
+    .filter(option => option.value !== "")
+    .map(option => ({
+      value: option.value,
+      text: option.textContent?.trim() || option.value
+    }));
+}
+
+function getVitalsRollerTrigger(select) {
+  if (!select) return null;
+
+  return document.querySelector(
+    `.vitals-roller-trigger[data-vitals-roller-source="${select.id}"]`
+  );
+}
+
+function getVitalsRollerSelectedText(select) {
+  const selectedOption = select?.options?.[select.selectedIndex];
+  return selectedOption?.textContent?.trim() || "Non renseigné";
+}
+
+function getVitalsRollerFieldLabel(select) {
+  const explicitLabel = select?.getAttribute("aria-label")?.trim();
+  if (explicitLabel) return explicitLabel;
+
+  const wrappingLabel = select?.closest("label");
+  const directText = Array.from(wrappingLabel?.childNodes || [])
+    .filter(node => node.nodeType === Node.TEXT_NODE)
+    .map(node => node.textContent?.trim() || "")
+    .filter(Boolean)
+    .join(" ");
+
+  return directText || select?.id || "Constante";
+}
+
+function syncVitalsRollerTrigger(select) {
+  const trigger = getVitalsRollerTrigger(select);
+  if (!select || !trigger) return;
+
+  const selectedText = getVitalsRollerSelectedText(select);
+  trigger.textContent = selectedText;
+  trigger.setAttribute(
+    "aria-label",
+    `${getVitalsRollerFieldLabel(select)}, ${selectedText}`
+  );
+}
+
+function syncVitalsRollerTriggers() {
+  getVitalsRollerSelects().forEach(syncVitalsRollerTrigger);
+}
+
+function getVitalsRollerAnchorGeometry(trigger) {
+  const triggerRect = trigger.getBoundingClientRect();
+  const anchorY = triggerRect.top + triggerRect.height / 2;
+
+  return {
+    anchorY,
+    rowHeight: Math.max(44, Math.round(triggerRect.height)),
+    triggerLeft: triggerRect.left,
+    triggerWidth: triggerRect.width,
+    triggerHeight: triggerRect.height
+  };
+}
+
+function clampVitalsRollerIndex(index, options = vitalsRollerState.options) {
+  const maximumIndex = Math.max(0, options.length - 1);
+  return Math.min(maximumIndex, Math.max(0, index));
+}
+
+function createVitalsRollerElements() {
+  if (vitalsRollerElements) return vitalsRollerElements;
+
+  const layer = document.createElement("div");
+  layer.className = "vitals-roller-layer hidden";
+  layer.setAttribute("aria-hidden", "true");
+
+  const roller = document.createElement("div");
+  roller.id = "vitalsRoller";
+  roller.className = "vitals-roller";
+  roller.setAttribute("role", "listbox");
+  roller.setAttribute("aria-label", "Sélection d'une constante");
+
+  const track = document.createElement("div");
+  track.className = "vitals-roller-track";
+
+  const selectionBand = document.createElement("div");
+  selectionBand.className = "vitals-roller-selection-band";
+  selectionBand.setAttribute("aria-hidden", "true");
+
+  roller.append(track, selectionBand);
+  layer.appendChild(roller);
+  document.body.appendChild(layer);
+
+  layer.addEventListener("pointerdown", event => {
+    if (event.target === layer) {
+      event.preventDefault();
+      closeVitalsRoller();
+    }
+  });
+
+  roller.addEventListener("pointerdown", event => {
+    if (!vitalsRollerState.select) return;
+
+    event.preventDefault();
+    beginVitalsRollerGesture(event, roller);
+  }, { passive: false });
+
+  roller.addEventListener("contextmenu", event => event.preventDefault());
+
+  vitalsRollerElements = { layer, roller, track, selectionBand };
+  return vitalsRollerElements;
+}
+
+function setVitalsRollerActiveIndex(index) {
+  const { roller } = createVitalsRollerElements();
+  const safeIndex = Math.round(clampVitalsRollerIndex(index));
+
+  if (vitalsRollerState.activeIndex === safeIndex) return;
+
+  const previousRow = roller.querySelector(".vitals-roller-row.active");
+  previousRow?.classList.remove("active");
+  previousRow?.setAttribute("aria-selected", "false");
+
+  const activeRow = roller.querySelector(`[data-vitals-roller-index="${safeIndex}"]`);
+  activeRow?.classList.add("active");
+  activeRow?.setAttribute("aria-selected", "true");
+
+  if (activeRow?.id) {
+    roller.setAttribute("aria-activedescendant", activeRow.id);
+  }
+
+  vitalsRollerState.activeIndex = safeIndex;
+}
+
+function applyVitalsRollerGeometry() {
+  const { roller, selectionBand } = createVitalsRollerElements();
+  const geometry = vitalsRollerState.geometry;
+  if (!geometry) return;
+
+  roller.style.left = `${geometry.triggerLeft}px`;
+  roller.style.width = `${geometry.triggerWidth}px`;
+  roller.style.setProperty("--vitals-roller-row-height", `${geometry.rowHeight}px`);
+  selectionBand.style.top = `${geometry.anchorY - geometry.rowHeight / 2}px`;
+  selectionBand.style.height = `${geometry.rowHeight}px`;
+}
+
+function updateVitalsRollerPosition() {
+  const { track } = createVitalsRollerElements();
+  const geometry = vitalsRollerState.geometry;
+  if (!geometry) return;
+
+  const trackOffset = geometry.anchorY -
+    (vitalsRollerState.currentVirtualIndex + 0.5) * geometry.rowHeight;
+
+  track.style.transform = `translate3d(0, ${trackOffset}px, 0)`;
+  setVitalsRollerActiveIndex(vitalsRollerState.currentVirtualIndex);
+}
+
+function renderVitalsRollerOptions() {
+  const { track } = createVitalsRollerElements();
+  const fragment = document.createDocumentFragment();
+  const sequence = ++vitalsRollerRowSequence;
+
+  vitalsRollerState.options.forEach((option, index) => {
+    const row = document.createElement("div");
+    row.id = `vitals-roller-option-${sequence}-${index}`;
+    row.className = "vitals-roller-row";
+    row.dataset.vitalsRollerIndex = String(index);
+    row.setAttribute("role", "option");
+    row.setAttribute("aria-selected", "false");
+    row.textContent = option.text;
+    fragment.appendChild(row);
+  });
+
+  track.replaceChildren(fragment);
+  vitalsRollerState.activeIndex = -1;
+}
+
+function handleVitalsRollerViewportChange() {
+  const trigger = vitalsRollerState.trigger;
+  if (!trigger) return;
+
+  const geometry = getVitalsRollerAnchorGeometry(trigger);
+  if (geometry.triggerHeight <= 0 || geometry.triggerWidth <= 0) {
+    closeVitalsRoller();
+    return;
+  }
+
+  vitalsRollerState.geometry = geometry;
+  applyVitalsRollerGeometry();
+  updateVitalsRollerPosition();
+}
+
+function handleVitalsRollerGlobalKeyDown(event) {
+  if (event.key !== "Escape" || !vitalsRollerState.select) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  closeVitalsRoller();
+}
+
+function addVitalsRollerGlobalListeners() {
+  if (vitalsRollerState.globalListenersAttached) return;
+
+  document.addEventListener("keydown", handleVitalsRollerGlobalKeyDown, true);
+  window.addEventListener("resize", handleVitalsRollerViewportChange);
+  window.visualViewport?.addEventListener("resize", handleVitalsRollerViewportChange);
+  window.visualViewport?.addEventListener("scroll", handleVitalsRollerViewportChange);
+  vitalsRollerState.globalListenersAttached = true;
+}
+
+function removeVitalsRollerGlobalListeners() {
+  if (!vitalsRollerState.globalListenersAttached) return;
+
+  document.removeEventListener("keydown", handleVitalsRollerGlobalKeyDown, true);
+  window.removeEventListener("resize", handleVitalsRollerViewportChange);
+  window.visualViewport?.removeEventListener("resize", handleVitalsRollerViewportChange);
+  window.visualViewport?.removeEventListener("scroll", handleVitalsRollerViewportChange);
+  vitalsRollerState.globalListenersAttached = false;
+}
+
+function addVitalsRollerGestureListeners() {
+  if (vitalsRollerState.gestureListenersAttached) return;
+
+  document.addEventListener("pointermove", handleVitalsRollerPointerMove, { passive: false });
+  document.addEventListener("pointerup", handleVitalsRollerPointerUp);
+  document.addEventListener("pointercancel", handleVitalsRollerPointerCancel);
+  vitalsRollerState.gestureListenersAttached = true;
+}
+
+function removeVitalsRollerGestureListeners() {
+  if (!vitalsRollerState.gestureListenersAttached) return;
+
+  document.removeEventListener("pointermove", handleVitalsRollerPointerMove);
+  document.removeEventListener("pointerup", handleVitalsRollerPointerUp);
+  document.removeEventListener("pointercancel", handleVitalsRollerPointerCancel);
+  vitalsRollerState.gestureListenersAttached = false;
+}
+
+function releaseVitalsRollerPointerCapture() {
+  const { pointerId, pointerTarget } = vitalsRollerState;
+
+  try {
+    if (pointerTarget?.hasPointerCapture?.(pointerId)) {
+      pointerTarget.releasePointerCapture(pointerId);
+    }
+  } catch {
+    // La capture peut déjà avoir été libérée par le navigateur.
+  }
+}
+
+function endVitalsRollerGesture() {
+  releaseVitalsRollerPointerCapture();
+  removeVitalsRollerGestureListeners();
+  vitalsRollerState.pointerId = null;
+  vitalsRollerState.pointerTarget = null;
+}
+
+function beginVitalsRollerGesture(event, captureTarget) {
+  if (!vitalsRollerState.select || vitalsRollerState.pointerId !== null) return;
+
+  vitalsRollerState.pointerId = event.pointerId;
+  vitalsRollerState.pointerTarget = captureTarget;
+  vitalsRollerState.startY = event.clientY;
+  vitalsRollerState.startIndex = vitalsRollerState.currentVirtualIndex;
+  vitalsRollerState.maxMovement = 0;
+
+  try {
+    captureTarget?.setPointerCapture?.(event.pointerId);
+  } catch {
+    // Le suivi document reste actif si la capture n'est pas disponible.
+  }
+
+  addVitalsRollerGestureListeners();
+}
+
+function handleVitalsRollerPointerMove(event) {
+  if (event.pointerId !== vitalsRollerState.pointerId) return;
+
+  event.preventDefault();
+
+  const deltaY = event.clientY - vitalsRollerState.startY;
+  const rowHeight = vitalsRollerState.geometry?.rowHeight || 44;
+  vitalsRollerState.maxMovement = Math.max(
+    vitalsRollerState.maxMovement,
+    Math.abs(deltaY)
+  );
+  vitalsRollerState.currentVirtualIndex = clampVitalsRollerIndex(
+    vitalsRollerState.startIndex - deltaY / rowHeight
+  );
+  updateVitalsRollerPosition();
+}
+
+function handleVitalsRollerPointerUp(event) {
+  if (event.pointerId !== vitalsRollerState.pointerId) return;
+
+  const didDrag = vitalsRollerState.maxMovement >= VITALS_ROLLER_DRAG_THRESHOLD_PX;
+  const startIndex = vitalsRollerState.startIndex;
+  const finalIndex = Math.round(vitalsRollerState.currentVirtualIndex);
+  endVitalsRollerGesture();
+
+  if (!didDrag) {
+    vitalsRollerState.currentVirtualIndex = startIndex;
+    updateVitalsRollerPosition();
+    return;
+  }
+
+  commitVitalsRollerValue(finalIndex);
+  closeVitalsRoller();
+}
+
+function handleVitalsRollerPointerCancel(event) {
+  if (event.pointerId !== vitalsRollerState.pointerId) return;
+
+  endVitalsRollerGesture();
+  closeVitalsRoller();
+}
+
+function commitVitalsRollerValue(index) {
+  const select = vitalsRollerState.select;
+  const option = vitalsRollerState.options[
+    Math.round(clampVitalsRollerIndex(index))
+  ];
+
+  if (!select || !option) return;
+
+  select.value = option.value;
+  select.dataset.vitalsTouched = "true";
+  select.dispatchEvent(new Event("input", { bubbles: true }));
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  syncVitalsRollerTrigger(select);
+}
+
+function closeVitalsRoller() {
+  if (!vitalsRollerElements) return;
+
+  const { layer, roller, track } = vitalsRollerElements;
+  const activeTrigger = vitalsRollerState.trigger;
+
+  endVitalsRollerGesture();
+  removeVitalsRollerGlobalListeners();
+  layer.classList.add("hidden");
+  layer.setAttribute("aria-hidden", "true");
+  roller.removeAttribute("aria-activedescendant");
+  track.replaceChildren();
+  document.body.classList.remove("vitals-roller-open");
+  activeTrigger?.setAttribute("aria-expanded", "false");
+
+  vitalsRollerState.select = null;
+  vitalsRollerState.trigger = null;
+  vitalsRollerState.options = [];
+  vitalsRollerState.geometry = null;
+  vitalsRollerState.activeIndex = -1;
+  vitalsRollerState.currentVirtualIndex = 0;
+}
+
+function openVitalsRoller(select, trigger, pointerEvent = null) {
+  const options = getVitalsRollerOptions(select);
+  if (!select || !trigger || options.length === 0) return;
+
+  if (vitalsRollerState.select) {
+    closeVitalsRoller();
+  }
+
+  const geometry = getVitalsRollerAnchorGeometry(trigger);
+  if (geometry.triggerHeight <= 0 || geometry.triggerWidth <= 0) return;
+
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex(option => option.value === select.value)
+  );
+  const { layer, roller } = createVitalsRollerElements();
+
+  select.dataset.vitalsTouched = "true";
+  vitalsRollerState.select = select;
+  vitalsRollerState.trigger = trigger;
+  vitalsRollerState.options = options;
+  vitalsRollerState.geometry = geometry;
+  vitalsRollerState.currentVirtualIndex = selectedIndex;
+
+  roller.setAttribute("aria-label", getVitalsRollerFieldLabel(select));
+  renderVitalsRollerOptions();
+  applyVitalsRollerGeometry();
+  updateVitalsRollerPosition();
+
+  layer.classList.remove("hidden");
+  layer.setAttribute("aria-hidden", "false");
+  document.body.classList.add("vitals-roller-open");
+  trigger.setAttribute("aria-expanded", "true");
+  syncVitalsRollerTrigger(select);
+  addVitalsRollerGlobalListeners();
+
+  if (pointerEvent) {
+    beginVitalsRollerGesture(pointerEvent, trigger);
+  }
+}
+
+function handleVitalsRollerTriggerKeyDown(event, select, trigger) {
+  const isCurrentRoller = vitalsRollerState.select === select;
+
+  if (event.key === "Escape" && isCurrentRoller) {
+    event.preventDefault();
+    closeVitalsRoller();
+    return;
+  }
+
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+
+    if (isCurrentRoller) {
+      commitVitalsRollerValue(Math.round(vitalsRollerState.currentVirtualIndex));
+      closeVitalsRoller();
+    } else {
+      openVitalsRoller(select, trigger);
+    }
+    return;
+  }
+
+  if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+
+  event.preventDefault();
+
+  if (!isCurrentRoller) {
+    openVitalsRoller(select, trigger);
+  }
+
+  const direction = event.key === "ArrowUp" ? -1 : 1;
+  vitalsRollerState.currentVirtualIndex = clampVitalsRollerIndex(
+    Math.round(vitalsRollerState.currentVirtualIndex) + direction
+  );
+  updateVitalsRollerPosition();
+}
+
+function createVitalsRollerTrigger(select) {
+  if (!select) return null;
+
+  const existingTrigger = getVitalsRollerTrigger(select);
+  if (existingTrigger) return existingTrigger;
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "vitals-roller-trigger";
+  trigger.dataset.vitalsRollerSource = select.id;
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-controls", "vitalsRoller");
+  trigger.setAttribute("aria-expanded", "false");
+
+  select.classList.add("vitals-native-roller-source");
+  select.disabled = true;
+  select.tabIndex = -1;
+  select.setAttribute("aria-hidden", "true");
+  select.insertAdjacentElement("afterend", trigger);
+
+  trigger.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    openVitalsRoller(select, trigger, event);
+  }, { passive: false });
+
+  trigger.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+  });
+
+  trigger.addEventListener("keydown", event => {
+    handleVitalsRollerTriggerKeyDown(event, select, trigger);
+  });
+
+  trigger.addEventListener("contextmenu", event => event.preventDefault());
+  select.addEventListener("input", () => syncVitalsRollerTrigger(select));
+  select.addEventListener("change", () => syncVitalsRollerTrigger(select));
+
+  syncVitalsRollerTrigger(select);
+  return trigger;
+}
+
+function setupVitalsRollerFeature() {
+  createVitalsRollerElements();
+  getVitalsRollerSelects().forEach(createVitalsRollerTrigger);
+  syncVitalsRollerTriggers();
 }
 
 function getVitalsFieldValue(input) {
@@ -7528,6 +8055,8 @@ function resetVitalSelect(input) {
 }
 
 function clearVitalsForm() {
+  closeVitalsRoller();
+
   [
     vitalsFcInput,
     vitalsTasLeftInput,
@@ -7544,6 +8073,7 @@ function clearVitalsForm() {
   ].forEach(resetVitalSelect);
 
   if (vitalsOxygenSupportInput) vitalsOxygenSupportInput.value = "";
+  syncVitalsRollerTriggers();
 }
 
 function renderVitalsHistory() {
@@ -7607,10 +8137,12 @@ function openVitalsSheet() {
   vitalsSheet?.classList.remove("hidden");
   document.body.classList.add("vitals-sheet-open");
 
+  syncVitalsRollerTriggers();
   updateVitalsFloatingButtonState(true);
 }
 
 function closeVitalsSheet() {
+  closeVitalsRoller();
   vitalsOverlay?.classList.add("hidden");
   vitalsSheet?.classList.add("hidden");
   document.body.classList.remove("vitals-sheet-open");
@@ -7734,6 +8266,7 @@ function getAllVitalsLines() {
 
 function setupVitalsFeature() {
   populateVitalsSelects();
+  setupVitalsRollerFeature();
   setupVitalsTouchedTracking();
   renderVitalsHistory();
   renderVitalsAlertBanner();

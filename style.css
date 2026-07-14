@@ -4049,7 +4049,8 @@ body.vitals-sheet-open .floating-vitals-button {
 }
 
 .vitals-grid input,
-.vitals-grid select {
+.vitals-grid select,
+.vitals-grid .vitals-roller-trigger {
   min-height: 48px;
   width: 100%;
   border-radius: 12px;
@@ -4064,6 +4065,119 @@ body.vitals-sheet-open .floating-vitals-button {
 .vitals-grid select {
   appearance: auto;
   -webkit-appearance: menulist;
+}
+
+.vitals-native-roller-source {
+  position: absolute !important;
+  width: 1px !important;
+  min-width: 1px !important;
+  height: 1px !important;
+  min-height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.vitals-grid .vitals-roller-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: left;
+  line-height: normal;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.vitals-grid .vitals-roller-trigger::after {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #cbd5e1;
+  content: "▾";
+  font-size: 0.72em;
+  line-height: 1;
+}
+
+.vitals-grid .vitals-roller-trigger:active {
+  transform: none;
+}
+
+.vitals-grid .vitals-roller-trigger[aria-expanded="true"] {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.16);
+}
+
+.vitals-roller-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10015;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: rgba(2, 6, 23, 0.08);
+}
+
+.vitals-roller {
+  position: fixed;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  border-inline: 1px solid #334155;
+  background: rgba(2, 6, 23, 0.98);
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.48);
+  color: #f8fafc;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.vitals-roller-track {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  will-change: transform;
+}
+
+.vitals-roller-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--vitals-roller-row-height, 48px);
+  padding: 0 8px;
+  color: #94a3b8;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.vitals-roller-row.active {
+  color: #cffafe;
+  background: rgba(14, 116, 144, 0.34);
+}
+
+.vitals-roller-selection-band {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  border-top: 1px solid #38bdf8;
+  border-bottom: 1px solid #38bdf8;
+  background: rgba(8, 145, 178, 0.16);
+  pointer-events: none;
 }
 
 .vitals-actions {
@@ -6901,7 +7015,8 @@ body.vitals-sheet-open .identity-swipe-tabs {
   .identity-block textarea,
   .vitals-sheet input:not([type="checkbox"]):not([type="radio"]),
   .vitals-sheet select,
-  .vitals-sheet textarea {
+  .vitals-sheet textarea,
+  .vitals-sheet .vitals-roller-trigger {
     font-size: 16px !important;
   }
 
@@ -6966,7 +7081,8 @@ body.vitals-sheet-open .identity-swipe-tabs {
     display: block;
   }
 
-  .vitals-bp-line select {
+  .vitals-bp-line select,
+  .vitals-bp-line .vitals-roller-trigger {
     min-height: 44px;
     padding: 6px;
     border-radius: 9px;

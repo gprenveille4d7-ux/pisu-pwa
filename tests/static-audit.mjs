@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -36,7 +37,7 @@ assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de v
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
 assert.match(app, new RegExp(`CACHE_NAME\\s*=\\s*["']pisu-acr-cache-v${cacheVersion}["']`), "Cache applicatif non synchronise");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.19["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.20["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 assert.match(worker, /async function fetchNetworkFirst\(request,\s*fallbackRequest\s*=\s*request\)/, "Stratégie réseau prioritaire absente");
@@ -153,6 +154,237 @@ assert.match(
 assert.match(style, /\.collapsible-content\[hidden\]\s*\{[\s\S]*?display:\s*none\s*!important;/, "Les onglets enfants ne disparaissent plus avec un accordéon ferme");
 assert.match(style, /\.vitals-overlay\s*\{[\s\S]*?z-index:\s*10000\s*!important;[\s\S]*?\.vitals-sheet\s*\{[\s\S]*?z-index:\s*10010\s*!important;[\s\S]*?\.floating-vitals-button\s*\{[\s\S]*?z-index:\s*10020\s*!important;/, "La priorite des Constantes sur les onglets sticky est alteree");
 assert.match(style, /\.saed-overlay\s*\{[\s\S]*?z-index:\s*13000\s*!important;[\s\S]*?\.saed-sheet\s*\{[\s\S]*?z-index:\s*13010\s*!important;/, "La priorite du SAED sur les onglets sticky est alteree");
+
+const vitalsRollerIdsSource = app.match(
+  /const VITALS_ROLLER_SELECT_IDS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\);/
+)?.[1] || "";
+const vitalsRollerIds = [...vitalsRollerIdsSource.matchAll(/["']([^"']+)["']/g)]
+  .map(match => match[1]);
+const expectedVitalsRollerIds = [
+  "vitalsFc",
+  "vitalsTasLeft",
+  "vitalsTadLeft",
+  "vitalsTasRight",
+  "vitalsTadRight",
+  "vitalsSpo2",
+  "vitalsOxygenFlow",
+  "vitalsFr",
+  "vitalsTemp",
+  "vitalsGcs",
+  "vitalsPain",
+  "vitalsGlycemia"
+];
+
+assert.deepEqual(vitalsRollerIds, expectedVitalsRollerIds, "Liste des constantes numeriques de la roulette incorrecte");
+assert.ok(!vitalsRollerIds.includes("vitalsMoment"), "Le moment ne doit pas utiliser la roulette numerique");
+assert.ok(!vitalsRollerIds.includes("vitalsOxygenSupport"), "Le support O2 ne doit pas utiliser la roulette numerique");
+assert.equal((app.match(/className\s*=\s*["']vitals-roller-layer hidden["']/g) || []).length, 1, "La roulette PISU n'est pas une instance unique");
+assert.match(app, /function getVitalsRollerAnchorGeometry\(trigger\)[\s\S]*?const triggerRect\s*=\s*trigger\.getBoundingClientRect\(\)[\s\S]*?triggerRect\.top\s*\+\s*triggerRect\.height\s*\/\s*2/, "Ancrage vertical reel de la roulette absent");
+assert.match(app, /function getVitalsRollerOptions\(select\)[\s\S]*?Array\.from\(select\.options\)[\s\S]*?option\.value\s*!==\s*["']["']/, "La roulette ne lit pas directement les options du select source");
+const vitalsRollerOptionsSource = app.slice(
+  app.indexOf("function getVitalsRollerOptions"),
+  app.indexOf("function getVitalsRollerTrigger")
+);
+assert.doesNotMatch(vitalsRollerOptionsSource, /\[\s*-?\d+(?:\.\d+)?\s*(?:,|\])/, "Une plage numerique a ete dupliquee dans la roulette");
+assert.match(app, /vitalsRollerState\.startIndex\s*-\s*deltaY\s*\/\s*rowHeight/, "Suivi continu du doigt par hauteur de ligne absent");
+assert.match(app, /const finalIndex\s*=\s*Math\.round\(vitalsRollerState\.currentVirtualIndex\)/, "Snap final de la roulette absent");
+assert.match(app, /select\.value\s*=\s*option\.value[\s\S]*?select\.dataset\.vitalsTouched\s*=\s*["']true["'][\s\S]*?new Event\(["']input["'],\s*\{\s*bubbles:\s*true\s*\}\)[\s\S]*?new Event\(["']change["'],\s*\{\s*bubbles:\s*true\s*\}\)/, "Validation de la roulette non reconnectee au select source");
+assert.match(app, /function clearVitalsForm\(\)[\s\S]*?syncVitalsRollerTriggers\(\)/, "Remise a zero visuelle des triggers absente");
+assert.match(app, /function closeVitalsSheet\(\)\s*\{\s*closeVitalsRoller\(\)/, "La roulette ne se ferme pas avec les Constantes");
+assert.match(app, /trigger\.type\s*=\s*["']button["'][\s\S]*?aria-haspopup["'],\s*["']listbox/, "Trigger accessible de la roulette absent");
+
+const vitalsRollerStyle = style.slice(
+  style.indexOf(".vitals-native-roller-source"),
+  style.indexOf(".vitals-actions")
+);
+assert.match(vitalsRollerStyle, /\.vitals-roller-layer\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?z-index:\s*10015;/, "Couche fixe de la roulette absente ou mal empilee");
+assert.match(vitalsRollerStyle, /\.vitals-roller\s*\{[\s\S]*?top:\s*0;[\s\S]*?touch-action:\s*none;/, "Zone tactile de la roulette absente");
+assert.match(vitalsRollerStyle, /\.vitals-roller-selection-band\s*\{[\s\S]*?position:\s*absolute;/, "Bande de selection de la roulette absente");
+assert.doesNotMatch(vitalsRollerStyle, /top:\s*50%|bottom:\s*0|translateY\(-50%\)/, "La roulette est recentree ou ancree en bas du viewport");
+
+const geometryProbe = { triggerTop: 211.25, triggerHeight: 48, selectedIndex: 80 };
+const geometryAnchorY = geometryProbe.triggerTop + geometryProbe.triggerHeight / 2;
+const geometryTrackOffset = geometryAnchorY -
+  (geometryProbe.selectedIndex + 0.5) * geometryProbe.triggerHeight;
+const geometrySelectedCenter = geometryTrackOffset +
+  (geometryProbe.selectedIndex + 0.5) * geometryProbe.triggerHeight;
+assert.ok(Math.abs(geometrySelectedCenter - geometryAnchorY) <= 1, "Le centre simule de la valeur active n'est pas aligne a 1 px");
+
+function createVitalSelectProbe(defaultValue) {
+  return {
+    dataset: { vitalDefault: defaultValue, vitalsTouched: "false" },
+    options: [],
+    _value: "",
+    get value() {
+      return this._value;
+    },
+    set value(nextValue) {
+      this._value = String(nextValue);
+    },
+    set innerHTML(value) {
+      if (value === "") {
+        this.options = [];
+        this._value = "";
+      }
+    },
+    appendChild(option) {
+      this.options.push(option);
+    }
+  };
+}
+
+const populatedVitals = {
+  vitalsFcInput: createVitalSelectProbe("80"),
+  vitalsTasLeftInput: createVitalSelectProbe("120"),
+  vitalsTadLeftInput: createVitalSelectProbe("70"),
+  vitalsTasRightInput: createVitalSelectProbe("120"),
+  vitalsTadRightInput: createVitalSelectProbe("70"),
+  vitalsSpo2Input: createVitalSelectProbe("100"),
+  vitalsOxygenFlowInput: createVitalSelectProbe("15"),
+  vitalsFrInput: createVitalSelectProbe("20"),
+  vitalsTempInput: createVitalSelectProbe("37.0"),
+  vitalsGcsInput: createVitalSelectProbe("15"),
+  vitalsPainInput: createVitalSelectProbe("0"),
+  vitalsGlycemiaInput: createVitalSelectProbe("1.00")
+};
+const populateVitalsSource = app.slice(
+  app.indexOf("function populateOrderedRangeSelect"),
+  app.indexOf("function getVitalsRollerSelects")
+);
+const populateVitalsContext = {
+  ...populatedVitals,
+  document: { createElement: () => ({ value: "", textContent: "" }) },
+  syncVitalsRollerTriggers: () => {}
+};
+vm.runInNewContext(`${populateVitalsSource}\npopulateVitalsSelects();`, populateVitalsContext);
+
+const expectedVitalDefaults = {
+  vitalsFcInput: "80",
+  vitalsTasLeftInput: "120",
+  vitalsTadLeftInput: "70",
+  vitalsTasRightInput: "120",
+  vitalsTadRightInput: "70",
+  vitalsSpo2Input: "100",
+  vitalsOxygenFlowInput: "15",
+  vitalsFrInput: "20",
+  vitalsTempInput: "37.0",
+  vitalsGcsInput: "15",
+  vitalsPainInput: "0",
+  vitalsGlycemiaInput: "1.00"
+};
+
+for (const [field, expectedValue] of Object.entries(expectedVitalDefaults)) {
+  const select = populatedVitals[field];
+  assert.equal(select.value, expectedValue, `Valeur par defaut incorrecte pour ${field}`);
+  assert.equal(select.dataset.vitalsTouched, "false", `Valeur ${field} marquee touchee pendant la population`);
+  assert.ok(select.options.some(option => option.value === expectedValue), `Option source absente pour ${field}`);
+  assert.equal(new Set(select.options.map(option => option.value)).size, select.options.length, `Options dupliquees pour ${field}`);
+}
+
+const tasOptions = populatedVitals.vitalsTasLeftInput.options.filter(option => option.value !== "");
+const tasStartIndex = tasOptions.findIndex(option => option.value === "120");
+const tasVirtualIndexAfterThreeRows = tasStartIndex - (-3 * 48) / 48;
+const tasFinalOption = tasOptions[Math.round(tasVirtualIndexAfterThreeRows)];
+assert.equal(tasFinalOption?.value, "123", "Le geste TAS de trois lignes vers le haut n'aboutit pas a 123");
+
+const commitVitalsRollerSource = app.slice(
+  app.indexOf("function commitVitalsRollerValue"),
+  app.indexOf("function closeVitalsRoller")
+);
+const committedSelect = {
+  value: "120",
+  dataset: { vitalDefault: "120", vitalsTouched: "false" },
+  dispatchedEvents: [],
+  dispatchEvent(event) {
+    this.dispatchedEvents.push(event.type);
+    return true;
+  }
+};
+const rollerCommitContext = {
+  vitalsRollerState: {
+    select: committedSelect,
+    options: [{ value: "123", text: "123" }]
+  },
+  clampVitalsRollerIndex: () => 0,
+  syncVitalsRollerTrigger: () => {},
+  Event
+};
+vm.runInNewContext(`${commitVitalsRollerSource}\ncommitVitalsRollerValue(0);`, rollerCommitContext);
+assert.equal(committedSelect.value, "123", "La roulette ne met pas a jour le select source");
+assert.equal(committedSelect.dataset.vitalsTouched, "true", "La roulette ne valide pas vitalsTouched");
+assert.deepEqual(committedSelect.dispatchedEvents, ["input", "change"], "Les evenements source de la roulette sont incomplets");
+
+const getVitalsFieldValueSource = app.slice(
+  app.indexOf("function getVitalsFieldValue"),
+  app.indexOf("function markVitalsFieldTouched")
+);
+const buildVitalsEntrySource = app.slice(
+  app.indexOf("function buildVitalsEntry"),
+  app.indexOf("function hasVitalsData")
+);
+const tasLeftProbe = {
+  tagName: "SELECT",
+  value: "123",
+  dataset: { vitalDefault: "120", vitalsTouched: "true" }
+};
+const vitalsBuildContext = {
+  window: { crypto: { randomUUID: () => "vitals-test" } },
+  vitalsMomentInput: { value: "Initial" },
+  vitalsFcInput: null,
+  vitalsTasLeftInput: tasLeftProbe,
+  vitalsTadLeftInput: null,
+  vitalsTasRightInput: null,
+  vitalsTadRightInput: null,
+  vitalsSpo2Input: null,
+  vitalsOxygenSupportInput: null,
+  vitalsOxygenFlowInput: null,
+  vitalsFrInput: null,
+  vitalsTempInput: null,
+  vitalsGcsInput: null,
+  vitalsPainInput: null,
+  vitalsGlycemiaInput: null,
+  getVitalsEntries: () => [],
+  getCleanValue: input => input?.value?.trim() || "",
+  normalizeDecimalValue: value => String(value || "").trim().replace(",", "."),
+  formatVitalsTime: () => "12:00:00"
+};
+vm.runInNewContext(
+  `${getVitalsFieldValueSource}\n${buildVitalsEntrySource}\nresult = buildVitalsEntry();`,
+  vitalsBuildContext
+);
+assert.equal(vitalsBuildContext.result.tasLeft, "123", "buildVitalsEntry ne lit pas la TAS choisie dans le select source");
+tasLeftProbe.dataset.vitalsTouched = "false";
+vm.runInNewContext("resultUntouched = buildVitalsEntry();", vitalsBuildContext);
+assert.equal(vitalsBuildContext.resultUntouched.tasLeft, "", "Une TAS par defaut non touchee est enregistree a tort");
+
+const resetVitalSelectSource = app.slice(
+  app.indexOf("function resetVitalSelect"),
+  app.indexOf("function renderVitalsHistory")
+);
+let closeRollerCalls = 0;
+let syncTriggerCalls = 0;
+const clearVitalsContext = {
+  ...populatedVitals,
+  vitalsOxygenSupportInput: { value: "Air ambiant" },
+  closeVitalsRoller: () => { closeRollerCalls += 1; },
+  syncVitalsRollerTriggers: () => { syncTriggerCalls += 1; }
+};
+for (const select of Object.values(populatedVitals)) {
+  select.value = select === populatedVitals.vitalsTasLeftInput ? "123" : select.value;
+  select.dataset.vitalsTouched = "true";
+}
+vm.runInNewContext(`${resetVitalSelectSource}\nclearVitalsForm();`, clearVitalsContext);
+for (const [field, expectedValue] of Object.entries(expectedVitalDefaults)) {
+  assert.equal(populatedVitals[field].value, expectedValue, `Reset incorrect pour ${field}`);
+  assert.equal(populatedVitals[field].dataset.vitalsTouched, "false", `vitalsTouched non remis a false pour ${field}`);
+}
+assert.equal(clearVitalsContext.vitalsOxygenSupportInput.value, "", "Le support O2 n'est plus remis a zero");
+assert.equal(closeRollerCalls, 1, "La remise a zero ne ferme pas la roulette");
+assert.equal(syncTriggerCalls, 1, "La remise a zero ne synchronise pas les triggers");
+assert.match(app, /select\.disabled\s*=\s*true/, "Le select numerique natif reste interactif sur iOS");
+assert.match(app, /function removeVitalsRollerGestureListeners\(\)[\s\S]*?removeEventListener\(["']pointermove["'][\s\S]*?removeEventListener\(["']pointerup["'][\s\S]*?removeEventListener\(["']pointercancel["']/, "Les listeners du geste roulette ne sont pas nettoyes");
+assert.doesNotMatch(style, /\.vitals-sheet\s*\{[^}]*touch-action:\s*none/s, "Le scroll de tout le panneau Constantes est bloque");
+
 assert.match(saed, /pisuSaedRequestV1/, "Stockage de la demande SAED absent");
 assert.match(app, /function getProtocolDefinition\(protocolId\)/, "Definition contextuelle des protocoles absente");
 assert.match(app, /window\.getProtocolDefinition\s*=\s*getProtocolDefinition/, "Definition protocolaire non exposee au SAED");
