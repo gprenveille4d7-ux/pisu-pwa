@@ -380,14 +380,17 @@
 
   function buildRouteLines(route) {
     const lines = [];
+    const origin = [route?.originLabel, route?.originCoordinates].filter(Boolean).join(" — ");
     const destination = [route?.destinationName, route?.destinationService].filter(Boolean).join(" — ");
     const transport = [
+      route?.transportStatus,
       route?.transportType,
       route?.transportVector,
       route?.transportMode,
       route?.transportMonitoring
     ].filter(Boolean).join(" — ");
 
+    if (origin) lines.push(`Lieu de prise en charge : ${origin}`);
     if (destination) lines.push(`Destination : ${destination}`);
     if (transport) lines.push(`Transport : ${transport}`);
     if (route?.departureTime) lines.push(`Départ des lieux : ${route.departureTime}`);
@@ -402,7 +405,9 @@
     }
 
     if (route?.arrivalTime) lines.push(`Arrivée : ${route.arrivalTime}`);
-    if (route?.transmissionDone) lines.push("Transmission à l’équipe receveuse réalisée");
+    if (route?.transmissionDone) {
+      lines.push(`Transmission à l’équipe receveuse réalisée${route?.transmissionTime ? ` à ${route.transmissionTime}` : ""}`);
+    }
     if (route?.note) lines.push(`Note transport : ${route.note}`);
 
     return lines;

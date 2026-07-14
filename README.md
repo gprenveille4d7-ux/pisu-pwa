@@ -4,10 +4,11 @@ Prototype d’aide-mémoire PISU destiné à un usage professionnel ou de format
 
 ## Version auditée
 
-- Version de l’application : `v5.6` (source unique : `version.js`)
-- Cache PWA : `v205`
+- Version de l’application : `v5.7` (source unique : `version.js`)
+- Cache PWA : `v210`
 - 11 protocoles reliés au cycle de mission
 - Journal et SAED opérationnel structurés
+- Parcours / transport / destination repositionné après les protocoles, avec horodatages stables
 - Reprise d’une mission après rechargement
 - Protection contre les doubles activations rapides
 - Transfert par code local, sans service QR externe
@@ -31,7 +32,7 @@ Le contrôle statique ne nécessite aucune dépendance externe :
 node tests/static-audit.mjs
 ```
 
-Il vérifie notamment les ressources locales, les identifiants HTML, la synchronisation du cache, la source de version unique, le SAED opérationnel, le raccordement des protocoles à la remise à zéro et l’absence du service QR distant supprimé lors de l’audit.
+Il vérifie notamment les ressources locales, les identifiants HTML, la synchronisation du cache, la source de version unique, la position du parcours après les protocoles, le SAED opérationnel, le raccordement des protocoles à la remise à zéro et l’absence du service QR distant supprimé lors de l’audit.
 
 ## Limites importantes
 
