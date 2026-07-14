@@ -4090,6 +4090,8 @@ class PisuSwipeController {
     this.datasetKey = options.datasetKey || "";
     this.align = options.align || "start";
     this.autoHeight = options.autoHeight !== false;
+    this.nativeTouch = options.nativeTouch === true;
+    this.nativeMotion = options.nativeMotion === true;
     this.storageKey = `pisuSwipeIndex:${this.name}`;
     this.tabs = this.tabSelector
       ? Array.from(document.querySelectorAll(this.tabSelector))
@@ -4281,6 +4283,12 @@ class PisuSwipeController {
 
     if (reducedMotion || behavior !== "smooth") {
       this.track.scrollTo({ left: targetLeft, top: 0, behavior: "auto" });
+    } else if (this.nativeMotion) {
+      this.track.scrollTo({
+        left: targetLeft,
+        top: 0,
+        behavior: "smooth"
+      });
     } else {
       this.animateProgrammaticMotion(targetLeft);
     }
@@ -4408,9 +4416,25 @@ class PisuSwipeController {
     this.track.addEventListener("scrollend", () => {
       if (this.motionFrame) return;
 
+      if (this.nativeTouch) {
+        const nativeFinalIndex = this.getCurrentIndex();
+
+        this.pendingIndex = null;
+        this.settleIndex = null;
+
+        this.commitActiveIndex(
+          nativeFinalIndex,
+          { forceLayout: true }
+        );
+
+        this.scheduleUpdate(true);
+        return;
+      }
+
       const finalIndex = Number.isFinite(this.settleIndex)
         ? this.settleIndex
         : this.getCurrentIndex();
+
       this.settleExactPosition(finalIndex);
     }, { passive: true });
 
@@ -4463,9 +4487,19 @@ class PisuSwipeController {
     };
 
     this.track.addEventListener("pointerdown", cancelPendingNavigation, { passive: true });
-    this.track.addEventListener("touchstart", beginTouchGesture, { passive: true });
-    this.track.addEventListener("touchend", finishTouchGesture, { passive: true });
-    this.track.addEventListener("touchcancel", cancelTouchGesture, { passive: true });
+
+    if (this.nativeTouch) {
+      this.track.addEventListener(
+        "touchstart",
+        cancelPendingNavigation,
+        { passive: true }
+      );
+    } else {
+      this.track.addEventListener("touchstart", beginTouchGesture, { passive: true });
+      this.track.addEventListener("touchend", finishTouchGesture, { passive: true });
+      this.track.addEventListener("touchcancel", cancelTouchGesture, { passive: true });
+    }
+
     this.track.addEventListener("wheel", cancelPendingNavigation, { passive: true });
 
     this.track.addEventListener("keydown", event => {
@@ -4551,7 +4585,9 @@ function getPisuSwipeController(name) {
       nextSelector: "#protocolSwipeNext",
       dotsSelector: "#protocolSwipeDots",
       align: "center",
-      autoHeight: false
+      autoHeight: false,
+      nativeTouch: true,
+      nativeMotion: true
     },
     team: {
       name: "team",
