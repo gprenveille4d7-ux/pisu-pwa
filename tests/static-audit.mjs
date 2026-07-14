@@ -32,7 +32,7 @@ assert.match(index, new RegExp(`style\\.css\\?v=${cacheVersion}`), "Version CSS 
 assert.match(index, new RegExp(`app\\.js\\?v=${cacheVersion}`), "Version JavaScript non synchronisée");
 assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du module SAED non synchronisée");
 assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.7["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.8["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 
 const protocolFiles = [
@@ -97,7 +97,10 @@ assert.match(app, /storeMissionRouteOriginFromGps/, "Réutilisation du GPS dans 
 assert.match(app, /MISSION_ROUTE_TIMELINE_CATEGORY/, "Chronologie logistique structurée absente");
 assert.match(saed, /route\?\.originLabel/, "Lieu de prise en charge absent du SAED");
 assert.match(saed, /route\?\.transportStatus/, "Statut de transport absent du SAED");
-assert.match(style, /\.mission-route-panel \.route-swipe-track[\s\S]*overflow:\s*visible\s*!important/, "Flux parcours vertical ou débordements non sécurisés");
+assert.match(index, /id=["']routeSwipeTrack["'][^>]*tabindex=["']0["']/, "Piste swipe parcours non accessible au clavier");
+assert.match(index, /data-route-slide-target=["']2["']/, "Navigation vers la destination absente");
+assert.match(style, /\.mission-route-panel \.route-swipe-track\s*\{[\s\S]*?display:\s*flex\s*!important[\s\S]*?overflow-x:\s*auto\s*!important[\s\S]*?scroll-snap-type:\s*x mandatory\s*!important[\s\S]*?\}/, "Swipe horizontal du parcours absent ou incomplet");
+assert.match(style, /\.mission-route-panel \.route-swipe-slide\s*\{[\s\S]*?flex:\s*0 0 100%\s*!important[\s\S]*?scroll-snap-align:\s*start\s*!important[\s\S]*?\}/, "Panneaux du parcours non configurés pour le swipe");
 assert.match(saed, /pisuSaedRequestV1/, "Stockage de la demande SAED absent");
 assert.match(saed, /buildVitalRows/, "Comparaison initiale / actuelle des constantes absente");
 assert.match(saed, /buildChronology/, "Chronologie SAED absente");
