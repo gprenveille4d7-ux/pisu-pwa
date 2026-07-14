@@ -6126,6 +6126,14 @@ body.charter-open .sound-toggle-button {
   transition: height 180ms ease;
 }
 
+.team-swipe-track.pisu-swipe-programmatic-motion,
+.identity-swipe-track.pisu-swipe-programmatic-motion,
+.protocol-swipe-track.pisu-swipe-programmatic-motion,
+.mission-route-panel .route-swipe-track.pisu-swipe-programmatic-motion {
+  scroll-behavior: auto !important;
+  scroll-snap-type: none !important;
+}
+
 .team-swipe-track::-webkit-scrollbar,
 .route-swipe-track::-webkit-scrollbar,
 .identity-swipe-track::-webkit-scrollbar {

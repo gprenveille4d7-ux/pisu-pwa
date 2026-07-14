@@ -4063,10 +4063,15 @@ function setAppTitle(protocolId = "") {
 }
 
 /* =========================================================
-   MOTEUR DE SWIPE GÉNÉRIQUE V5.9
+   MOTEUR DE SWIPE GÉNÉRIQUE V5.10
    Remplace les quatre implémentations parallèles sans modifier
    les actions ou la logique des protocoles.
    ========================================================= */
+
+const PISU_SWIPE_PANEL_DURATION_MS = 420;
+const PISU_SWIPE_MIN_DURATION_MS = 280;
+const PISU_SWIPE_MAX_DURATION_MS = 900;
+const PISU_SWIPE_MOTION_CLASS = "pisu-swipe-programmatic-motion";
 
 function clampSwipeIndex(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -4092,6 +4097,8 @@ class PisuSwipeController {
     this.forceLayoutUpdate = false;
     this.activeIndex = -1;
     this.pendingIndex = null;
+    this.motionFrame = 0;
+    this.motionFollowsPanels = false;
     this.initialized = false;
     this.resizeObserver = null;
     this.mutationObserver = null;
@@ -4165,6 +4172,68 @@ class PisuSwipeController {
     return safeIndex;
   }
 
+  cancelProgrammaticMotion() {
+    if (this.motionFrame) {
+      window.cancelAnimationFrame(this.motionFrame);
+      this.motionFrame = 0;
+    }
+
+    this.motionFollowsPanels = false;
+    this.track?.classList.remove(PISU_SWIPE_MOTION_CLASS);
+  }
+
+  getProgrammaticMotionDuration(targetLeft) {
+    if (!this.track) return PISU_SWIPE_MIN_DURATION_MS;
+
+    const panelWidth = Math.max(1, this.track.clientWidth);
+    const panelDistance = Math.abs(targetLeft - this.track.scrollLeft) / panelWidth;
+
+    return Math.min(
+      PISU_SWIPE_MAX_DURATION_MS,
+      Math.max(PISU_SWIPE_MIN_DURATION_MS, panelDistance * PISU_SWIPE_PANEL_DURATION_MS)
+    );
+  }
+
+  animateProgrammaticMotion(targetLeft) {
+    if (!this.track) return;
+
+    const startLeft = this.track.scrollLeft;
+    const distance = targetLeft - startLeft;
+
+    if (Math.abs(distance) < 1) {
+      this.track.scrollLeft = targetLeft;
+      this.motionFollowsPanels = false;
+      this.track.classList.remove(PISU_SWIPE_MOTION_CLASS);
+      this.scheduleUpdate(true);
+      return;
+    }
+
+    const duration = this.getProgrammaticMotionDuration(targetLeft);
+    let startedAt = null;
+
+    this.track.classList.add(PISU_SWIPE_MOTION_CLASS);
+
+    const step = timestamp => {
+      if (startedAt === null) startedAt = timestamp;
+
+      const progress = Math.min(1, (timestamp - startedAt) / duration);
+      this.track.scrollLeft = startLeft + distance * progress;
+
+      if (progress < 1) {
+        this.motionFrame = window.requestAnimationFrame(step);
+        return;
+      }
+
+      this.motionFrame = 0;
+      this.motionFollowsPanels = false;
+      this.track.scrollLeft = targetLeft;
+      this.track.classList.remove(PISU_SWIPE_MOTION_CLASS);
+      this.scheduleUpdate(true);
+    };
+
+    this.motionFrame = window.requestAnimationFrame(step);
+  }
+
   scrollTo(index, behavior = "smooth") {
     const slides = this.getSlides();
     if (!this.track || slides.length === 0) return;
@@ -4172,15 +4241,25 @@ class PisuSwipeController {
     const safeIndex = clampSwipeIndex(index, 0, slides.length - 1);
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     const targetLeft = this.getTargetLeft(safeIndex);
+    const currentIndex = this.getCurrentIndex();
+
+    this.cancelProgrammaticMotion();
 
     this.pendingIndex = safeIndex;
-    this.commitActiveIndex(safeIndex, { forceLayout: true });
+    this.motionFollowsPanels = !reducedMotion
+      && behavior === "smooth"
+      && Math.abs(safeIndex - currentIndex) > 1;
 
-    this.track.scrollTo({
-      left: targetLeft,
-      top: 0,
-      behavior: reducedMotion ? "auto" : behavior
-    });
+    this.commitActiveIndex(
+      this.motionFollowsPanels ? currentIndex : safeIndex,
+      { forceLayout: true }
+    );
+
+    if (reducedMotion || behavior !== "smooth") {
+      this.track.scrollTo({ left: targetLeft, top: 0, behavior: "auto" });
+    } else {
+      this.animateProgrammaticMotion(targetLeft);
+    }
 
     try {
       sessionStorage.setItem(this.storageKey, String(safeIndex));
@@ -4235,7 +4314,9 @@ class PisuSwipeController {
     }
 
     this.commitActiveIndex(
-      Number.isFinite(this.pendingIndex) ? this.pendingIndex : observedIndex,
+      this.motionFollowsPanels
+        ? observedIndex
+        : (Number.isFinite(this.pendingIndex) ? this.pendingIndex : observedIndex),
       { forceLayout: Boolean(options.forceLayout) }
     );
   }
@@ -4296,12 +4377,18 @@ class PisuSwipeController {
     }, { passive: true });
 
     this.track.addEventListener("scrollend", () => {
+      if (this.motionFrame) return;
+
       this.pendingIndex = null;
+      this.motionFollowsPanels = false;
       this.update({ forceLayout: true });
     }, { passive: true });
 
     const cancelPendingNavigation = () => {
-      if (!Number.isFinite(this.pendingIndex)) return;
+      const hadPendingNavigation = Number.isFinite(this.pendingIndex) || Boolean(this.motionFrame);
+      if (!hadPendingNavigation) return;
+
+      this.cancelProgrammaticMotion();
       this.pendingIndex = null;
       this.scheduleUpdate();
     };
