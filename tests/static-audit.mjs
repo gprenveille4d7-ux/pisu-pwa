@@ -37,7 +37,7 @@ assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de v
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
 assert.match(app, new RegExp(`CACHE_NAME\\s*=\\s*["']pisu-acr-cache-v${cacheVersion}["']`), "Cache applicatif non synchronise");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.21["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.22["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 assert.match(worker, /async function fetchNetworkFirst\(request,\s*fallbackRequest\s*=\s*request\)/, "Stratégie réseau prioritaire absente");
@@ -104,7 +104,39 @@ for (const timestampKey of ["departureAt", "junctionAt", "arrivalAt", "transmiss
 }
 assert.match(app, /storeMissionRouteOriginFromGps/, "Réutilisation du GPS dans le parcours absente");
 assert.match(app, /MISSION_ROUTE_TIMELINE_CATEGORY/, "Chronologie logistique structurée absente");
-assert.match(saed, /route\?\.originLabel/, "Lieu de prise en charge absent du SAED");
+assert.match(saed, /function formatOriginLocation\(route\)/, "Construction centralisée du lieu d’intervention absente");
+const originFormatterSource = saed.slice(
+  saed.indexOf("function formatOriginLocation"),
+  saed.indexOf("function buildRouteLines")
+);
+assert.match(originFormatterSource, /route\?\.originLabel/, "Le libellé d’origine n’alimente plus le lieu SAED");
+assert.match(originFormatterSource, /route\?\.originCoordinates/, "Les coordonnées d’origine n’alimentent plus le lieu SAED");
+assert.doesNotMatch(originFormatterSource, /\.replace\(|\.split\(|RegExp/, "Le lieu SAED est reconstruit en parsant une chaîne");
+
+const originBuildersSource = saed.slice(
+  saed.indexOf("function formatOriginLocation"),
+  saed.indexOf("function hasOrientationTransportData")
+);
+assert.match(originBuildersSource, /function buildOriginLines\(route\)[\s\S]*?formatOriginLocation\(route\)/, "buildOriginLines ne réutilise pas le formateur centralisé");
+const originProbeContext = {};
+vm.runInNewContext(
+  `${originBuildersSource}
+  originProbe = {
+    complete: formatOriginLocation({ originLabel: "12 rue de la Pelleterie, Falaise", originCoordinates: "48.8921, -0.1968" }),
+    labelOnly: formatOriginLocation({ originLabel: "12 rue de la Pelleterie, Falaise", originCoordinates: "" }),
+    gpsOnly: formatOriginLocation({ originLabel: "", originCoordinates: "48.8921, -0.1968" }),
+    missing: formatOriginLocation({ originLabel: "", originCoordinates: "" }),
+    completeLines: buildOriginLines({ originLabel: "12 rue de la Pelleterie, Falaise", originCoordinates: "48.8921, -0.1968" }),
+    missingLines: buildOriginLines({ originLabel: "", originCoordinates: "" })
+  };`,
+  originProbeContext
+);
+assert.equal(originProbeContext.originProbe.complete, "12 rue de la Pelleterie, Falaise — 48.8921, -0.1968", "Lieu complet mal formaté");
+assert.equal(originProbeContext.originProbe.labelOnly, "12 rue de la Pelleterie, Falaise", "Lieu textuel seul mal formaté");
+assert.equal(originProbeContext.originProbe.gpsOnly, "48.8921, -0.1968", "Coordonnées seules mal formatées");
+assert.equal(originProbeContext.originProbe.missing, "", "Un lieu absent est inventé");
+assert.deepEqual(Array.from(originProbeContext.originProbe.completeLines), ["Lieu d’intervention : 12 rue de la Pelleterie, Falaise — 48.8921, -0.1968"], "Ligne de lieu complète incorrecte");
+assert.deepEqual(Array.from(originProbeContext.originProbe.missingLines), [], "Une ligne de lieu absente est fabriquée");
 assert.match(saed, /route\?\.transportStatus/, "Statut de transport absent du SAED");
 assert.match(index, /id=["']routeSwipeTrack["'][^>]*tabindex=["']0["']/, "Piste swipe parcours non accessible au clavier");
 assert.match(index, /data-route-slide-target=["']2["']/, "Navigation vers la destination absente");
@@ -429,8 +461,205 @@ assert.match(saed, /function buildClinicalCallReason\(model\)/, "Construction du
 assert.match(saed, /function buildEvaluationSummary\(model\)/, "Synthese actions evolution absente");
 assert.match(saed, /function buildDemandProposal\(model,\s*demandType/, "Proposition contextuelle D absente");
 assert.match(saed, /validated:\s*Boolean\(request\?\.validated\s*&&\s*type\s*&&\s*detail\)/, "Validation explicite de la demande absente");
-assert.match(saed, /Repère de prise en charge disponible/, "Separation du repere GPS absente");
 assert.match(saed, /Orientation \/ transport renseigné/, "Etat orientation transport absent");
+const renderSituationSource = saed.slice(
+  saed.indexOf("function renderSituation"),
+  saed.indexOf("function renderAntecedents")
+);
+const situationOrder = [
+  "<span>Appelant</span>",
+  "<span>Patient</span>",
+  "<span>Lieu d’intervention</span>",
+  "<span>Motif / protocole</span>"
+];
+let previousSituationPosition = -1;
+for (const label of situationOrder) {
+  const position = renderSituationSource.indexOf(label);
+  assert.ok(position > previousSituationPosition, `Ordre de Situation SAED incorrect autour de ${label}`);
+  previousSituationPosition = position;
+}
+assert.match(renderSituationSource, /model\.originLocation/, "La carte Situation n’utilise pas le lieu centralisé");
+assert.match(renderSituationSource, /Lieu d’intervention non renseigné/, "Le lieu absent n’est pas signalé dans la Situation");
+
+const situationTextSource = saed.slice(
+  saed.indexOf("function buildSituationTextLines"),
+  saed.indexOf("function buildText")
+);
+const situationTextOrder = ["Appelant :", "Patient :", "Lieu d’intervention", "Motif / protocole :"];
+let previousTextPosition = -1;
+for (const label of situationTextOrder) {
+  const position = situationTextSource.indexOf(label);
+  assert.ok(position > previousTextPosition, `Ordre du SAED copié/exporté incorrect autour de ${label}`);
+  previousTextPosition = position;
+}
+assert.match(situationTextSource, /model\.originLocation/, "Le texte SAED n’utilise pas le lieu centralisé");
+assert.match(situationTextSource, /Lieu d’intervention non renseigné/, "Le texte SAED invente ou masque un lieu absent");
+assert.match(saed, /async function copyText\(\)[\s\S]*?const text = buildText\(\)/, "La copie n’utilise plus le texte SAED commun");
+assert.match(saed, /function downloadText\(\)[\s\S]*?const text = buildText\(\)/, "L’export TXT n’utilise plus le texte SAED commun");
+
+function runSaedRouteProbe(route) {
+  const elements = new Map();
+  const createClassList = () => ({
+    add() {},
+    remove() {},
+    toggle() {},
+    contains() { return false; }
+  });
+  const createElement = () => ({
+    className: "",
+    hidden: false,
+    innerHTML: "",
+    textContent: "",
+    value: "",
+    dataset: {},
+    classList: createClassList(),
+    addEventListener() {},
+    setAttribute() {},
+    removeAttribute() {},
+    querySelectorAll() { return []; }
+  });
+  const documentProbe = {
+    body: createElement(),
+    getElementById(id) {
+      if (!elements.has(id)) elements.set(id, createElement());
+      return elements.get(id);
+    },
+    addEventListener() {},
+    createElement
+  };
+  const storage = new Map();
+  const localStorageProbe = {
+    getItem(key) { return storage.has(key) ? storage.get(key) : null; },
+    setItem(key, value) { storage.set(key, String(value)); },
+    removeItem(key) { storage.delete(key); }
+  };
+  const windowProbe = {
+    addEventListener() {},
+    getStructuredEvents: () => [],
+    getActiveEventsForSaed: events => events,
+    getVitalsEntries: () => [],
+    getPatientSnapshot: () => ({ name: "Patient Test", sex: "Homme", age: "67 ans" }),
+    getPatientAntecedentsSnapshot: () => ({}),
+    getResponderIdentity: () => ({ role: "IDE", name: "Guillaume Prenveille", service: "SMUR Falaise" }),
+    getMissionCrew: () => [],
+    getMissionRouteSnapshot: () => route,
+    getMissionState: () => ({ activeProtocolId: "chestPainProtocol", startedAt: "2026-07-14T08:00:00.000Z" }),
+    getLatestVitalsAlert: () => ({ level: "none", reasons: [] }),
+    getEffectiveCall15Alert: () => ({ level: "none", reasons: [] }),
+    getProtocolDefinition: () => ({
+      label: "Douleur thoracique",
+      intro: "Douleur thoracique persistante.",
+      demand: ""
+    })
+  };
+  const context = {
+    PISU_APP_VERSION: "5.22",
+    window: windowProbe,
+    document: documentProbe,
+    localStorage: localStorageProbe,
+    navigator: { clipboard: { writeText: async () => {} } },
+    Blob,
+    URL,
+    Event,
+    console
+  };
+
+  vm.runInNewContext(saed, context);
+  const model = windowProbe.pisuSAED.render();
+
+  return {
+    model,
+    text: windowProbe.pisuSAED.buildText(),
+    situationHtml: elements.get("saedSituationContent").innerHTML,
+    routeHtml: elements.get("saedRouteContent").innerHTML,
+    missionContextHtml: elements.get("saedMissionContextContent").innerHTML
+  };
+}
+
+const completeLocationProbe = runSaedRouteProbe({
+  originLabel: "12 rue de la Pelleterie, Falaise",
+  originCoordinates: "48.8921, -0.1968"
+});
+const completeLocationLine = "Lieu d’intervention : 12 rue de la Pelleterie, Falaise — 48.8921, -0.1968";
+assert.match(completeLocationProbe.situationHtml, /<span>Lieu d’intervention<\/span>/, "La carte lieu manque dans la Situation rendue");
+assert.match(completeLocationProbe.situationHtml, /12 rue de la Pelleterie, Falaise — 48\.8921, -0\.1968/, "Le lieu complet manque dans la Situation rendue");
+assert.ok(completeLocationProbe.text.indexOf("Appelant :") < completeLocationProbe.text.indexOf("Patient :"), "L’appelant n’est pas avant le patient dans le texte");
+assert.ok(completeLocationProbe.text.indexOf("Patient :") < completeLocationProbe.text.indexOf(completeLocationLine), "Le lieu n’est pas après le patient dans le texte");
+assert.ok(completeLocationProbe.text.indexOf(completeLocationLine) < completeLocationProbe.text.indexOf("Motif / protocole :"), "Le lieu n’est pas avant le motif dans le texte");
+assert.ok(completeLocationProbe.text.indexOf("Motif / protocole :") < completeLocationProbe.text.indexOf("Pourquoi maintenant :"), "Le motif n’est pas avant le pourquoi maintenant");
+assert.equal((completeLocationProbe.text.match(/12 rue de la Pelleterie, Falaise/g) || []).length, 1, "Le lieu complet est répété dans le flux textuel");
+assert.doesNotMatch(completeLocationProbe.routeHtml, /12 rue de la Pelleterie|48\.8921/, "Le lieu complet est répété dans Orientation / Transport");
+assert.doesNotMatch(completeLocationProbe.missionContextHtml, /12 rue de la Pelleterie|48\.8921/, "Le lieu complet est répété dans les repères de fin");
+
+const routeDecisionProbe = runSaedRouteProbe({
+  originLabel: "12 rue de la Pelleterie, Falaise",
+  originCoordinates: "48.8921, -0.1968",
+  destinationName: "CH Falaise",
+  destinationService: "Urgences",
+  transportStatus: "Transport en cours",
+  transportType: "Allongé",
+  transportVector: "VSAV",
+  transportMode: "Non médicalisé",
+  transportMonitoring: "Surveillance continue",
+  departureTime: "10:15",
+  junctionEnabled: true,
+  junctionTime: "10:30",
+  junctionPlace: "Pont d’Eraines",
+  junctionWith: "SMUR",
+  arrivalTime: "10:45",
+  transmissionDone: true,
+  transmissionTime: "10:50",
+  note: "Patient stable pendant le transport"
+});
+for (const expectedRouteLine of [
+  "Destination : CH Falaise — Urgences",
+  "Transport : Transport en cours — Allongé — VSAV — Non médicalisé — Surveillance continue",
+  "Départ des lieux : 10:15",
+  "Jonction : à 10:30 — Pont d’Eraines — avec SMUR",
+  "Arrivée : 10:45",
+  "Transmission à l’équipe receveuse réalisée à 10:50",
+  "Note transport : Patient stable pendant le transport"
+]) {
+  assert.ok(routeDecisionProbe.model.routeDecisionLines.includes(expectedRouteLine), `Donnée de devenir perdue : ${expectedRouteLine}`);
+  assert.match(routeDecisionProbe.text, new RegExp(expectedRouteLine.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Donnée de devenir absente du texte : ${expectedRouteLine}`);
+}
+assert.doesNotMatch(routeDecisionProbe.routeHtml, /12 rue de la Pelleterie|48\.8921/, "Le lieu initial revient dans le bloc de devenir complet");
+assert.doesNotMatch(routeDecisionProbe.missionContextHtml, /12 rue de la Pelleterie|48\.8921/, "Le lieu initial revient dans le contexte mission complet");
+
+const labelOnlyLocationProbe = runSaedRouteProbe({
+  originLabel: "12 rue de la Pelleterie, Falaise",
+  originCoordinates: ""
+});
+assert.match(labelOnlyLocationProbe.text, /Lieu d’intervention : 12 rue de la Pelleterie, Falaise/, "Le lieu textuel seul manque dans le SAED");
+assert.doesNotMatch(labelOnlyLocationProbe.text, /Lieu d’intervention : 12 rue de la Pelleterie, Falaise —/, "Un séparateur vide suit le lieu textuel seul");
+
+const gpsOnlyLocationProbe = runSaedRouteProbe({
+  originLabel: "",
+  originCoordinates: "48.8921, -0.1968"
+});
+const gpsOnlyLocationLine = gpsOnlyLocationProbe.text
+  .split("\n")
+  .find(line => line.includes("Lieu d’intervention")) || "";
+assert.match(gpsOnlyLocationProbe.text, /Lieu d’intervention : 48\.8921, -0\.1968/, "Les coordonnées seules manquent dans le SAED");
+assert.doesNotMatch(gpsOnlyLocationLine, /Falaise|Domicile|Voie publique|Position actuelle|Lieu inconnu/, "Un nom de lieu est inventé pour des coordonnées seules");
+
+const missingLocationProbe = runSaedRouteProbe({ originLabel: "", originCoordinates: "" });
+assert.match(missingLocationProbe.text, /Lieu d’intervention non renseigné/, "Le lieu absent n’est pas explicite dans le texte SAED");
+assert.match(missingLocationProbe.situationHtml, /saed-fact-card wide is-missing/, "La carte d’un lieu absent n’est pas marquée comme manquante");
+assert.match(missingLocationProbe.situationHtml, /Lieu d’intervention non renseigné/, "Le lieu absent n’est pas explicite dans la Situation rendue");
+
+const routeBuilderSource = saed.slice(
+  saed.indexOf("function buildRouteLines"),
+  saed.indexOf("function buildOriginLines")
+);
+const orientationTransportSource = saed.slice(
+  saed.indexOf("function buildOrientationTransportLines"),
+  saed.indexOf("function readCounter")
+);
+assert.doesNotMatch(routeBuilderSource, /originLabel|originCoordinates|Lieu d’intervention|Lieu de prise en charge/, "buildRouteLines réintroduit le lieu initial en fin de SAED");
+assert.doesNotMatch(orientationTransportSource, /originLabel|originCoordinates|Lieu d’intervention|Lieu de prise en charge/, "buildOrientationTransportLines réintroduit le lieu initial");
+assert.doesNotMatch(saed, /const\s+\w*(?:LOCATION|ORIGIN|PLACE|LIEU)\w*_STORAGE_KEY/i, "Une clé localStorage dédiée au lieu SAED a été créée");
+assert.doesNotMatch(saed, /localStorage\.(?:getItem|setItem|removeItem)\(\s*["'][^"']*(?:origin|location|lieu|place)/i, "Le SAED stocke une seconde donnée de lieu");
 assert.match(saed, /model\.requestComplete[\s\S]*?!demandDraftDirty/, "Le vert D ne depend pas de la validation professionnelle");
 assert.match(saed, /buildVitalRows/, "Comparaison initiale / actuelle des constantes absente");
 assert.match(saed, /buildChronology/, "Chronologie SAED absente");

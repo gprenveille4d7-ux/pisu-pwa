@@ -598,47 +598,21 @@
     });
   }
 
+  function formatOriginLocation(route) {
+    return [route?.originLabel, route?.originCoordinates]
+      .map(value => String(value || "").trim())
+      .filter(Boolean)
+      .join(" — ");
+  }
+
   function buildRouteLines(route) {
-    const lines = [];
-    const origin = [route?.originLabel, route?.originCoordinates].filter(Boolean).join(" — ");
-    const destination = [route?.destinationName, route?.destinationService].filter(Boolean).join(" — ");
-    const transport = [
-      route?.transportStatus,
-      route?.transportType,
-      route?.transportVector,
-      route?.transportMode,
-      route?.transportMonitoring
-    ].filter(Boolean).join(" — ");
-
-    if (origin) lines.push(`Lieu de prise en charge : ${origin}`);
-    if (destination) lines.push(`Destination : ${destination}`);
-    if (transport) lines.push(`Transport : ${transport}`);
-    if (route?.departureTime) lines.push(`Départ des lieux : ${route.departureTime}`);
-
-    if (route?.junctionEnabled) {
-      const junction = [
-        route.junctionTime ? `à ${route.junctionTime}` : "",
-        route.junctionPlace,
-        route.junctionWith ? `avec ${route.junctionWith}` : ""
-      ].filter(Boolean).join(" — ");
-      lines.push(`Jonction : ${junction || "prévue / réalisée"}`);
-    }
-
-    if (route?.arrivalTime) lines.push(`Arrivée : ${route.arrivalTime}`);
-    if (route?.transmissionDone) {
-      lines.push(`Transmission à l’équipe receveuse réalisée${route?.transmissionTime ? ` à ${route.transmissionTime}` : ""}`);
-    }
-    if (route?.note) lines.push(`Note transport : ${route.note}`);
-
-    return lines;
+    return buildOrientationTransportLines(route);
   }
 
   function buildOriginLines(route) {
-    const origin = [route?.originLabel, route?.originCoordinates]
-      .filter(Boolean)
-      .join(" — ");
+    const origin = formatOriginLocation(route);
 
-    return origin ? [`Lieu de prise en charge : ${origin}`] : [];
+    return origin ? [`Lieu d’intervention : ${origin}`] : [];
   }
 
   function hasOrientationTransportData(route) {
@@ -649,7 +623,12 @@
       route?.transportType ||
       route?.transportVector ||
       route?.transportMode ||
-      route?.transportMonitoring
+      route?.transportMonitoring ||
+      route?.departureTime ||
+      route?.junctionEnabled ||
+      route?.arrivalTime ||
+      route?.transmissionDone ||
+      route?.note
     );
   }
 
@@ -742,6 +721,7 @@
     const call15Alert = safeCall("getEffectiveCall15Alert", alert);
     const request = readRequest();
     const protocol = getProtocolContext(events, missionState);
+    const originLocation = formatOriginLocation(route);
     const routeLines = buildRouteLines(route);
     const originLines = buildOriginLines(route);
     const routeDecisionLines = buildOrientationTransportLines(route);
@@ -761,6 +741,7 @@
       patientLine: formatPatient(patient),
       crew: Array.isArray(crew) ? crew : [],
       route,
+      originLocation,
       routeLines,
       originLines,
       routeDecisionLines,
@@ -832,6 +813,10 @@
         <article class="saed-fact-card ${model.patientLine ? "" : "is-missing"}">
           <span>Patient</span>
           <strong>${escapeHtml(model.patientLine || "Patient non identifié")}</strong>
+        </article>
+        <article class="saed-fact-card wide ${model.originLocation ? "" : "is-missing"}">
+          <span>Lieu d’intervention</span>
+          <strong>${escapeHtml(model.originLocation || "Lieu d’intervention non renseigné")}</strong>
         </article>
         <article class="saed-fact-card wide ${model.protocol.label ? "" : "is-missing"}">
           <span>Motif / protocole</span>
@@ -1018,14 +1003,10 @@
       `;
     }
 
-    const routeLines = model.routeDecisionLines.length > 0
-      ? model.routeDecisionLines
-      : model.originLines;
-    const routeTitle = model.routeDecisionLines.length > 0
+    const routeLines = model.routeDecisionLines;
+    const routeTitle = routeLines.length > 0
       ? "Orientation / transport renseigné"
-      : model.originLines.length > 0
-        ? "Repère de prise en charge disponible"
-        : "";
+      : "";
 
     routeContent.hidden = routeLines.length === 0;
     routeContent.innerHTML = routeLines.length > 0
@@ -1160,7 +1141,10 @@
   function buildSituationTextLines(model) {
     const lines = [
       `Appelant : ${model.responderLine || "non renseigné"}`,
-      `Patient : ${model.patientLine || "non identifié"}`
+      `Patient : ${model.patientLine || "non identifié"}`,
+      model.originLocation
+        ? `Lieu d’intervention : ${model.originLocation}`
+        : "Lieu d’intervention non renseigné"
     ];
     const missionStart = formatClock(model.missionState?.startedAt);
 
