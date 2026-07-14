@@ -32,7 +32,7 @@ assert.match(index, new RegExp(`style\\.css\\?v=${cacheVersion}`), "Version CSS 
 assert.match(index, new RegExp(`app\\.js\\?v=${cacheVersion}`), "Version JavaScript non synchronisée");
 assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du module SAED non synchronisée");
 assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.11["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.12["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 
 const protocolFiles = [
@@ -106,6 +106,10 @@ assert.match(app, /this\.track\.addEventListener\("scroll",\s*\(\)\s*=>\s*\{\s*t
 assert.match(app, /Math\.abs\(requestedIndex - navigationIndex\)\s*>\s*1[\s\S]*?navigationIndex\s*\+\s*Math\.sign\(requestedIndex - navigationIndex\)/, "Verrouillage à un panneau par action absent");
 assert.match(app, /this\.commitActiveIndex\(safeIndex,\s*\{\s*forceLayout:\s*true\s*\}\)[\s\S]*?this\.animateProgrammaticMotion\(targetLeft\)/, "Retour visuel du panneau voisin absent");
 assert.match(app, /this\.track\.addEventListener\("scrollend"/, "Réconciliation finale du scroll snap absente");
+assert.match(app, /this\.settleIndex\s*=\s*safeIndex/, "Cible finale du panneau non mémorisée");
+assert.match(app, /const slideLeft\s*=\s*slideRect\.left[\s\S]*?trackRect\.left[\s\S]*?this\.track\.scrollLeft/, "Position du panneau non calculée relativement à la piste");
+assert.match(app, /settleExactPosition\(index\)[\s\S]*?this\.track\.scrollLeft\s*=\s*targetLeft/, "Recalage exact du panneau après inertie absent");
+assert.match(app, /const finalIndex\s*=\s*Number\.isFinite\(this\.settleIndex\)[\s\S]*?this\.settleExactPosition\(finalIndex\)/, "Recalage final au scrollend absent");
 assert.match(app, /this\.track\.style\.height\s*!==\s*nextHeight/, "Protection contre les écritures répétées de hauteur absente");
 assert.match(app, /PISU_SWIPE_PANEL_DURATION_MS\s*=\s*420/, "Durée progressive par panneau absente");
 assert.match(app, /this\.motionFrame\s*=\s*window\.requestAnimationFrame\(step\)/, "Animation de swipe pilotée par frame absente");

@@ -4063,7 +4063,7 @@ function setAppTitle(protocolId = "") {
 }
 
 /* =========================================================
-   MOTEUR DE SWIPE GÉNÉRIQUE V5.11
+   MOTEUR DE SWIPE GÉNÉRIQUE V5.12
    Remplace les quatre implémentations parallèles sans modifier
    les actions ou la logique des protocoles.
    ========================================================= */
@@ -4098,6 +4098,7 @@ class PisuSwipeController {
     this.forceLayoutUpdate = false;
     this.activeIndex = -1;
     this.pendingIndex = null;
+    this.settleIndex = null;
     this.motionFrame = 0;
     this.touchGesture = null;
     this.initialized = false;
@@ -4141,11 +4142,18 @@ class PisuSwipeController {
     const slide = this.getSlides()[index];
     if (!this.track || !slide) return 0;
 
+    const trackRect = this.track.getBoundingClientRect();
+    const slideRect = slide.getBoundingClientRect();
+    const slideLeft = slideRect.left
+      - trackRect.left
+      - this.track.clientLeft
+      + this.track.scrollLeft;
+
     if (this.align === "center") {
-      return slide.offsetLeft - (this.track.clientWidth - slide.offsetWidth) / 2;
+      return slideLeft - (this.track.clientWidth - slide.offsetWidth) / 2;
     }
 
-    return slide.offsetLeft;
+    return slideLeft;
   }
 
   getNavigationIndex() {
@@ -4232,6 +4240,25 @@ class PisuSwipeController {
     this.motionFrame = window.requestAnimationFrame(step);
   }
 
+  settleExactPosition(index) {
+    const slides = this.getSlides();
+    if (!this.track || slides.length === 0) return;
+
+    const safeIndex = clampSwipeIndex(index, 0, slides.length - 1);
+    const targetLeft = this.getTargetLeft(safeIndex);
+
+    // Safari iOS peut encore laisser quelques pixels d'inertie après le snap.
+    // À scrollend, l'inertie est terminée : on recale alors la piste exactement.
+    this.track.classList.add(PISU_SWIPE_MOTION_CLASS);
+    this.track.scrollLeft = targetLeft;
+    this.track.classList.remove(PISU_SWIPE_MOTION_CLASS);
+
+    this.pendingIndex = null;
+    this.settleIndex = null;
+    this.commitActiveIndex(safeIndex, { forceLayout: true });
+    this.scheduleUpdate(true);
+  }
+
   scrollTo(index, behavior = "smooth") {
     const slides = this.getSlides();
     if (!this.track || slides.length === 0) return;
@@ -4249,6 +4276,7 @@ class PisuSwipeController {
     this.cancelProgrammaticMotion();
 
     this.pendingIndex = safeIndex;
+    this.settleIndex = safeIndex;
     this.commitActiveIndex(safeIndex, { forceLayout: true });
 
     if (reducedMotion || behavior !== "smooth") {
@@ -4380,16 +4408,21 @@ class PisuSwipeController {
     this.track.addEventListener("scrollend", () => {
       if (this.motionFrame) return;
 
-      this.pendingIndex = null;
-      this.update({ forceLayout: true });
+      const finalIndex = Number.isFinite(this.settleIndex)
+        ? this.settleIndex
+        : this.getCurrentIndex();
+      this.settleExactPosition(finalIndex);
     }, { passive: true });
 
     const cancelPendingNavigation = () => {
-      const hadPendingNavigation = Number.isFinite(this.pendingIndex) || Boolean(this.motionFrame);
+      const hadPendingNavigation = Number.isFinite(this.pendingIndex)
+        || Number.isFinite(this.settleIndex)
+        || Boolean(this.motionFrame);
       if (!hadPendingNavigation) return;
 
       this.cancelProgrammaticMotion();
       this.pendingIndex = null;
+      this.settleIndex = null;
       this.scheduleUpdate();
     };
 
