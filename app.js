@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v229";
+const CACHE_NAME = "pisu-acr-cache-v230";
 const APP_VERSION = String(globalThis.PISU_APP_VERSION || "").trim();
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
@@ -3648,7 +3648,7 @@ function resetMissionCompletely() {
   window.pisuSAED?.reset?.();
   clearProtocolScrollMemory?.();
   resetMissionHandoffUi?.();
-  startNewMissionState();
+  clearMissionState();
 
   if (logEl) {
     logEl.innerHTML = "";
@@ -3662,11 +3662,10 @@ function resetMissionCompletely() {
 
   showMainMenu?.();
 
-  addLog("Nouvelle mission créée — journal, SAED, patient, constantes et parcours remis à zéro");
-
   loadResponderIdentity?.();
   updateResponderSummary?.();
   updateTeamSummary?.();
+  markButtonValidated(newMissionResetBtn, "Nouvelle mission prête ✓");
 }
 
 document.getElementById("clearLog").addEventListener("click", () => {

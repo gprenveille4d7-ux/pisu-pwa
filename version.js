@@ -1,1 +1,1 @@
-globalThis.PISU_APP_VERSION = "5.22";
+globalThis.PISU_APP_VERSION = "5.23";

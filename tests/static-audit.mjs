@@ -37,7 +37,7 @@ assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de v
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
 assert.match(app, new RegExp(`CACHE_NAME\\s*=\\s*["']pisu-acr-cache-v${cacheVersion}["']`), "Cache applicatif non synchronise");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.22["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.23["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 assert.match(worker, /async function fetchNetworkFirst\(request,\s*fallbackRequest\s*=\s*request\)/, "Stratégie réseau prioritaire absente");
@@ -553,7 +553,7 @@ function runSaedRouteProbe(route) {
     })
   };
   const context = {
-    PISU_APP_VERSION: "5.22",
+    PISU_APP_VERSION: "5.23",
     window: windowProbe,
     document: documentProbe,
     localStorage: localStorageProbe,
@@ -667,6 +667,182 @@ assert.match(app, /saedRequest:\s*window\.pisuSAED/, "Demande SAED absente du tr
 assert.match(app, /data-open-operational-saed/, "Accès SAED absent des protocoles");
 assert.doesNotMatch(app, /Copier mini SAED/, "L’ancien résumé mini SAED reste exposé");
 assert.match(app, /pisuMissionStateV1/, "État de reprise de mission absent");
+
+const resetMissionSource = app.slice(
+  app.indexOf("function resetMissionCompletely"),
+  app.indexOf('document.getElementById("clearLog")')
+);
+const clearMissionStateSource = app.slice(
+  app.indexOf("function clearMissionState"),
+  app.indexOf("function shouldTrackMissionActivity")
+);
+const touchMissionStateSource = app.slice(
+  app.indexOf("function touchMissionState"),
+  app.indexOf("function applyMissionStateSnapshot")
+);
+const updateMissionResumeBannerSource = app.slice(
+  app.indexOf("function updateMissionResumeBanner"),
+  app.indexOf("function stopMissionResumeTicker")
+);
+
+assert.match(resetMissionSource, /clearMissionState\(\)/, "Le reset complet ne supprime pas l’état mission");
+assert.doesNotMatch(resetMissionSource, /startNewMissionState\(\)/, "Le reset complet recrée encore une mission vide");
+assert.doesNotMatch(resetMissionSource, /addLog\s*\(/, "Un message de reset est encore ajouté au journal de mission");
+assert.doesNotMatch(resetMissionSource, /Nouvelle mission créée/, "L’ancien message technique pollue encore le nouveau journal");
+assert.match(resetMissionSource, /markButtonValidated\(newMissionResetBtn,\s*["']Nouvelle mission prête ✓["']\)/, "Le feedback visuel de fin de reset est absent");
+assert.match(clearMissionStateSource, /localStorage\.removeItem\(MISSION_STATE_STORAGE_KEY\)/, "clearMissionState ne supprime pas la clé persistée");
+assert.match(clearMissionStateSource, /window\.clearInterval\(missionResumeInterval\)[\s\S]*?missionResumeInterval\s*=\s*null/, "clearMissionState n’arrête pas le ticker mission");
+assert.match(clearMissionStateSource, /missionResumeBanner\?\.classList\.add\(["']hidden["']\)/, "clearMissionState ne cache pas le bandeau mission");
+assert.match(touchMissionStateSource, /getMissionState\(\)\s*\|\|\s*startNewMissionState\(\)/, "La première activité réelle ne crée plus automatiquement la mission");
+assert.doesNotMatch(updateMissionResumeBannerSource, /startNewMissionState|touchMissionState|saveMissionState|localStorage\.setItem/, "Le rafraîchissement du bandeau peut créer une mission");
+
+const missionLifecycleSource = app.slice(
+  app.indexOf("let missionResumeInterval"),
+  app.indexOf("function resumeCurrentMission")
+);
+const missionLogSource = app.slice(
+  app.indexOf("function saveLog"),
+  app.indexOf("function addLogToDom")
+);
+
+function createMissionLifecycleProbe(storage = new Map()) {
+  const bannerClasses = new Set(["hidden"]);
+  const intervalCallbacks = new Map();
+  const structuredEvents = [];
+  const feedbackLabels = [];
+  let nextIntervalId = 1;
+
+  const context = {
+    localStorage: {
+      getItem(key) { return storage.has(key) ? storage.get(key) : null; },
+      setItem(key, value) { storage.set(key, String(value)); },
+      removeItem(key) { storage.delete(key); }
+    },
+    window: {
+      clearInterval(id) { intervalCallbacks.delete(id); },
+      setInterval(callback) {
+        const id = nextIntervalId;
+        nextIntervalId += 1;
+        intervalCallbacks.set(id, callback);
+        return id;
+      },
+      confirm: () => true,
+      pisuSounds: { stopRcpMetronome() {}, resetAlertMemory() {} },
+      pisuSAED: { reset() {}, refreshIfOpen() {} }
+    },
+    document: { getElementById: () => null },
+    PROTOCOL_TITLES: { chestPainProtocol: "Douleur thoracique" },
+    missionResumeBanner: {
+      classList: {
+        add(name) { bannerClasses.add(name); },
+        remove(name) { bannerClasses.delete(name); },
+        contains(name) { return bannerClasses.has(name); }
+      }
+    },
+    missionResumeProtocol: { textContent: "" },
+    missionResumeDuration: { textContent: "" },
+    nowLabel: () => "12:00:00",
+    addLogToDom() {},
+    addStructuredEvent(event) { if (event) structuredEvents.push(event); },
+    inferStructuredEventFromLog: text => ({ text }),
+    inferStructuredEvent: () => null,
+    clearInterval(id) { intervalCallbacks.delete(id); },
+    timerInterval: null,
+    clearStructuredEvents() { structuredEvents.length = 0; },
+    getStructuredEvents() { return structuredEvents.slice(); },
+    clearAllProtocolCounters() {},
+    resetPatientIdentityFields() {},
+    resetPatientAntecedentsFields() {},
+    resetMissionCrew() {},
+    resetMissionRoute() {},
+    resetAllVisualValidations() {},
+    clearVitalsHistory() {},
+    clearProtocolScrollMemory() {},
+    resetMissionHandoffUi() {},
+    notifyProtocolMissionReset() {},
+    logEl: { innerHTML: "" },
+    remaining: 120,
+    timerEl: { textContent: "02:00" },
+    showMainMenu() {},
+    loadResponderIdentity() {},
+    updateResponderSummary() {},
+    updateTeamSummary() {},
+    newMissionResetBtn: { textContent: "Reset mission complète" },
+    markButtonValidated(button, label) {
+      if (button) feedbackLabels.push(label);
+    },
+    Date,
+    console
+  };
+
+  vm.runInNewContext(
+    `const MISSION_STATE_STORAGE_KEY = "pisuMissionStateV1";
+    ${missionLifecycleSource}
+    ${missionLogSource}
+    ${resetMissionSource}`,
+    context
+  );
+
+  return {
+    context,
+    storage,
+    bannerClasses,
+    intervalCallbacks,
+    structuredEvents,
+    feedbackLabels
+  };
+}
+
+const missionStorageProbe = new Map();
+const activeMissionProbe = createMissionLifecycleProbe(missionStorageProbe);
+const previousMissionStartedAt = "2020-01-01T08:00:00.000Z";
+activeMissionProbe.context.startNewMissionState({
+  startedAt: previousMissionStartedAt,
+  activeProtocolId: "chestPainProtocol"
+});
+activeMissionProbe.context.addLog("Identité patient enregistrée");
+activeMissionProbe.context.addLog("Constantes enregistrées");
+activeMissionProbe.context.addLog("Action protocolaire enregistrée");
+activeMissionProbe.context.startMissionResumeTicker();
+
+assert.ok(activeMissionProbe.context.getMissionState(), "La mission de test n’est pas active avant reset");
+assert.equal(activeMissionProbe.context.getLog().length, 3, "Le journal de test actif est incomplet");
+assert.equal(activeMissionProbe.context.getStructuredEvents().length, 3, "Les événements structurés de test sont incomplets");
+assert.equal(activeMissionProbe.bannerClasses.has("hidden"), false, "Le bandeau de la mission active reste caché avant reset");
+assert.equal(activeMissionProbe.intervalCallbacks.size, 1, "Le ticker de la mission active n’a pas démarré");
+
+const staleMissionTicker = [...activeMissionProbe.intervalCallbacks.values()][0];
+activeMissionProbe.context.resetMissionCompletely();
+
+assert.equal(activeMissionProbe.context.getMissionState(), null, "Le reset complet laisse un état mission actif");
+assert.deepEqual(Array.from(activeMissionProbe.context.getLog()), [], "Le reset complet laisse des lignes de journal");
+assert.deepEqual(Array.from(activeMissionProbe.context.getStructuredEvents()), [], "Le reset complet laisse des événements structurés");
+assert.equal(activeMissionProbe.storage.has("pisuMissionStateV1"), false, "La clé mission subsiste après reset");
+assert.equal(activeMissionProbe.bannerClasses.has("hidden"), true, "Le bandeau mission reste visible après reset");
+assert.equal(activeMissionProbe.intervalCallbacks.size, 0, "Le ticker mission reste actif après reset");
+assert.deepEqual(activeMissionProbe.feedbackLabels, ["Nouvelle mission prête ✓"], "Le feedback UI du reset est incorrect");
+
+for (let elapsedSecond = 0; elapsedSecond < 60; elapsedSecond += 1) {
+  staleMissionTicker?.();
+  activeMissionProbe.context.updateMissionResumeBanner();
+}
+assert.equal(activeMissionProbe.context.getMissionState(), null, "Une attente après reset recrée une mission");
+assert.equal(activeMissionProbe.bannerClasses.has("hidden"), true, "Un ancien tick fait réapparaître le bandeau");
+
+const reloadedMissionProbe = createMissionLifecycleProbe(missionStorageProbe);
+reloadedMissionProbe.context.startMissionResumeTicker();
+assert.equal(reloadedMissionProbe.context.getMissionState(), null, "Le reload après reset restaure une mission fantôme");
+assert.deepEqual(Array.from(reloadedMissionProbe.context.getLog()), [], "Le reload après reset restaure un journal technique");
+assert.equal(reloadedMissionProbe.bannerClasses.has("hidden"), true, "Le bandeau revient après reload / réouverture PWA");
+assert.equal(reloadedMissionProbe.intervalCallbacks.size, 0, "Le reload démarre un ticker sans mission");
+
+const firstRealActivityAt = Date.now();
+reloadedMissionProbe.context.addLog("Identité patient enregistrée après reset");
+const restartedMissionState = reloadedMissionProbe.context.getMissionState();
+assert.ok(restartedMissionState, "La première activité réelle ne démarre pas une nouvelle mission");
+assert.notEqual(restartedMissionState.startedAt, previousMissionStartedAt, "La nouvelle mission réutilise l’heure de l’ancienne");
+assert.ok(Date.parse(restartedMissionState.startedAt) >= firstRealActivityAt, "La nouvelle mission commence avant la première activité réelle");
+
 assert.match(app, /RAPID_ACTION_GUARD_MS\s*=\s*900/, "Protection anti-double-clic absente");
 
 console.log(
