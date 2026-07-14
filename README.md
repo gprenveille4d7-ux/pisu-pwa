@@ -4,14 +4,15 @@ Prototype d’aide-mémoire PISU destiné à un usage professionnel ou de format
 
 ## Version auditée
 
-- Version de l’application : `v5.11` (source unique : `version.js`)
-- Cache PWA : `v218`
+- Version de l’application : `v5.12` (source unique : `version.js`)
+- Cache PWA : `v219`
 - 11 protocoles reliés au cycle de mission
 - Journal et SAED opérationnel structurés
 - Parcours / transport / destination repositionné après les protocoles, en navigation swipe avec horodatages stables
 - État actif des swipes synchronisé à chaque frame, sans debounce tactile
 - Navigation programmée à vitesse constante de 420 ms par panneau pour rendre les panneaux intermédiaires lisibles
 - Verrouillage strict : un toucher ou un swipe ne peut avancer que d’un seul panneau
+- Recalage exact sur le bord intérieur de la piste à la fin de l’inertie tactile iPhone
 - Reprise d’une mission après rechargement
 - Protection contre les doubles activations rapides
 - Transfert par code local, sans service QR externe
