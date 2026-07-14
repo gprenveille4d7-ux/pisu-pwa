@@ -4063,7 +4063,7 @@ function setAppTitle(protocolId = "") {
 }
 
 /* =========================================================
-   MOTEUR DE SWIPE GÉNÉRIQUE V5.10
+   MOTEUR DE SWIPE GÉNÉRIQUE V5.11
    Remplace les quatre implémentations parallèles sans modifier
    les actions ou la logique des protocoles.
    ========================================================= */
@@ -4072,6 +4072,7 @@ const PISU_SWIPE_PANEL_DURATION_MS = 420;
 const PISU_SWIPE_MIN_DURATION_MS = 280;
 const PISU_SWIPE_MAX_DURATION_MS = 900;
 const PISU_SWIPE_MOTION_CLASS = "pisu-swipe-programmatic-motion";
+const PISU_SWIPE_TOUCH_THRESHOLD_PX = 24;
 
 function clampSwipeIndex(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -4098,7 +4099,7 @@ class PisuSwipeController {
     this.activeIndex = -1;
     this.pendingIndex = null;
     this.motionFrame = 0;
-    this.motionFollowsPanels = false;
+    this.touchGesture = null;
     this.initialized = false;
     this.resizeObserver = null;
     this.mutationObserver = null;
@@ -4178,7 +4179,6 @@ class PisuSwipeController {
       this.motionFrame = 0;
     }
 
-    this.motionFollowsPanels = false;
     this.track?.classList.remove(PISU_SWIPE_MOTION_CLASS);
   }
 
@@ -4202,7 +4202,6 @@ class PisuSwipeController {
 
     if (Math.abs(distance) < 1) {
       this.track.scrollLeft = targetLeft;
-      this.motionFollowsPanels = false;
       this.track.classList.remove(PISU_SWIPE_MOTION_CLASS);
       this.scheduleUpdate(true);
       return;
@@ -4225,7 +4224,6 @@ class PisuSwipeController {
       }
 
       this.motionFrame = 0;
-      this.motionFollowsPanels = false;
       this.track.scrollLeft = targetLeft;
       this.track.classList.remove(PISU_SWIPE_MOTION_CLASS);
       this.scheduleUpdate(true);
@@ -4238,22 +4236,20 @@ class PisuSwipeController {
     const slides = this.getSlides();
     if (!this.track || slides.length === 0) return;
 
-    const safeIndex = clampSwipeIndex(index, 0, slides.length - 1);
+    const requestedIndex = clampSwipeIndex(index, 0, slides.length - 1);
+    const navigationIndex = this.getNavigationIndex();
+    const steppedIndex = behavior === "smooth"
+      && Math.abs(requestedIndex - navigationIndex) > 1
+      ? navigationIndex + Math.sign(requestedIndex - navigationIndex)
+      : requestedIndex;
+    const safeIndex = clampSwipeIndex(steppedIndex, 0, slides.length - 1);
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     const targetLeft = this.getTargetLeft(safeIndex);
-    const currentIndex = this.getCurrentIndex();
 
     this.cancelProgrammaticMotion();
 
     this.pendingIndex = safeIndex;
-    this.motionFollowsPanels = !reducedMotion
-      && behavior === "smooth"
-      && Math.abs(safeIndex - currentIndex) > 1;
-
-    this.commitActiveIndex(
-      this.motionFollowsPanels ? currentIndex : safeIndex,
-      { forceLayout: true }
-    );
+    this.commitActiveIndex(safeIndex, { forceLayout: true });
 
     if (reducedMotion || behavior !== "smooth") {
       this.track.scrollTo({ left: targetLeft, top: 0, behavior: "auto" });
@@ -4307,16 +4303,21 @@ class PisuSwipeController {
 
   update(options = {}) {
     if (!this.track) return;
-    const observedIndex = this.getCurrentIndex();
+    const rawObservedIndex = this.getCurrentIndex();
+    const observedIndex = this.touchGesture
+      ? clampSwipeIndex(
+        rawObservedIndex,
+        this.touchGesture.index - 1,
+        this.touchGesture.index + 1
+      )
+      : rawObservedIndex;
 
     if (this.pendingIndex === observedIndex) {
       this.pendingIndex = null;
     }
 
     this.commitActiveIndex(
-      this.motionFollowsPanels
-        ? observedIndex
-        : (Number.isFinite(this.pendingIndex) ? this.pendingIndex : observedIndex),
+      Number.isFinite(this.pendingIndex) ? this.pendingIndex : observedIndex,
       { forceLayout: Boolean(options.forceLayout) }
     );
   }
@@ -4380,7 +4381,6 @@ class PisuSwipeController {
       if (this.motionFrame) return;
 
       this.pendingIndex = null;
-      this.motionFollowsPanels = false;
       this.update({ forceLayout: true });
     }, { passive: true });
 
@@ -4393,8 +4393,46 @@ class PisuSwipeController {
       this.scheduleUpdate();
     };
 
+    const beginTouchGesture = event => {
+      const touch = event.touches?.[0];
+      if (!touch) return;
+
+      cancelPendingNavigation();
+      this.touchGesture = {
+        index: this.getCurrentIndex(),
+        x: touch.clientX,
+        y: touch.clientY
+      };
+    };
+
+    const finishTouchGesture = event => {
+      const gesture = this.touchGesture;
+      const touch = event.changedTouches?.[0];
+      this.touchGesture = null;
+
+      if (!gesture || !touch) return;
+
+      const horizontalDistance = gesture.x - touch.clientX;
+      const verticalDistance = gesture.y - touch.clientY;
+      const isHorizontalGesture = Math.abs(horizontalDistance) >= PISU_SWIPE_TOUCH_THRESHOLD_PX
+        && Math.abs(horizontalDistance) > Math.abs(verticalDistance);
+      const targetIndex = isHorizontalGesture
+        ? gesture.index + Math.sign(horizontalDistance)
+        : gesture.index;
+
+      this.scrollTo(targetIndex);
+    };
+
+    const cancelTouchGesture = () => {
+      const gesture = this.touchGesture;
+      this.touchGesture = null;
+      if (gesture) this.scrollTo(gesture.index);
+    };
+
     this.track.addEventListener("pointerdown", cancelPendingNavigation, { passive: true });
-    this.track.addEventListener("touchstart", cancelPendingNavigation, { passive: true });
+    this.track.addEventListener("touchstart", beginTouchGesture, { passive: true });
+    this.track.addEventListener("touchend", finishTouchGesture, { passive: true });
+    this.track.addEventListener("touchcancel", cancelTouchGesture, { passive: true });
     this.track.addEventListener("wheel", cancelPendingNavigation, { passive: true });
 
     this.track.addEventListener("keydown", event => {
@@ -4406,10 +4444,10 @@ class PisuSwipeController {
         this.scrollTo(this.getNavigationIndex() - 1);
       } else if (event.key === "Home") {
         event.preventDefault();
-        this.scrollTo(0);
+        this.scrollTo(0, "auto");
       } else if (event.key === "End") {
         event.preventDefault();
-        this.scrollTo(this.getSlides().length - 1);
+        this.scrollTo(this.getSlides().length - 1, "auto");
       }
     });
   }

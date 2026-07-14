@@ -32,7 +32,7 @@ assert.match(index, new RegExp(`style\\.css\\?v=${cacheVersion}`), "Version CSS 
 assert.match(index, new RegExp(`app\\.js\\?v=${cacheVersion}`), "Version JavaScript non synchronisée");
 assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du module SAED non synchronisée");
 assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.10["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.11["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 
 const protocolFiles = [
@@ -103,13 +103,15 @@ assert.match(style, /\.mission-route-panel \.route-swipe-track\s*\{[\s\S]*?displ
 assert.match(style, /\.mission-route-panel \.route-swipe-slide\s*\{[\s\S]*?flex:\s*0 0 100%\s*!important[\s\S]*?scroll-snap-align:\s*start\s*!important[\s\S]*?\}/, "Panneaux du parcours non configurés pour le swipe");
 assert.doesNotMatch(app, /scrollTimer[\s\S]*?setTimeout\(\(\)\s*=>\s*this\.update\(\),\s*60\)/, "L’ancien debounce tactile de 60 ms est encore présent");
 assert.match(app, /this\.track\.addEventListener\("scroll",\s*\(\)\s*=>\s*\{\s*this\.scheduleUpdate\(\);/s, "Synchronisation du swipe par frame absente");
-assert.match(app, /this\.commitActiveIndex\(\s*this\.motionFollowsPanels\s*\?\s*currentIndex\s*:\s*safeIndex,[\s\S]*?this\.animateProgrammaticMotion\(targetLeft\)/, "Retour visuel progressif lors d’un tap absent");
+assert.match(app, /Math\.abs\(requestedIndex - navigationIndex\)\s*>\s*1[\s\S]*?navigationIndex\s*\+\s*Math\.sign\(requestedIndex - navigationIndex\)/, "Verrouillage à un panneau par action absent");
+assert.match(app, /this\.commitActiveIndex\(safeIndex,\s*\{\s*forceLayout:\s*true\s*\}\)[\s\S]*?this\.animateProgrammaticMotion\(targetLeft\)/, "Retour visuel du panneau voisin absent");
 assert.match(app, /this\.track\.addEventListener\("scrollend"/, "Réconciliation finale du scroll snap absente");
 assert.match(app, /this\.track\.style\.height\s*!==\s*nextHeight/, "Protection contre les écritures répétées de hauteur absente");
 assert.match(app, /PISU_SWIPE_PANEL_DURATION_MS\s*=\s*420/, "Durée progressive par panneau absente");
 assert.match(app, /this\.motionFrame\s*=\s*window\.requestAnimationFrame\(step\)/, "Animation de swipe pilotée par frame absente");
 assert.match(app, /this\.track\.scrollLeft\s*=\s*startLeft\s*\+\s*distance\s*\*\s*progress/, "Vitesse constante de panneau absente");
-assert.match(app, /this\.motionFollowsPanels\s*\?\s*observedIndex/, "Activation des panneaux intermédiaires pendant la transition absente");
+assert.match(app, /PISU_SWIPE_TOUCH_THRESHOLD_PX\s*=\s*24/, "Seuil tactile du swipe absent");
+assert.match(app, /addEventListener\("touchend",\s*finishTouchGesture/, "Verrouillage tactile en fin de geste absent");
 assert.match(style, /\.mission-route-panel \.route-swipe-track\.pisu-swipe-programmatic-motion\s*\{[\s\S]*?scroll-behavior:\s*auto\s*!important;[\s\S]*?scroll-snap-type:\s*none\s*!important;/, "Neutralisation temporaire du snap pendant l’animation absente");
 assert.match(style, /touch-action:\s*pan-x pan-y/, "Gestes horizontal et vertical non explicitement préservés");
 assert.match(saed, /pisuSaedRequestV1/, "Stockage de la demande SAED absent");
