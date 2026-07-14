@@ -4608,7 +4608,9 @@ function getPisuSwipeController(name) {
       tabSelector: "[data-team-slide-target]",
       prevSelector: "#teamSwipePrev",
       nextSelector: "#teamSwipeNext",
-      datasetKey: "teamSlideTarget"
+      datasetKey: "teamSlideTarget",
+      nativeTouch: true,
+      nativeMotion: true
     },
     route: {
       name: "route",
@@ -4617,7 +4619,9 @@ function getPisuSwipeController(name) {
       tabSelector: "[data-route-slide-target]",
       prevSelector: "#routeSwipePrev",
       nextSelector: "#routeSwipeNext",
-      datasetKey: "routeSlideTarget"
+      datasetKey: "routeSlideTarget",
+      nativeTouch: true,
+      nativeMotion: true
     },
     identity: {
       name: "identity",
@@ -4626,7 +4630,9 @@ function getPisuSwipeController(name) {
       tabSelector: "[data-identity-slide-target]",
       prevSelector: "#identitySwipePrev",
       nextSelector: "#identitySwipeNext",
-      datasetKey: "identitySlideTarget"
+      datasetKey: "identitySlideTarget",
+      nativeTouch: true,
+      nativeMotion: true
     }
   };
 
