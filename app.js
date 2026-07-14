@@ -4489,29 +4489,31 @@ class PisuSwipeController {
         ? gesture.index + Math.sign(horizontalDistance)
         : gesture.index;
 
+      if (this.nativeTouch) {
+        this.settleExactPosition(targetIndex);
+        return;
+      }
+
       this.scrollTo(targetIndex);
     };
 
     const cancelTouchGesture = () => {
       const gesture = this.touchGesture;
       this.touchGesture = null;
-      if (gesture) this.scrollTo(gesture.index);
+      if (!gesture) return;
+
+      if (this.nativeTouch) {
+        this.settleExactPosition(gesture.index);
+        return;
+      }
+
+      this.scrollTo(gesture.index);
     };
 
     this.track.addEventListener("pointerdown", cancelPendingNavigation, { passive: true });
-
-    if (this.nativeTouch) {
-      this.track.addEventListener(
-        "touchstart",
-        cancelPendingNavigation,
-        { passive: true }
-      );
-    } else {
-      this.track.addEventListener("touchstart", beginTouchGesture, { passive: true });
-      this.track.addEventListener("touchend", finishTouchGesture, { passive: true });
-      this.track.addEventListener("touchcancel", cancelTouchGesture, { passive: true });
-    }
-
+    this.track.addEventListener("touchstart", beginTouchGesture, { passive: true });
+    this.track.addEventListener("touchend", finishTouchGesture, { passive: true });
+    this.track.addEventListener("touchcancel", cancelTouchGesture, { passive: true });
     this.track.addEventListener("wheel", cancelPendingNavigation, { passive: true });
 
     this.track.addEventListener("keydown", event => {

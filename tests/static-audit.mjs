@@ -35,7 +35,7 @@ assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du mod
 assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.17["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.18["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 assert.match(worker, /async function fetchNetworkFirst\(request,\s*fallbackRequest\s*=\s*request\)/, "Stratégie réseau prioritaire absente");
@@ -123,12 +123,15 @@ assert.match(app, /this\.motionFrame\s*=\s*window\.requestAnimationFrame\(step\)
 assert.match(app, /this\.track\.scrollLeft\s*=\s*startLeft\s*\+\s*distance\s*\*\s*progress/, "Vitesse constante de panneau absente");
 assert.match(app, /PISU_SWIPE_TOUCH_THRESHOLD_PX\s*=\s*24/, "Seuil tactile du swipe absent");
 assert.match(app, /addEventListener\("touchend",\s*finishTouchGesture/, "Verrouillage tactile en fin de geste absent");
+assert.match(app, /if\s*\(this\.nativeTouch\)\s*\{\s*this\.settleExactPosition\(targetIndex\);/s, "Arrêt natif sur le panneau voisin absent");
 for (const swipeName of ["protocol", "team", "route", "identity"]) {
   const nativeSwipeConfig = new RegExp(
     swipeName + ":\\s*\\{[\\s\\S]*?nativeTouch:\\s*true,[\\s\\S]*?nativeMotion:\\s*true"
   );
   assert.match(app, nativeSwipeConfig, "Swipe natif non activé pour " + swipeName);
 }
+assert.match(style, /\.team-swipe-slide,[\s\S]*?scroll-snap-stop:\s*always\s*!important;/, "Arrêt strict des panneaux pleine largeur absent");
+assert.match(style, /\.protocol-swipe-card\s*\{[\s\S]*?scroll-snap-stop:\s*always\s*!important;/, "Arrêt strict des cartes protocoles absent");
 assert.match(style, /\.mission-route-panel \.route-swipe-track\.pisu-swipe-programmatic-motion\s*\{[\s\S]*?scroll-behavior:\s*auto\s*!important;[\s\S]*?scroll-snap-type:\s*none\s*!important;/, "Neutralisation temporaire du snap pendant l’animation absente");
 assert.match(style, /touch-action:\s*pan-x pan-y/, "Gestes horizontal et vertical non explicitement préservés");
 assert.match(saed, /pisuSaedRequestV1/, "Stockage de la demande SAED absent");

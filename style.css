@@ -803,7 +803,7 @@ footer {
   align-self: flex-start !important;
   overflow: hidden !important;
   scroll-snap-align: start !important;
-  scroll-snap-stop: always;
+  scroll-snap-stop: always !important;
 }
 
 .mission-route-panel .route-swipe-hint {
@@ -5842,7 +5842,7 @@ body.charter-open .sound-toggle-button {
   min-width: 0;
   min-height: 128px;
   scroll-snap-align: center;
-  scroll-snap-stop: always;
+  scroll-snap-stop: always !important;
   display: grid;
   align-content: center;
   gap: 7px;
@@ -6151,7 +6151,7 @@ body.charter-open .sound-toggle-button {
   align-self: flex-start !important;
   align-content: start !important;
   scroll-snap-align: start !important;
-  scroll-snap-stop: always;
+  scroll-snap-stop: always !important;
   overflow: hidden;
 }
 
@@ -6528,7 +6528,7 @@ body.charter-open .sound-toggle-button {
 
 .protocol-swipe-card {
   min-width: 0;
-  scroll-snap-stop: always;
+  scroll-snap-stop: always !important;
 }
 
 .protocol-swipe-dot[aria-current="true"],
