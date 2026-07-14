@@ -37,7 +37,7 @@ assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de v
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
 assert.match(app, new RegExp(`CACHE_NAME\\s*=\\s*["']pisu-acr-cache-v${cacheVersion}["']`), "Cache applicatif non synchronise");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.24["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.25["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 assert.match(worker, /async function fetchNetworkFirst\(request,\s*fallbackRequest\s*=\s*request\)/, "Stratégie réseau prioritaire absente");
@@ -662,7 +662,7 @@ function runSaedRouteProbe(route) {
     })
   };
   const context = {
-    PISU_APP_VERSION: "5.24",
+    PISU_APP_VERSION: "5.25",
     window: windowProbe,
     document: documentProbe,
     localStorage: localStorageProbe,
