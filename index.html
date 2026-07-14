@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=210">
+  <link rel="stylesheet" href="./style.css?v=212">
 </head>
 <body class="charter-pending modal-open">
   <div id="userCharterOverlay" class="charter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="charterTitle">
@@ -303,26 +303,28 @@
 
         <div id="missionRouteContent" class="mission-route-content route-swipe-content route-compact-content">
           <div class="route-swipe-tabs route-compact-tabs" aria-label="Navigation parcours transport destination">
-            <button class="route-swipe-tab active" type="button" data-route-slide-target="0">
+            <button id="routeTabParcours" class="route-swipe-tab active" type="button" data-route-slide-target="0" aria-controls="routeSlideParcours">
               🧭 Parcours
             </button>
 
-            <button class="route-swipe-tab" type="button" data-route-slide-target="1">
+            <button id="routeTabTransport" class="route-swipe-tab" type="button" data-route-slide-target="1" aria-controls="routeSlideTransport">
               🚑 Transport
             </button>
 
-            <button class="route-swipe-tab" type="button" data-route-slide-target="2">
+            <button id="routeTabDestination" class="route-swipe-tab" type="button" data-route-slide-target="2" aria-controls="routeSlideDestination">
               🏥 Destination
             </button>
           </div>
+
+          <p class="route-swipe-hint" aria-hidden="true">← Glissez pour passer d’une étape à l’autre →</p>
 
           <div class="route-swipe-shell route-compact-shell">
             <button id="routeSwipePrev" class="route-swipe-nav" type="button" aria-label="Section précédente">
               ‹
             </button>
 
-            <div id="routeSwipeTrack" class="route-swipe-track route-compact-track">
-              <section class="route-swipe-slide route-compact-slide" data-route-slide="0">
+            <div id="routeSwipeTrack" class="route-swipe-track route-compact-track" role="region" aria-label="Étapes du parcours de mission" tabindex="0">
+              <section id="routeSlideParcours" class="route-swipe-slide route-compact-slide" data-route-slide="0" role="tabpanel" aria-labelledby="routeTabParcours">
                 <div id="routeOriginCard" class="route-compact-card route-location-card">
                   <div class="route-compact-title">
                     <span class="route-step">1</span>
@@ -401,7 +403,7 @@
                 </details>
               </section>
 
-              <section class="route-swipe-slide route-compact-slide" data-route-slide="1">
+              <section id="routeSlideTransport" class="route-swipe-slide route-compact-slide" data-route-slide="1" role="tabpanel" aria-labelledby="routeTabTransport">
                 <div id="routeTransportCard" class="route-compact-card">
                   <div class="route-compact-title">
                     <span class="route-step">2</span>
@@ -477,7 +479,7 @@
                 </div>
               </section>
 
-              <section class="route-swipe-slide route-compact-slide" data-route-slide="2">
+              <section id="routeSlideDestination" class="route-swipe-slide route-compact-slide" data-route-slide="2" role="tabpanel" aria-labelledby="routeTabDestination">
                 <div id="routeDestinationCard" class="route-compact-card">
                   <div class="route-compact-title">
                     <span class="route-step">3</span>
@@ -3303,9 +3305,9 @@
     </section>
   </div>
 
-  <script src="./version.js?v=210"></script>
-  <script src="./saed.js?v=210"></script>
-  <script src="./app.js?v=210"></script>
+  <script src="./version.js?v=212"></script>
+  <script src="./saed.js?v=212"></script>
+  <script src="./app.js?v=212"></script>
   <script src="acr-adulte.js"></script>
   <script src="acr-enfant.js"></script>
   <script src="douleur-thoracique.js"></script>
