@@ -35,9 +35,12 @@ assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du mod
 assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.16["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.17["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
+assert.match(worker, /async function fetchNetworkFirst\(request,\s*fallbackRequest\s*=\s*request\)/, "Stratégie réseau prioritaire absente");
+assert.match(worker, /event\.request\.mode\s*===\s*"navigate"[\s\S]*?fetchNetworkFirst\(event\.request,\s*"\.\/index\.html"\)/, "Navigation encore prioritaire au cache");
+assert.match(worker, /requestUrl\.searchParams\.has\("v"\)[\s\S]*?fetchNetworkFirst\(event\.request\)/, "Ressources versionnées encore prioritaires au cache");
 
 const protocolFiles = [
   "acr-adulte.js",

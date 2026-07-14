@@ -1,11 +1,11 @@
-const CACHE_NAME = "pisu-acr-cache-v223";
+const CACHE_NAME = "pisu-acr-cache-v224";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./style.css?v=223",
-  "./version.js?v=223",
-  "./saed.js?v=223",
-  "./app.js?v=223",
+  "./style.css?v=224",
+  "./version.js?v=224",
+  "./saed.js?v=224",
+  "./app.js?v=224",
   "./acr-adulte.js",
   "./acr-enfant.js",
   "./douleur-thoracique.js",
@@ -17,7 +17,7 @@ const FILES_TO_CACHE = [
   "./hypoglycemie.js",
   "./asthme-bpco.js",
   "./antalgie.js",
-  "./patient-sync.js?v=223",
+  "./patient-sync.js?v=224",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"
@@ -39,13 +39,37 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
+async function fetchNetworkFirst(request, fallbackRequest = request) {
+  try {
+    const response = await fetch(request, { cache: "no-store" });
+
+    if (!response.ok) {
+      throw new Error(`Réponse réseau ${response.status}`);
+    }
+
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(fallbackRequest, response.clone());
+
+    return response;
+  } catch {
+    return caches.match(fallbackRequest);
+  }
+}
+
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
   if (event.request.mode === "navigate") {
-    event.respondWith(
-      caches.match("./index.html").then(cached => cached || fetch(event.request))
-    );
+    event.respondWith(fetchNetworkFirst(event.request, "./index.html"));
+    return;
+  }
+
+  const requestUrl = new URL(event.request.url);
+  const isVersionedAsset = requestUrl.origin === self.location.origin &&
+    requestUrl.searchParams.has("v");
+
+  if (isVersionedAsset) {
+    event.respondWith(fetchNetworkFirst(event.request));
     return;
   }
 

@@ -4,8 +4,8 @@ Prototype d’aide-mémoire PISU destiné à un usage professionnel ou de format
 
 ## Version auditée
 
-- Version de l’application : `v5.16` (source unique : `version.js`)
-- Cache PWA : `v223`
+- Version de l’application : `v5.17` (source unique : `version.js`)
+- Cache PWA : `v224`
 - 11 protocoles reliés au cycle de mission
 - Journal et SAED opérationnel structurés
 - SAED contextuel sur les 11 protocoles : S construit depuis les données saisies, E synthétise actions et évolution, D propose une formulation puis exige une validation professionnelle
@@ -13,6 +13,7 @@ Prototype d’aide-mémoire PISU destiné à un usage professionnel ou de format
 - Parcours / transport / destination repositionné après les protocoles, en navigation swipe avec horodatages stables
 - État actif des swipes synchronisé à chaque frame, sans debounce tactile
 - Inertie et snap tactiles natifs pour Protocoles, Équipe, Identité patient et Parcours
+- Navigation et ressources versionnées vérifiées sur le réseau avant repli hors ligne
 - Verrouillage strict : un toucher ou un swipe ne peut avancer que d’un seul panneau
 - Recalage exact sur le bord intérieur de la piste à la fin de l’inertie tactile iPhone
 - Reprise d’une mission après rechargement
