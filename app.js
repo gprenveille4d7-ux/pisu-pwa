@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v227";
+const CACHE_NAME = "pisu-acr-cache-v228";
 const APP_VERSION = String(globalThis.PISU_APP_VERSION || "").trim();
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";

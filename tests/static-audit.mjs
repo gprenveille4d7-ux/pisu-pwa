@@ -37,7 +37,7 @@ assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de v
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
 assert.match(app, new RegExp(`CACHE_NAME\\s*=\\s*["']pisu-acr-cache-v${cacheVersion}["']`), "Cache applicatif non synchronise");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.20["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.21["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 assert.match(worker, /async function fetchNetworkFirst\(request,\s*fallbackRequest\s*=\s*request\)/, "Stratégie réseau prioritaire absente");
@@ -195,12 +195,33 @@ assert.match(app, /trigger\.type\s*=\s*["']button["'][\s\S]*?aria-haspopup["'],\
 
 const vitalsRollerStyle = style.slice(
   style.indexOf(".vitals-native-roller-source"),
-  style.indexOf(".vitals-actions")
+  style.indexOf("\n.vitals-actions {", style.indexOf(".vitals-native-roller-source"))
 );
 assert.match(vitalsRollerStyle, /\.vitals-roller-layer\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?z-index:\s*10015;/, "Couche fixe de la roulette absente ou mal empilee");
 assert.match(vitalsRollerStyle, /\.vitals-roller\s*\{[\s\S]*?top:\s*0;[\s\S]*?touch-action:\s*none;/, "Zone tactile de la roulette absente");
 assert.match(vitalsRollerStyle, /\.vitals-roller-selection-band\s*\{[\s\S]*?position:\s*absolute;/, "Bande de selection de la roulette absente");
 assert.doesNotMatch(vitalsRollerStyle, /top:\s*50%|bottom:\s*0|translateY\(-50%\)/, "La roulette est recentree ou ancree en bas du viewport");
+assert.match(style, /--vitals-scroll-gutter-width:\s*clamp\(24px,\s*7vw,\s*32px\)/, "Largeur responsive des couloirs de scroll absente");
+assert.match(style, /\.vitals-sheet\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?padding-left:\s*calc\([\s\S]*?var\(--vitals-scroll-gutter-width\)[\s\S]*?var\(--safe-left,\s*env\(safe-area-inset-left,\s*0px\)\)[\s\S]*?padding-right:\s*calc\([\s\S]*?var\(--vitals-scroll-gutter-width\)[\s\S]*?var\(--safe-right,\s*env\(safe-area-inset-right,\s*0px\)\)/, "Couloirs natifs ou safe areas du panneau Constantes incomplets");
+assert.match(style, /\.vitals-grid,\s*\.vitals-bp-block,\s*\.vitals-actions,\s*\.vitals-history-details\s*\{[\s\S]*?min-width:\s*0;[\s\S]*?max-width:\s*100%;/, "Le contenu des Constantes peut deborder dans les couloirs");
+const vitalsTriggerRule = style.match(
+  /\.vitals-grid input,\s*\.vitals-grid select,\s*\.vitals-grid \.vitals-roller-trigger\s*\{([\s\S]*?)\}/
+)?.[1] || "";
+assert.match(vitalsTriggerRule, /width:\s*100%;/, "Largeur du trigger de constante non bornee par sa cellule");
+assert.doesNotMatch(vitalsTriggerRule, /position:\s*absolute|margin-(?:left|right):\s*-|margin-inline:\s*-|translate[XY]?\(/, "Un trigger de constante peut recouvrir un couloir lateral");
+assert.doesNotMatch(app, /vitalsSheet\.scrollTop\s*=/, "Un moteur JavaScript pilote le scroll des Constantes");
+assert.doesNotMatch(app, /function\s+(?:setup|handle|update)VitalsScrollGutter/, "Un moteur pointer dedie aux couloirs a ete ajoute");
+assert.match(app, /const VITALS_ROLLER_DRAG_THRESHOLD_PX\s*=\s*6/, "Le seuil tactile de la roulette validee a ete modifie");
+
+for (const viewportWidth of [320, 375, 390, 430]) {
+  const gutterWidth = Math.min(32, Math.max(24, viewportWidth * 0.07));
+  const centralWidth = viewportWidth - 2 - gutterWidth * 2;
+  const bpColumnWidth = (centralWidth - 2 - 16 - 2 - 8 - 50 - 12) / 2;
+
+  assert.ok(gutterWidth >= 24, `Couloir trop etroit a ${viewportWidth}px`);
+  assert.ok(centralWidth >= 270, `Zone centrale trop etroite a ${viewportWidth}px`);
+  assert.ok(bpColumnWidth >= 90, `Cellules SYS/DIA trop etroites a ${viewportWidth}px`);
+}
 
 const geometryProbe = { triggerTop: 211.25, triggerHeight: 48, selectedIndex: 80 };
 const geometryAnchorY = geometryProbe.triggerTop + geometryProbe.triggerHeight / 2;
