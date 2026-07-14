@@ -1,11 +1,11 @@
-const CACHE_NAME = "pisu-acr-cache-v217";
+const CACHE_NAME = "pisu-acr-cache-v218";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./style.css?v=217",
-  "./version.js?v=217",
-  "./saed.js?v=217",
-  "./app.js?v=217",
+  "./style.css?v=218",
+  "./version.js?v=218",
+  "./saed.js?v=218",
+  "./app.js?v=218",
   "./acr-adulte.js",
   "./acr-enfant.js",
   "./douleur-thoracique.js",
