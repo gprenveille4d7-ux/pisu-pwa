@@ -759,7 +759,7 @@ footer {
   gap: 8px !important;
   width: 100%;
   margin-top: 8px;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 .mission-route-panel .route-compact-content .route-swipe-tabs {
@@ -6050,15 +6050,18 @@ body.charter-open .sound-toggle-button {
   min-width: 0 !important;
   max-width: 100% !important;
   min-height: 0 !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 .team-compact-content .team-swipe-tabs,
 .route-compact-content .route-swipe-tabs,
 .identity-compact-content .identity-swipe-tabs {
-  position: static !important;
-  inset: auto !important;
-  z-index: auto !important;
+  position: sticky !important;
+  top: var(--pisu-child-tabs-sticky-top, var(--accordion-nested-sticky-top, 172px)) !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 2400 !important;
   transform: none !important;
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -6067,7 +6070,7 @@ body.charter-open .sound-toggle-button {
   margin: 4px 0 2px !important;
   padding: 4px !important;
   border-radius: 999px !important;
-  background: var(--pisu-ui-surface-deep) !important;
+  background: rgba(2, 6, 23, 0.98) !important;
   backdrop-filter: blur(10px);
 }
 

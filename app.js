@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v210";
+const CACHE_NAME = "pisu-acr-cache-v226";
 const APP_VERSION = String(globalThis.PISU_APP_VERSION || "").trim();
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
@@ -6395,6 +6395,64 @@ function getAccordionStickyOffset() {
   return headerHeight + 16;
 }
 
+const CHILD_NAVIGATION_STICKY_GAP_PX = 6;
+let childNavigationStickyFrame = 0;
+
+function getChildNavigationStickyPairs() {
+  return [
+    {
+      anchor: document.querySelector(".team-block > .collapsible-title"),
+      tabs: document.querySelector(".team-block .team-swipe-tabs")
+    },
+    {
+      anchor: document.querySelector(".identity-block > .collapsible-title"),
+      tabs: document.querySelector(".identity-block .identity-swipe-tabs")
+    },
+    {
+      anchor: document.querySelector(
+        ".mission-route-panel > .mission-route-subblock > .route-panel-summary"
+      ),
+      tabs: document.querySelector(".mission-route-panel .route-swipe-tabs")
+    }
+  ].filter(({ anchor, tabs }) => anchor && tabs);
+}
+
+function updateChildNavigationStickyOffsets() {
+  const updates = getChildNavigationStickyPairs().map(({ anchor, tabs }) => {
+    const anchorTop = parseFloat(getComputedStyle(anchor).top);
+    const anchorHeight = Math.ceil(anchor.getBoundingClientRect().height);
+    const nextValue = Number.isFinite(anchorTop) && anchorHeight > 0
+      ? `${Math.ceil(anchorTop + anchorHeight + CHILD_NAVIGATION_STICKY_GAP_PX)}px`
+      : "";
+
+    return { tabs, nextValue };
+  });
+
+  updates.forEach(({ tabs, nextValue }) => {
+    const currentValue = tabs.style.getPropertyValue("--pisu-child-tabs-sticky-top");
+
+    if (!nextValue) {
+      if (currentValue) {
+        tabs.style.removeProperty("--pisu-child-tabs-sticky-top");
+      }
+      return;
+    }
+
+    if (currentValue !== nextValue) {
+      tabs.style.setProperty("--pisu-child-tabs-sticky-top", nextValue);
+    }
+  });
+}
+
+function scheduleChildNavigationStickyOffsets() {
+  if (childNavigationStickyFrame) return;
+
+  childNavigationStickyFrame = window.requestAnimationFrame(() => {
+    childNavigationStickyFrame = 0;
+    updateChildNavigationStickyOffsets();
+  });
+}
+
 function updateAccordionStickyOffsets() {
   const header = document.querySelector(".app-header, header.app-header, body > header");
   const headerRect = header?.getBoundingClientRect?.();
@@ -6412,6 +6470,8 @@ function updateAccordionStickyOffsets() {
     "--accordion-nested-sticky-top",
     `${headerBottom + 58}px`
   );
+
+  scheduleChildNavigationStickyOffsets();
 }
 
 function setupAccordionStickyOffsets() {
@@ -6423,12 +6483,14 @@ function setupAccordionStickyOffsets() {
 
   const header = document.querySelector(".app-header, header.app-header, body > header");
 
-  if (header && window.ResizeObserver) {
-    const observer = new ResizeObserver(() => {
-      updateAccordionStickyOffsets();
-    });
+  const stickyAnchors = getChildNavigationStickyPairs().map(({ anchor }) => anchor);
 
-    observer.observe(header);
+  if (window.ResizeObserver) {
+    const observer = new ResizeObserver(updateAccordionStickyOffsets);
+
+    [header, ...stickyAnchors].filter(Boolean).forEach(element => {
+      observer.observe(element);
+    });
   }
 }
 

@@ -35,7 +35,8 @@ assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du mod
 assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
 assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
 assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.18["']/, "Version applicative centralisée introuvable");
+assert.match(app, new RegExp(`CACHE_NAME\\s*=\\s*["']pisu-acr-cache-v${cacheVersion}["']`), "Cache applicatif non synchronise");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.19["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 assert.match(worker, /async function fetchNetworkFirst\(request,\s*fallbackRequest\s*=\s*request\)/, "Stratégie réseau prioritaire absente");
@@ -134,6 +135,24 @@ assert.match(style, /\.team-swipe-slide,[\s\S]*?scroll-snap-stop:\s*always\s*!im
 assert.match(style, /\.protocol-swipe-card\s*\{[\s\S]*?scroll-snap-stop:\s*always\s*!important;/, "Arrêt strict des cartes protocoles absent");
 assert.match(style, /\.mission-route-panel \.route-swipe-track\.pisu-swipe-programmatic-motion\s*\{[\s\S]*?scroll-behavior:\s*auto\s*!important;[\s\S]*?scroll-snap-type:\s*none\s*!important;/, "Neutralisation temporaire du snap pendant l’animation absente");
 assert.match(style, /touch-action:\s*pan-x pan-y/, "Gestes horizontal et vertical non explicitement préservés");
+assert.match(style, /--pisu-child-tabs-sticky-top/, "Variable d'offset sticky des onglets enfants absente");
+assert.match(app, /function updateChildNavigationStickyOffsets\(\)/, "Synchronisation sticky des onglets enfants absente");
+assert.match(app, /getComputedStyle\(anchor\)\.top/, "Position sticky du titre mere non lue dynamiquement");
+assert.match(app, /anchor\.getBoundingClientRect\(\)\.height/, "Hauteur reelle du titre mere non mesuree");
+assert.match(app, /function getChildNavigationStickyPairs\(\)[\s\S]*?\.team-block > \.collapsible-title[\s\S]*?\.identity-block > \.collapsible-title[\s\S]*?\.mission-route-panel > \.mission-route-subblock > \.route-panel-summary/, "Les trois couples titre/navigation enfant ne sont pas centralises");
+assert.match(app, /const observer\s*=\s*new ResizeObserver\(updateAccordionStickyOffsets\)[\s\S]*?\[header, \.\.\.stickyAnchors\][\s\S]*?observer\.observe\(element\)/, "ResizeObserver commun du header et des trois titres absent");
+assert.match(app, /setupMissionRouteFeature\(\);\s*setupAccordionStickyOffsets\?\.\(\);/, "Les ancres sticky sont observees avant le montage final du parcours");
+assert.match(style, /\.team-compact-content \.team-swipe-tabs,[\s\S]*?\.route-compact-content \.route-swipe-tabs,[\s\S]*?\.identity-compact-content \.identity-swipe-tabs\s*\{[\s\S]*?position:\s*sticky\s*!important;[\s\S]*?top:\s*var\(--pisu-child-tabs-sticky-top,[^;]+;[\s\S]*?z-index:\s*2400\s*!important;/, "Sticky commun des trois navigations enfants absent ou incomplet");
+assert.doesNotMatch(style, /\.(?:team|route|identity)-swipe-tabs\s*\{[^}]*top:\s*\d+px/s, "Un offset sticky fixe a ete code pour un module enfant");
+assert.match(style, /\.team-compact-content,[\s\S]*?\.identity-compact-content\s*\{[\s\S]*?overflow:\s*visible\s*!important;/, "Les conteneurs compacts bloquent encore le sticky vertical");
+assert.match(
+  style,
+  /\.team-swipe-track,[\s\S]*?\.route-swipe-track,[\s\S]*?\.identity-swipe-track\s*\{[\s\S]*?overflow-x:\s*auto\s*!important;[\s\S]*?overflow-y:\s*hidden\s*!important;[\s\S]*?scroll-snap-type:\s*x mandatory\s*!important;[\s\S]*?touch-action:\s*pan-x pan-y/,
+  "Protections communes des trois pistes swipe alterees"
+);
+assert.match(style, /\.collapsible-content\[hidden\]\s*\{[\s\S]*?display:\s*none\s*!important;/, "Les onglets enfants ne disparaissent plus avec un accordéon ferme");
+assert.match(style, /\.vitals-overlay\s*\{[\s\S]*?z-index:\s*10000\s*!important;[\s\S]*?\.vitals-sheet\s*\{[\s\S]*?z-index:\s*10010\s*!important;[\s\S]*?\.floating-vitals-button\s*\{[\s\S]*?z-index:\s*10020\s*!important;/, "La priorite des Constantes sur les onglets sticky est alteree");
+assert.match(style, /\.saed-overlay\s*\{[\s\S]*?z-index:\s*13000\s*!important;[\s\S]*?\.saed-sheet\s*\{[\s\S]*?z-index:\s*13010\s*!important;/, "La priorite du SAED sur les onglets sticky est alteree");
 assert.match(saed, /pisuSaedRequestV1/, "Stockage de la demande SAED absent");
 assert.match(app, /function getProtocolDefinition\(protocolId\)/, "Definition contextuelle des protocoles absente");
 assert.match(app, /window\.getProtocolDefinition\s*=\s*getProtocolDefinition/, "Definition protocolaire non exposee au SAED");
