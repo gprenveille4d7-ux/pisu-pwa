@@ -10,6 +10,7 @@ const app = read("app.js");
 const saed = read("saed.js");
 const style = read("style.css");
 const versionSource = read("version.js");
+const patientSync = read("patient-sync.js");
 const worker = read("service-worker.js");
 
 const localAssets = [
@@ -32,8 +33,11 @@ assert.match(index, new RegExp(`style\\.css\\?v=${cacheVersion}`), "Version CSS 
 assert.match(index, new RegExp(`app\\.js\\?v=${cacheVersion}`), "Version JavaScript non synchronisée");
 assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du module SAED non synchronisée");
 assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.13["']/, "Version applicative centralisée introuvable");
+assert.match(index, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient non versionné");
+assert.match(worker, new RegExp("patient-sync\\.js\\?v=" + cacheVersion), "Module de synchronisation patient absent du cache");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.14["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
+assert.match(patientSync, /const VERSION\s*=\s*["']patient-sync-v1["']/, "Version du module de synchronisation patient introuvable");
 
 const protocolFiles = [
   "acr-adulte.js",
