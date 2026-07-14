@@ -1,4 +1,4 @@
-const CACHE_NAME = "pisu-acr-cache-v204";
+const CACHE_NAME = "pisu-acr-cache-v210";
 const APP_VERSION = String(globalThis.PISU_APP_VERSION || "").trim();
 const CHARTER_VERSION = "2026-07-04-v1";
 const CHARTER_STORAGE_KEY = "pisuUserCharterAcceptance";
@@ -978,25 +978,35 @@ const patientIdentityPanel = document.querySelector(".identity-block");
 const togglePatientIdentityBtn = document.getElementById("togglePatientIdentityBtn");
 const patientIdentityContent = document.getElementById("patientIdentityContent");
 const patientIdentitySummary = document.getElementById("patientIdentitySummary");
+const missionRoutePanel = document.getElementById("missionRoutePanel");
+const missionRouteDetails = document.getElementById("missionRouteDetails");
 const missionRouteSummary = document.getElementById("missionRouteSummary");
+const routeOriginCard = document.getElementById("routeOriginCard");
+const routeOriginSummary = document.getElementById("routeOriginSummary");
+const routeOriginCoordinates = document.getElementById("routeOriginCoordinates");
+const routeCaptureLocationBtn = document.getElementById("routeCaptureLocationBtn");
 const routeDepartureCard = document.getElementById("routeDepartureCard");
 const routeDestinationCard = document.getElementById("routeDestinationCard");
 const routeTransportCard = document.getElementById("routeTransportCard");
 const routeJunctionCard = document.getElementById("routeJunctionCard") || document.getElementById("routeJunctionCompactDetails");
 const routeArrivalCard = document.getElementById("routeArrivalCard");
 const routeDepartureTimeInput = document.getElementById("routeDepartureTime");
+const routeDepartureDisplay = document.getElementById("routeDepartureDisplay");
 const routeDestinationNameInput = document.getElementById("routeDestinationName");
 const routeDestinationServiceInput = document.getElementById("routeDestinationService");
+const routeTransportStatusInput = document.getElementById("routeTransportStatus");
 const routeTransportTypeInput = document.getElementById("routeTransportType");
 const routeTransportVectorInput = document.getElementById("routeTransportVector");
 const routeTransportModeInput = document.getElementById("routeTransportMode");
 const routeTransportMonitoringInput = document.getElementById("routeTransportMonitoring");
 const routeTransportTeamInput = document.getElementById("routeTransportTeam");
+const routeCrewReuseSummary = document.getElementById("routeCrewReuseSummary");
 const routeJunctionEnabledInput = document.getElementById("routeJunctionEnabled");
 const routeJunctionTimeInput = document.getElementById("routeJunctionTime");
 const routeJunctionPlaceInput = document.getElementById("routeJunctionPlace");
 const routeJunctionWithInput = document.getElementById("routeJunctionWith");
 const routeArrivalTimeInput = document.getElementById("routeArrivalTime");
+const routeArrivalDisplay = document.getElementById("routeArrivalDisplay");
 const routeTransmissionDoneInput = document.getElementById("routeTransmissionDone");
 const routeTransportNoteInput = document.getElementById("routeTransportNote");
 const saveMissionRouteBtn = document.getElementById("saveMissionRouteBtn");
@@ -3427,10 +3437,38 @@ async function reverseGeocode(latitude, longitude) {
   return feature ? formatAddress(feature.properties) : "";
 }
 
+function shouldReuseGpsForMissionRoute(actionLabel) {
+  const normalized = normalizeForSearch(actionLabel);
+  return normalized.includes("arrivee sur les lieux") || normalized.includes("lieu de prise en charge");
+}
+
+function storeMissionRouteOriginFromGps(actionLabel, position, address = "") {
+  if (!shouldReuseGpsForMissionRoute(actionLabel)) return;
+
+  const latitude = position.coords.latitude;
+  const longitude = position.coords.longitude;
+  const accuracy = Math.round(position.coords.accuracy);
+  const capturedAt = Number.isFinite(position.timestamp)
+    ? new Date(position.timestamp).toISOString()
+    : new Date().toISOString();
+
+  missionRouteMetadata.originLabel = address || "Position GPS";
+  missionRouteMetadata.originCoordinates = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  missionRouteMetadata.originAccuracy = String(accuracy);
+  missionRouteMetadata.originCapturedAt = capturedAt;
+  missionRouteMetadata.originSource = actionLabel;
+  saveMissionRoute();
+}
+
 function addGpsPoint(actionLabel) {
   if (!("geolocation" in navigator)) {
     addLog(`GPS ${actionLabel} impossible : geolocalisation non disponible`);
     return;
+  }
+
+  if (shouldReuseGpsForMissionRoute(actionLabel)) {
+    routeCaptureLocationBtn?.setAttribute("aria-busy", "true");
+    if (routeCaptureLocationBtn) routeCaptureLocationBtn.textContent = "Localisation…";
   }
 
   navigator.geolocation.getCurrentPosition(
@@ -3446,9 +3484,14 @@ function addGpsPoint(actionLabel) {
         const address = await reverseGeocode(latitude, longitude);
         const addressText = address ? `Adresse : ${address} - ` : "";
 
+        storeMissionRouteOriginFromGps(actionLabel, position, address);
         addLog(`GPS ${actionLabel} : ${addressText}${gpsText}`);
       } catch {
+        storeMissionRouteOriginFromGps(actionLabel, position);
         addLog(`GPS ${actionLabel} : adresse indisponible - ${gpsText}`);
+      } finally {
+        routeCaptureLocationBtn?.removeAttribute("aria-busy");
+        updateMissionRouteUi?.();
       }
     },
     error => {
@@ -3467,6 +3510,8 @@ function addGpsPoint(actionLabel) {
       }
 
       addLog(message);
+      routeCaptureLocationBtn?.removeAttribute("aria-busy");
+      updateMissionRouteUi?.();
     },
     {
       enableHighAccuracy: true,
@@ -4735,6 +4780,51 @@ function applyPatientSnapshot(patient = {}, options = {}) {
   }
 }
 
+const MISSION_ROUTE_DATA_VERSION = 2;
+const MISSION_ROUTE_TIMELINE_CATEGORY = "parcours_mission";
+const MISSION_ROUTE_TIMELINE_DEFINITIONS = {
+  departure: {
+    timeKey: "departureTime",
+    isoKey: "departureAt",
+    label: "Départ du lieu d’intervention"
+  },
+  junction: {
+    timeKey: "junctionTime",
+    isoKey: "junctionAt",
+    label: "Jonction réalisée"
+  },
+  arrival: {
+    timeKey: "arrivalTime",
+    isoKey: "arrivalAt",
+    label: "Arrivée à destination"
+  },
+  transmission: {
+    timeKey: "transmissionTime",
+    isoKey: "transmissionAt",
+    label: "Transmission à l’équipe receveuse réalisée"
+  }
+};
+
+let missionRouteMetadata = {
+  departureAt: "",
+  junctionAt: "",
+  arrivalAt: "",
+  transmissionAt: "",
+  transmissionTime: "",
+  originLabel: "",
+  originCoordinates: "",
+  originAccuracy: "",
+  originCapturedAt: "",
+  originSource: ""
+};
+
+function mountMissionRouteAfterProtocols() {
+  if (!missionRoutePanel || !missionRouteDetails) return;
+  if (missionRouteDetails.parentElement === missionRoutePanel) return;
+
+  missionRoutePanel.append(missionRouteDetails);
+}
+
 function getRouteValue(input) {
   return input?.value?.trim() || "";
 }
@@ -4751,19 +4841,103 @@ function setRouteChecked(input, value) {
   }
 }
 
-function getCurrentTimeValue() {
-  const now = new Date();
-  return now.toLocaleTimeString("fr-FR", {
+function getCurrentTimeValue(date = new Date()) {
+  return date.toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit"
   });
 }
 
+function isValidRouteIso(value) {
+  return Boolean(value && Number.isFinite(Date.parse(value)));
+}
+
+function createRouteIsoFromTime(time, referenceIso = "") {
+  if (!/^\d{2}:\d{2}$/.test(String(time || ""))) return "";
+
+  const reference = isValidRouteIso(referenceIso)
+    ? new Date(referenceIso)
+    : isValidRouteIso(getMissionState()?.startedAt)
+      ? new Date(getMissionState().startedAt)
+      : new Date();
+  const [hours, minutes] = time.split(":").map(Number);
+  const timestamp = new Date(
+    reference.getFullYear(),
+    reference.getMonth(),
+    reference.getDate(),
+    hours,
+    minutes,
+    0,
+    0
+  );
+
+  if (isValidRouteIso(referenceIso) && timestamp.getTime() < reference.getTime() - (6 * 60 * 60 * 1000)) {
+    timestamp.setDate(timestamp.getDate() + 1);
+  }
+
+  return timestamp.toISOString();
+}
+
+function normalizeMissionRouteSnapshot(route = {}) {
+  const normalized = {
+    ...route,
+    version: MISSION_ROUTE_DATA_VERSION,
+    departureTime: String(route.departureTime || "").slice(0, 5),
+    junctionTime: String(route.junctionTime || "").slice(0, 5),
+    arrivalTime: String(route.arrivalTime || "").slice(0, 5),
+    transmissionTime: String(route.transmissionTime || "").slice(0, 5),
+    departureAt: isValidRouteIso(route.departureAt) ? route.departureAt : "",
+    junctionAt: isValidRouteIso(route.junctionAt) ? route.junctionAt : "",
+    arrivalAt: isValidRouteIso(route.arrivalAt) ? route.arrivalAt : "",
+    transmissionAt: isValidRouteIso(route.transmissionAt) ? route.transmissionAt : "",
+    originLabel: String(route.originLabel || "").trim(),
+    originCoordinates: String(route.originCoordinates || "").trim(),
+    originAccuracy: String(route.originAccuracy || "").trim(),
+    originCapturedAt: isValidRouteIso(route.originCapturedAt) ? route.originCapturedAt : "",
+    originSource: String(route.originSource || "").trim(),
+    transportStatus: String(route.transportStatus || "").trim()
+  };
+
+  if (normalized.departureTime && !normalized.departureAt) {
+    normalized.departureAt = createRouteIsoFromTime(normalized.departureTime);
+  }
+
+  if (normalized.junctionTime && !normalized.junctionAt) {
+    normalized.junctionAt = createRouteIsoFromTime(
+      normalized.junctionTime,
+      normalized.departureAt
+    );
+  }
+
+  if (normalized.arrivalTime && !normalized.arrivalAt) {
+    normalized.arrivalAt = createRouteIsoFromTime(
+      normalized.arrivalTime,
+      normalized.junctionAt || normalized.departureAt
+    );
+  }
+
+  if (normalized.transmissionDone && !normalized.transmissionAt) {
+    normalized.transmissionAt = normalized.arrivalAt || createRouteIsoFromTime(
+      normalized.transmissionTime || normalized.arrivalTime || getCurrentTimeValue(),
+      normalized.arrivalAt || normalized.junctionAt || normalized.departureAt
+    );
+  }
+
+  if (normalized.transmissionAt && !normalized.transmissionTime) {
+    normalized.transmissionTime = getCurrentTimeValue(new Date(normalized.transmissionAt));
+  }
+
+  return normalized;
+}
+
 function getMissionRouteSnapshot() {
-  return {
+  return normalizeMissionRouteSnapshot({
+    version: MISSION_ROUTE_DATA_VERSION,
     departureTime: getRouteValue(routeDepartureTimeInput),
+    departureAt: missionRouteMetadata.departureAt,
     destinationName: getRouteValue(routeDestinationNameInput),
     destinationService: getRouteValue(routeDestinationServiceInput),
+    transportStatus: getRouteValue(routeTransportStatusInput),
     transportType: getRouteValue(routeTransportTypeInput),
     transportVector: getRouteValue(routeTransportVectorInput),
     transportMode: getRouteValue(routeTransportModeInput),
@@ -4771,19 +4945,31 @@ function getMissionRouteSnapshot() {
     transportTeam: getRouteValue(routeTransportTeamInput),
     junctionEnabled: Boolean(routeJunctionEnabledInput?.checked),
     junctionTime: getRouteValue(routeJunctionTimeInput),
+    junctionAt: missionRouteMetadata.junctionAt,
     junctionPlace: getRouteValue(routeJunctionPlaceInput),
     junctionWith: getRouteValue(routeJunctionWithInput),
     arrivalTime: getRouteValue(routeArrivalTimeInput),
+    arrivalAt: missionRouteMetadata.arrivalAt,
     transmissionDone: Boolean(routeTransmissionDoneInput?.checked),
+    transmissionTime: missionRouteMetadata.transmissionTime,
+    transmissionAt: missionRouteMetadata.transmissionAt,
+    originLabel: missionRouteMetadata.originLabel,
+    originCoordinates: missionRouteMetadata.originCoordinates,
+    originAccuracy: missionRouteMetadata.originAccuracy,
+    originCapturedAt: missionRouteMetadata.originCapturedAt,
+    originSource: missionRouteMetadata.originSource,
     note: getRouteValue(routeTransportNoteInput)
-  };
+  });
 }
 
 function hasMissionRouteData(route = getMissionRouteSnapshot()) {
   return Boolean(
+    route.originLabel ||
+    route.originCoordinates ||
     route.departureTime ||
     route.destinationName ||
     route.destinationService ||
+    route.transportStatus ||
     route.transportType ||
     route.transportVector ||
     route.transportMode ||
@@ -4817,10 +5003,33 @@ function saveMissionRoute(options = {}) {
   return route;
 }
 
+function recoverMissionRouteOriginFromLog(route = {}) {
+  if (route.originLabel || route.originCoordinates) return route;
+
+  const gpsPattern = /^GPS (?:Arrivée sur les lieux|Lieu de prise en charge) : (?:(?:Adresse : (.*?) - )|(?:adresse indisponible - ))?(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?) - precision \+\/-([0-9]+) m/i;
+  const item = [...getLog()].reverse().find(entry => gpsPattern.test(String(entry?.text || "")));
+
+  if (!item) return route;
+
+  const match = String(item.text || "").match(gpsPattern);
+  if (!match) return route;
+
+  return {
+    ...route,
+    originLabel: String(match[1] || "Position GPS").trim(),
+    originCoordinates: `${match[2]}, ${match[3]}`,
+    originAccuracy: match[4] || "",
+    originCapturedAt: createRouteIsoFromTime(String(item.time || "").slice(0, 5)),
+    originSource: "Arrivée sur les lieux (journal existant)"
+  };
+}
+
 function loadMissionRoute() {
   try {
-    const route = JSON.parse(localStorage.getItem(MISSION_ROUTE_STORAGE_KEY) || "{}");
-    applyMissionRouteSnapshot(route, { skipSave: true });
+    const storedRoute = JSON.parse(localStorage.getItem(MISSION_ROUTE_STORAGE_KEY) || "{}");
+    const route = recoverMissionRouteOriginFromLog(normalizeMissionRouteSnapshot(storedRoute));
+    applyMissionRouteSnapshot(route, { skipSave: false });
+    syncMissionRouteTimelineEvents(route);
   } catch {
     localStorage.removeItem(MISSION_ROUTE_STORAGE_KEY);
     applyMissionRouteSnapshot({}, { skipSave: true });
@@ -4828,21 +5037,37 @@ function loadMissionRoute() {
 }
 
 function applyMissionRouteSnapshot(route = {}, options = {}) {
-  setRouteValue(routeDepartureTimeInput, route.departureTime);
-  setRouteValue(routeDestinationNameInput, route.destinationName);
-  setRouteValue(routeDestinationServiceInput, route.destinationService);
-  setRouteValue(routeTransportTypeInput, route.transportType);
-  setRouteValue(routeTransportVectorInput, route.transportVector);
-  setRouteValue(routeTransportModeInput, route.transportMode);
-  setRouteValue(routeTransportMonitoringInput, route.transportMonitoring);
-  setRouteValue(routeTransportTeamInput, route.transportTeam);
-  setRouteChecked(routeJunctionEnabledInput, route.junctionEnabled);
-  setRouteValue(routeJunctionTimeInput, route.junctionTime);
-  setRouteValue(routeJunctionPlaceInput, route.junctionPlace);
-  setRouteValue(routeJunctionWithInput, route.junctionWith);
-  setRouteValue(routeArrivalTimeInput, route.arrivalTime);
-  setRouteChecked(routeTransmissionDoneInput, route.transmissionDone);
-  setRouteValue(routeTransportNoteInput, route.note);
+  const normalized = normalizeMissionRouteSnapshot(route);
+
+  missionRouteMetadata = {
+    departureAt: normalized.departureAt,
+    junctionAt: normalized.junctionAt,
+    arrivalAt: normalized.arrivalAt,
+    transmissionAt: normalized.transmissionAt,
+    transmissionTime: normalized.transmissionTime,
+    originLabel: normalized.originLabel,
+    originCoordinates: normalized.originCoordinates,
+    originAccuracy: normalized.originAccuracy,
+    originCapturedAt: normalized.originCapturedAt,
+    originSource: normalized.originSource
+  };
+
+  setRouteValue(routeDepartureTimeInput, normalized.departureTime);
+  setRouteValue(routeDestinationNameInput, normalized.destinationName);
+  setRouteValue(routeDestinationServiceInput, normalized.destinationService);
+  setRouteValue(routeTransportStatusInput, normalized.transportStatus);
+  setRouteValue(routeTransportTypeInput, normalized.transportType);
+  setRouteValue(routeTransportVectorInput, normalized.transportVector);
+  setRouteValue(routeTransportModeInput, normalized.transportMode);
+  setRouteValue(routeTransportMonitoringInput, normalized.transportMonitoring);
+  setRouteValue(routeTransportTeamInput, normalized.transportTeam);
+  setRouteChecked(routeJunctionEnabledInput, normalized.junctionEnabled);
+  setRouteValue(routeJunctionTimeInput, normalized.junctionTime);
+  setRouteValue(routeJunctionPlaceInput, normalized.junctionPlace);
+  setRouteValue(routeJunctionWithInput, normalized.junctionWith);
+  setRouteValue(routeArrivalTimeInput, normalized.arrivalTime);
+  setRouteChecked(routeTransmissionDoneInput, normalized.transmissionDone);
+  setRouteValue(routeTransportNoteInput, normalized.note);
 
   if (!options.skipSave) {
     localStorage.setItem(MISSION_ROUTE_STORAGE_KEY, JSON.stringify(getMissionRouteSnapshot()));
@@ -4854,33 +5079,48 @@ function applyMissionRouteSnapshot(route = {}, options = {}) {
 function resetMissionRoute() {
   localStorage.removeItem(MISSION_ROUTE_STORAGE_KEY);
   applyMissionRouteSnapshot({}, { skipSave: true });
+  removeMissionRouteTimelineEvents();
 }
 
 function updateMissionRouteUi(route = getMissionRouteSnapshot()) {
   updateMissionRouteSummary(route);
   updateMissionRouteCards(route);
   updateMissionRouteJunctionState(route);
+  updateMissionRouteChoiceGroups(route);
+  updateMissionRouteOrigin(route);
+  updateMissionRouteMilestones(route);
+  updateMissionRouteCrewReuse();
 }
 
 function updateMissionRouteSummary(route = getMissionRouteSnapshot()) {
   if (!missionRouteSummary) return;
 
   if (!hasMissionRouteData(route)) {
-    missionRouteSummary.textContent = "Départ, destination et arrivée à renseigner.";
+    missionRouteSummary.textContent = "Suite de mission à organiser.";
     return;
   }
 
   const parts = [];
 
-  if (route.departureTime) parts.push(`Départ ${route.departureTime}`);
-  if (route.destinationName) parts.push(`Destination ${route.destinationName}`);
-  if (route.junctionEnabled) parts.push(route.junctionTime ? `Jonction ${route.junctionTime}` : "Jonction prévue");
+  if (route.transportStatus) parts.push(route.transportStatus);
+  if (route.transportVector) parts.push(route.transportVector);
+  if (route.destinationName) {
+    parts.push([route.destinationName, route.destinationService].filter(Boolean).join(" — "));
+  } else if (route.destinationService) {
+    parts.push(route.destinationService);
+  }
+  if (route.departureTime && parts.length < 3) parts.push(`Départ ${route.departureTime}`);
   if (route.arrivalTime) parts.push(`Arrivée ${route.arrivalTime}`);
 
-  missionRouteSummary.textContent = parts.join(" · ") || "Parcours mission en cours.";
+  missionRouteSummary.textContent = parts.slice(0, 3).join(" · ") || "Parcours mission en cours.";
 }
 
 function updateMissionRouteCards(route = getMissionRouteSnapshot()) {
+  routeOriginCard?.classList.toggle(
+    "complete",
+    Boolean(route.originLabel || route.originCoordinates)
+  );
+
   routeDepartureCard?.classList.toggle("complete", Boolean(route.departureTime));
 
   routeDestinationCard?.classList.toggle(
@@ -4890,7 +5130,7 @@ function updateMissionRouteCards(route = getMissionRouteSnapshot()) {
 
   routeTransportCard?.classList.toggle(
     "complete",
-    Boolean(route.transportType || route.transportVector || route.transportMode || route.transportMonitoring || route.transportTeam)
+    Boolean(route.transportStatus || route.transportType || route.transportVector || route.transportMode || route.transportMonitoring)
   );
 
   routeJunctionCard?.classList.toggle(
@@ -4902,6 +5142,92 @@ function updateMissionRouteCards(route = getMissionRouteSnapshot()) {
     "complete",
     Boolean(route.arrivalTime || route.transmissionDone)
   );
+}
+
+function updateMissionRouteChoiceGroups(route = getMissionRouteSnapshot()) {
+  const values = {
+    transportStatus: route.transportStatus || "",
+    transportVector: route.transportVector || "",
+    transportMode: route.transportMode || ""
+  };
+
+  document.querySelectorAll("[data-route-choice-group]").forEach(group => {
+    const selectedValue = values[group.dataset.routeChoiceGroup] || "";
+
+    group.querySelectorAll("[data-route-choice]").forEach(button => {
+      const selected = button.dataset.routeChoice === selectedValue;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+  });
+}
+
+function updateMissionRouteOrigin(route = getMissionRouteSnapshot()) {
+  if (routeOriginSummary) {
+    routeOriginSummary.textContent = route.originLabel || (
+      route.originCoordinates ? "Position GPS" : "Position non mémorisée"
+    );
+  }
+
+  if (routeOriginCoordinates) {
+    if (route.originCoordinates) {
+      const accuracy = route.originAccuracy ? ` · ±${route.originAccuracy} m` : "";
+      routeOriginCoordinates.textContent = `${route.originCoordinates}${accuracy}`;
+    } else {
+      routeOriginCoordinates.textContent = "Le GPS « Arrivée sur les lieux » sera réutilisé ici.";
+    }
+  }
+
+  if (routeCaptureLocationBtn) {
+    routeCaptureLocationBtn.textContent = route.originCoordinates ? "Actualiser" : "Localiser";
+  }
+}
+
+function setRouteTimeDisplay(element, label, time, iso) {
+  if (!element) return;
+
+  element.textContent = time ? `${label} ${time}` : "Non horodaté";
+
+  if (isValidRouteIso(iso)) {
+    element.setAttribute("datetime", iso);
+  } else {
+    element.removeAttribute("datetime");
+  }
+}
+
+function updateMissionRouteMilestones(route = getMissionRouteSnapshot()) {
+  setRouteTimeDisplay(
+    routeDepartureDisplay,
+    "Départ",
+    route.departureTime,
+    route.departureAt
+  );
+  setRouteTimeDisplay(
+    routeArrivalDisplay,
+    "Arrivée",
+    route.arrivalTime,
+    route.arrivalAt
+  );
+}
+
+function updateMissionRouteCrewReuse() {
+  if (!routeCrewReuseSummary) return;
+
+  const crew = typeof getMissionCrew === "function" ? getMissionCrew() : [];
+
+  if (!Array.isArray(crew) || crew.length === 0) {
+    routeCrewReuseSummary.textContent = "L’équipage mission sera réutilisé automatiquement.";
+    return;
+  }
+
+  const labels = crew.map(member => [member.missionRole, member.name]
+    .filter(Boolean)
+    .join(" — "))
+    .filter(Boolean);
+
+  routeCrewReuseSummary.textContent = labels.length > 0
+    ? `Équipage réutilisé : ${labels.join(" · ")}`
+    : `${crew.length} membre(s) d’équipage réutilisé(s).`;
 }
 
 function updateMissionRouteJunctionState(route = getMissionRouteSnapshot()) {
@@ -4926,24 +5252,38 @@ function getMissionRouteLines(route = getMissionRouteSnapshot()) {
     return ["Parcours / transport non renseigné."];
   }
 
-  lines.push(`Départ des lieux : ${route.departureTime || "À compléter"}`);
+  if (route.originLabel || route.originCoordinates) {
+    const origin = [route.originLabel, route.originCoordinates]
+      .filter(Boolean)
+      .join(" — ");
+    lines.push(`Lieu de prise en charge : ${origin}`);
+  }
+
+  if (route.departureTime) {
+    lines.push(`Départ des lieux : ${route.departureTime}`);
+  }
 
   const destination = [
     route.destinationName,
     route.destinationService
   ].filter(Boolean).join(" — ");
 
-  lines.push(`Destination : ${destination || "À compléter"}`);
+  if (destination) {
+    lines.push(`Destination : ${destination}`);
+  }
 
   const transport = [
+    route.transportStatus ? `Situation : ${route.transportStatus}` : "",
     route.transportType ? `Type : ${route.transportType}` : "",
     route.transportVector ? `Vecteur : ${route.transportVector}` : "",
     route.transportMode ? `Modalité : ${route.transportMode}` : "",
     route.transportMonitoring ? `Surveillance : ${route.transportMonitoring}` : "",
-    route.transportTeam ? `Équipe : ${route.transportTeam}` : ""
+    route.transportTeam ? `Ancienne saisie équipe : ${route.transportTeam}` : ""
   ].filter(Boolean).join(" — ");
 
-  lines.push(`Transport : ${transport || "À compléter"}`);
+  if (transport) {
+    lines.push(`Transport : ${transport}`);
+  }
 
   if (route.junctionEnabled) {
     const junction = [
@@ -4953,14 +5293,15 @@ function getMissionRouteLines(route = getMissionRouteSnapshot()) {
     ].filter(Boolean).join(" — ");
 
     lines.push(`Jonction : ${junction || "Oui, détails à compléter"}`);
-  } else {
-    lines.push("Jonction : non renseignée / non réalisée");
   }
 
-  lines.push(`Arrivée destination : ${route.arrivalTime || "À compléter"}`);
-  lines.push(route.transmissionDone
-    ? "Transmission arrivée : réalisée à l’équipe receveuse."
-    : "Transmission arrivée : à compléter.");
+  if (route.arrivalTime) {
+    lines.push(`Arrivée destination : ${route.arrivalTime}`);
+  }
+
+  if (route.transmissionDone) {
+    lines.push(`Transmission arrivée : réalisée${route.transmissionTime ? ` à ${route.transmissionTime}` : ""}.`);
+  }
 
   if (route.note) {
     lines.push(`Note transport : ${route.note}`);
@@ -4975,6 +5316,15 @@ function getMissionRouteSAEDLines(route = getMissionRouteSnapshot()) {
   }
 
   const lines = [];
+  const origin = [
+    route.originLabel,
+    route.originCoordinates
+  ].filter(Boolean).join(" — ");
+
+  if (origin) {
+    lines.push(`Lieu de prise en charge : ${origin}.`);
+  }
+
   const destination = [
     route.destinationName,
     route.destinationService
@@ -4985,6 +5335,7 @@ function getMissionRouteSAEDLines(route = getMissionRouteSnapshot()) {
   }
 
   const transport = [
+    route.transportStatus,
     route.transportType,
     route.transportVector,
     route.transportMode,
@@ -5014,7 +5365,7 @@ function getMissionRouteSAEDLines(route = getMissionRouteSnapshot()) {
   }
 
   if (route.transmissionDone) {
-    lines.push("Transmission réalisée à l’équipe receveuse.");
+    lines.push(`Transmission réalisée à l’équipe receveuse${route.transmissionTime ? ` à ${route.transmissionTime}` : ""}.`);
   }
 
   return lines.length > 0 ? lines : ["Devenir / transport à préciser."];
@@ -5031,50 +5382,159 @@ function addMissionRouteLog(label) {
       sousCategorie: "parcours",
       libelleCourt: label,
       libelleLong: summary,
-      phraseSAED: summary,
+      phraseSAED: "",
       sectionSAED: "D",
       priorite: "moyenne",
       type: "transport",
       visibleSynthese: true,
-      visibleSAED: true,
-      visibleChrono: true,
+      visibleSAED: false,
+      visibleChrono: false,
       visibleJournal: true
     });
   }
 }
 
-function stampMissionRouteTime(kind) {
-  const time = getCurrentTimeValue();
+function removeMissionRouteTimelineEvents(kind = "") {
+  const events = getStructuredEvents();
+  const filtered = events.filter(event => {
+    if (event?.sousCategorie !== MISSION_ROUTE_TIMELINE_CATEGORY) return true;
+    return kind && event.routeEventKey !== kind;
+  });
 
-  if (kind === "departure") {
-    scrollToRouteSlide?.(0, "auto");
-    setRouteValue(routeDepartureTimeInput, time);
-    saveMissionRoute({ log: true, logLabel: "Départ des lieux horodaté" });
-    return;
-  }
-
-  if (kind === "junction") {
-    scrollToRouteSlide?.(0, "auto");
-    setRouteChecked(routeJunctionEnabledInput, true);
-    setRouteValue(routeJunctionTimeInput, time);
-    saveMissionRoute({ log: true, logLabel: "Jonction horodatée" });
-    return;
-  }
-
-  if (kind === "arrival") {
-    scrollToRouteSlide?.(2, "auto");
-    setRouteValue(routeArrivalTimeInput, time);
-    saveMissionRoute({ log: true, logLabel: "Arrivée destination horodatée" });
+  if (filtered.length !== events.length) {
+    saveStructuredEvents(filtered);
+    window.pisuSAED?.refreshIfOpen?.();
   }
 }
 
+function upsertMissionRouteTimelineEvent(kind, route = getMissionRouteSnapshot()) {
+  const definition = MISSION_ROUTE_TIMELINE_DEFINITIONS[kind];
+  if (!definition) return null;
+
+  const iso = route[definition.isoKey];
+  const time = route[definition.timeKey];
+
+  if (!isValidRouteIso(iso) || !time) {
+    removeMissionRouteTimelineEvents(kind);
+    return null;
+  }
+
+  const events = getStructuredEvents();
+  const existing = events.find(event => (
+    event?.sousCategorie === MISSION_ROUTE_TIMELINE_CATEGORY &&
+    event?.routeEventKey === kind
+  ));
+  const nextEvent = {
+    id: existing?.id || createStructuredEventId(),
+    iso,
+    heure: `${time}:00`,
+    version: "saed-v2",
+    protocole: "Mission PISU",
+    protocolId: "",
+    action: `route_${kind}`,
+    sectionSAED: "D",
+    categorie: "transport",
+    sousCategorie: MISSION_ROUTE_TIMELINE_CATEGORY,
+    routeEventKey: kind,
+    priorite: "moyenne",
+    statut: "realise",
+    type: "transport",
+    libelleCourt: definition.label,
+    libelleLong: `${definition.label} à ${time}`,
+    phraseSAED: "",
+    visibleSynthese: true,
+    visibleSAED: false,
+    visibleChrono: true,
+    visibleJournal: false
+  };
+  const nextEvents = existing
+    ? events.map(event => event.id === existing.id ? nextEvent : event)
+    : [...events, nextEvent];
+
+  saveStructuredEvents(nextEvents);
+  window.pisuSAED?.refreshIfOpen?.();
+  return nextEvent;
+}
+
+function syncMissionRouteTimelineEvents(route = getMissionRouteSnapshot()) {
+  Object.keys(MISSION_ROUTE_TIMELINE_DEFINITIONS).forEach(kind => {
+    upsertMissionRouteTimelineEvent(kind, route);
+  });
+}
+
+function getRouteTimestampReference(kind, route = getMissionRouteSnapshot()) {
+  if (kind === "junction") return route.departureAt;
+  if (kind === "arrival") return route.junctionAt || route.departureAt;
+  if (kind === "transmission") return route.arrivalAt || route.junctionAt || route.departureAt;
+  return getMissionState()?.startedAt || "";
+}
+
+function syncMissionRouteTimestampFromInput(kind) {
+  const definition = MISSION_ROUTE_TIMELINE_DEFINITIONS[kind];
+  if (!definition || kind === "transmission") return;
+
+  const input = kind === "departure"
+    ? routeDepartureTimeInput
+    : kind === "junction"
+      ? routeJunctionTimeInput
+      : routeArrivalTimeInput;
+  const value = getRouteValue(input);
+
+  if (!value) {
+    missionRouteMetadata[definition.isoKey] = "";
+    removeMissionRouteTimelineEvents(kind);
+    return;
+  }
+
+  const currentIso = missionRouteMetadata[definition.isoKey];
+  const currentTime = isValidRouteIso(currentIso)
+    ? getCurrentTimeValue(new Date(currentIso))
+    : "";
+
+  if (currentTime !== value) {
+    missionRouteMetadata[definition.isoKey] = createRouteIsoFromTime(
+      value,
+      getRouteTimestampReference(kind)
+    );
+  }
+}
+
+function stampMissionRouteTime(kind) {
+  const now = new Date();
+  const time = getCurrentTimeValue(now);
+  const definition = MISSION_ROUTE_TIMELINE_DEFINITIONS[kind];
+
+  if (!definition || kind === "transmission") return;
+
+  missionRouteMetadata[definition.isoKey] = now.toISOString();
+
+  if (kind === "departure") {
+    setRouteValue(routeDepartureTimeInput, time);
+  }
+
+  if (kind === "junction") {
+    setRouteChecked(routeJunctionEnabledInput, true);
+    setRouteValue(routeJunctionTimeInput, time);
+  }
+
+  if (kind === "arrival") {
+    setRouteValue(routeArrivalTimeInput, time);
+  }
+
+  const route = saveMissionRoute();
+  upsertMissionRouteTimelineEvent(kind, route);
+  addLog(`${definition.label} — ${time}`, { skipStructuredSAED: true });
+}
+
 function setupMissionRouteFeature() {
+  mountMissionRouteAfterProtocols();
   loadMissionRoute();
 
   const routeFields = [
     routeDepartureTimeInput,
     routeDestinationNameInput,
     routeDestinationServiceInput,
+    routeTransportStatusInput,
     routeTransportTypeInput,
     routeTransportVectorInput,
     routeTransportModeInput,
@@ -5092,8 +5552,62 @@ function setupMissionRouteFeature() {
   routeFields.forEach(field => {
     if (!field) return;
 
-    field.addEventListener("input", () => saveMissionRoute());
-    field.addEventListener("change", () => saveMissionRoute());
+    const persistField = () => {
+      if (field === routeDepartureTimeInput) syncMissionRouteTimestampFromInput("departure");
+      if (field === routeJunctionTimeInput) syncMissionRouteTimestampFromInput("junction");
+      if (field === routeArrivalTimeInput) syncMissionRouteTimestampFromInput("arrival");
+
+      const route = saveMissionRoute();
+
+      if (field === routeDepartureTimeInput) upsertMissionRouteTimelineEvent("departure", route);
+      if (field === routeJunctionTimeInput) upsertMissionRouteTimelineEvent("junction", route);
+      if (field === routeArrivalTimeInput) upsertMissionRouteTimelineEvent("arrival", route);
+    };
+
+    field.addEventListener("input", persistField);
+    field.addEventListener("change", persistField);
+  });
+
+  document.querySelectorAll("[data-route-choice-group]").forEach(group => {
+    group.addEventListener("click", event => {
+      const button = event.target.closest("[data-route-choice]");
+      if (!button) return;
+
+      const input = group.dataset.routeChoiceGroup === "transportStatus"
+        ? routeTransportStatusInput
+        : group.dataset.routeChoiceGroup === "transportVector"
+          ? routeTransportVectorInput
+          : routeTransportModeInput;
+      const nextValue = getRouteValue(input) === button.dataset.routeChoice
+        ? ""
+        : button.dataset.routeChoice;
+
+      setRouteValue(input, nextValue);
+      saveMissionRoute();
+    });
+  });
+
+  routeTransmissionDoneInput?.addEventListener("change", () => {
+    if (routeTransmissionDoneInput.checked) {
+      const now = new Date();
+      missionRouteMetadata.transmissionAt = missionRouteMetadata.transmissionAt || now.toISOString();
+      missionRouteMetadata.transmissionTime = missionRouteMetadata.transmissionTime || getCurrentTimeValue(now);
+      const route = saveMissionRoute();
+      upsertMissionRouteTimelineEvent("transmission", route);
+      addLog(
+        `Transmission à l’équipe receveuse réalisée — ${route.transmissionTime}`,
+        { skipStructuredSAED: true }
+      );
+    } else {
+      missionRouteMetadata.transmissionAt = "";
+      missionRouteMetadata.transmissionTime = "";
+      removeMissionRouteTimelineEvents("transmission");
+      saveMissionRoute();
+    }
+  });
+
+  routeCaptureLocationBtn?.addEventListener("click", () => {
+    addGpsPoint("Lieu de prise en charge");
   });
 
   document.querySelectorAll("[data-route-stamp]").forEach(button => {
@@ -5303,7 +5817,7 @@ function decodeMissionPayload(codeOrUrl) {
 function buildMissionPayload() {
   return {
     type: "pisu-mission-transfer",
-    version: 9,
+    version: 10,
     createdAt: new Date().toISOString(),
     responder: getResponderIdentity(),
     patient: getPatientSnapshot(),
@@ -5477,6 +5991,8 @@ function importMissionPayloadFromText(text) {
   } else {
     clearStructuredEvents();
   }
+
+  syncMissionRouteTimelineEvents(getMissionRouteSnapshot());
 
   localStorage.setItem("pisuLog", JSON.stringify(payload.log || []));
   applyMissionStateSnapshot(payload.missionState || {});
@@ -7010,6 +7526,7 @@ function updateCrewSummary() {
   if (crew.length === 0) {
     crewSummary.textContent = "Aucun équipage sélectionné";
     updateTeamSummary?.();
+    updateMissionRouteCrewReuse?.();
     return;
   }
 
@@ -7027,6 +7544,7 @@ function updateCrewSummary() {
 
   crewSummary.appendChild(wrapper);
   updateTeamSummary?.();
+  updateMissionRouteCrewReuse?.();
 }
 
 function updateSelectedCrewPreview() {
@@ -7642,7 +8160,6 @@ restoreCounterBadges();
 loadProtocolScrollPositions();
 loadResponderIdentity();
 loadPatientAntecedents();
-loadMissionRoute();
 setupCrewFeature();
 setupPatientAntecedentsFeature();
 setupMissionRouteFeature();

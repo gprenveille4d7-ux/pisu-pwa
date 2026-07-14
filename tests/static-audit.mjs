@@ -8,6 +8,7 @@ const read = file => fs.readFileSync(path.join(root, file), "utf8");
 const index = read("index.html");
 const app = read("app.js");
 const saed = read("saed.js");
+const style = read("style.css");
 const versionSource = read("version.js");
 const worker = read("service-worker.js");
 
@@ -31,7 +32,7 @@ assert.match(index, new RegExp(`style\\.css\\?v=${cacheVersion}`), "Version CSS 
 assert.match(index, new RegExp(`app\\.js\\?v=${cacheVersion}`), "Version JavaScript non synchronisée");
 assert.match(index, new RegExp(`saed\\.js\\?v=${cacheVersion}`), "Version du module SAED non synchronisée");
 assert.match(index, new RegExp(`version\\.js\\?v=${cacheVersion}`), "Source de version non synchronisée");
-assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.6["']/, "Version applicative centralisée introuvable");
+assert.match(versionSource, /PISU_APP_VERSION\s*=\s*["']5\.7["']/, "Version applicative centralisée introuvable");
 assert.doesNotMatch(app, /PISU_APP_VERSION\s*=\s*["']\d/, "La version applicative est dupliquée dans app.js");
 
 const protocolFiles = [
@@ -70,6 +71,33 @@ for (const requiredId of ["missionResumeBanner", "missionResumeProtocol", "missi
 for (const requiredId of ["appVersion", "floatingSaedBtn", "saedSheet", "saedSituationContent", "saedVitalsEvolution", "saedDemandDetail"]) {
   assert.match(index, new RegExp(`id=["']${requiredId}["']`), `Élément SAED absent : ${requiredId}`);
 }
+for (const requiredId of [
+  "missionRoutePanel",
+  "missionRouteDetails",
+  "missionRouteSummary",
+  "routeTransportStatus",
+  "routeTransportVector",
+  "routeTransportMode",
+  "routeOriginSummary",
+  "routeDepartureDisplay",
+  "routeArrivalDisplay"
+]) {
+  assert.match(index, new RegExp(`id=["']${requiredId}["']`), `Élément parcours absent : ${requiredId}`);
+}
+
+const protocolsPosition = index.indexOf('class="panel main-section protocols-block');
+const routePanelPosition = index.indexOf('id="missionRoutePanel"');
+assert.ok(protocolsPosition >= 0 && routePanelPosition > protocolsPosition, "Le point de montage parcours n’est pas placé après les protocoles");
+assert.match(app, /mountMissionRouteAfterProtocols/, "Montage du parcours après les protocoles absent");
+assert.match(app, /MISSION_ROUTE_DATA_VERSION\s*=\s*2/, "Migration des données parcours absente");
+for (const timestampKey of ["departureAt", "junctionAt", "arrivalAt", "transmissionAt"]) {
+  assert.match(app, new RegExp(timestampKey), `Timestamp parcours absent : ${timestampKey}`);
+}
+assert.match(app, /storeMissionRouteOriginFromGps/, "Réutilisation du GPS dans le parcours absente");
+assert.match(app, /MISSION_ROUTE_TIMELINE_CATEGORY/, "Chronologie logistique structurée absente");
+assert.match(saed, /route\?\.originLabel/, "Lieu de prise en charge absent du SAED");
+assert.match(saed, /route\?\.transportStatus/, "Statut de transport absent du SAED");
+assert.match(style, /\.mission-route-panel \.route-swipe-track[\s\S]*overflow:\s*visible\s*!important/, "Flux parcours vertical ou débordements non sécurisés");
 assert.match(saed, /pisuSaedRequestV1/, "Stockage de la demande SAED absent");
 assert.match(saed, /buildVitalRows/, "Comparaison initiale / actuelle des constantes absente");
 assert.match(saed, /buildChronology/, "Chronologie SAED absente");

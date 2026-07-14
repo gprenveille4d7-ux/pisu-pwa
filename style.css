@@ -685,6 +685,359 @@ footer {
   }
 }
 
+/* PARCOURS V5.7 — flux vertical après les protocoles */
+.mission-route-panel:empty {
+  display: none;
+}
+
+.mission-route-panel,
+.mission-route-panel *,
+.mission-route-subblock,
+.mission-route-content,
+.route-swipe-shell,
+.route-swipe-track,
+.route-swipe-slide,
+.route-compact-card {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.mission-route-panel {
+  border-color: #475569;
+  overflow: visible;
+}
+
+.mission-route-panel .mission-route-subblock {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.mission-route-panel .route-panel-summary {
+  top: var(--accordion-sticky-top, 118px) !important;
+  width: 100%;
+  min-height: 54px;
+  padding: 9px 12px !important;
+  border-color: #475569 !important;
+}
+
+.route-panel-summary-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.route-panel-summary-copy strong,
+.route-panel-summary-copy small {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.route-panel-summary-copy strong {
+  color: #f8fafc;
+  font-size: 0.96rem;
+  line-height: 1.15;
+}
+
+.route-panel-summary-copy .collapse-summary {
+  display: block;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.mission-route-panel .mission-route-content {
+  display: grid !important;
+  gap: 8px !important;
+  width: 100%;
+  margin-top: 8px;
+  overflow: visible !important;
+}
+
+.mission-route-panel .route-compact-content .route-swipe-tabs,
+.mission-route-panel .route-swipe-nav {
+  display: none !important;
+}
+
+.mission-route-panel .route-swipe-shell {
+  display: block !important;
+  width: 100%;
+}
+
+.mission-route-panel .route-swipe-track {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 10px !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  scroll-snap-type: none !important;
+}
+
+.mission-route-panel .route-swipe-slide {
+  display: grid !important;
+  flex: none !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  scroll-snap-align: none !important;
+}
+
+.mission-route-panel .route-compact-card {
+  width: 100% !important;
+  padding: 11px !important;
+  border: 1px solid #334155;
+  border-radius: 16px !important;
+  background: rgba(15, 23, 42, 0.82);
+  overflow: visible !important;
+}
+
+.mission-route-panel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.mission-route-panel select,
+.mission-route-panel textarea {
+  display: block;
+  inline-size: 100% !important;
+  min-inline-size: 0 !important;
+  max-inline-size: 100% !important;
+  box-sizing: border-box;
+}
+
+.mission-route-panel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.mission-route-panel select,
+.mission-route-panel .route-compact-check,
+.mission-route-panel .route-save-button,
+.mission-route-panel .route-clear-button {
+  min-height: 44px !important;
+}
+
+.mission-route-panel input[type="hidden"] {
+  display: none !important;
+}
+
+.route-location-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.route-location-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.route-location-copy > span {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.route-location-copy > strong,
+.route-location-copy > small {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.route-location-copy > strong {
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.route-location-copy > small {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.route-location-button,
+.route-choice-grid button,
+.route-milestone-button {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.mission-route-panel .route-milestone-button,
+.mission-route-panel .route-mini-button {
+  min-height: 44px !important;
+}
+
+.route-location-button {
+  min-width: 88px;
+  padding: 0 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.route-choice-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.route-choice-group legend {
+  margin-bottom: 6px;
+  color: #cbd5e1;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.route-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.route-choice-grid button {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #475569;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.62);
+  color: #cbd5e1;
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.route-choice-grid button.selected,
+.route-choice-grid button[aria-pressed="true"] {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.48);
+  color: #ecfeff;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.13);
+}
+
+.route-milestone-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.route-milestone-button {
+  width: 100%;
+  min-width: 0 !important;
+  white-space: normal !important;
+}
+
+.route-time-display {
+  min-width: 92px;
+  padding: 8px 10px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.55);
+  color: #bfdbfe;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.route-time-correction {
+  min-width: 0;
+}
+
+.route-time-correction > summary {
+  position: static !important;
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.route-time-correction > label {
+  margin-top: 4px;
+}
+
+.route-question {
+  margin: 0;
+  color: #bfdbfe;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.route-reuse-note {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.42);
+  color: #94a3b8;
+  font-size: 0.74rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.route-step-time {
+  font-size: 0.9rem;
+}
+
+.mission-route-panel .route-compact-actions {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+}
+
+@media (max-width: 700px) {
+  .mission-route-panel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  .mission-route-panel select,
+  .mission-route-panel textarea {
+    font-size: 16px !important;
+  }
+
+  .route-choice-grid-four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 390px) {
+  .route-location-row,
+  .route-milestone-row,
+  .mission-route-panel .route-compact-two,
+  .mission-route-panel .route-compact-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .route-location-button {
+    width: 100%;
+  }
+
+  .route-time-display {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .route-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* =========================================================
    VERSION APPLICATION + MODE TRANSMISSION SAED
    ========================================================= */
@@ -6524,5 +6877,61 @@ body.vitals-sheet-open .identity-swipe-tabs {
 
   .floating-vitals-button {
     min-height: 44px;
+  }
+}
+
+/* CORRECTIFS MOBILES — accès SAED et tension bilatérale compacte */
+@media (max-width: 700px) {
+  body.protocol-mode .floating-back-menu {
+    z-index: 10010 !important;
+  }
+
+  body.protocol-mode .floating-saed-button {
+    right: calc(16px + var(--safe-right, env(safe-area-inset-right, 0px))) !important;
+    bottom: calc(84px + var(--safe-bottom, env(safe-area-inset-bottom, 0px))) !important;
+  }
+
+  .vitals-bp-block {
+    gap: 4px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .vitals-bp-title {
+    font-size: 0.74rem;
+  }
+
+  .vitals-bp-column-headings {
+    display: grid;
+    grid-template-columns: 50px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    color: #94a3b8;
+    font-size: 0.66rem;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .vitals-bp-line {
+    grid-template-columns: 50px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .vitals-bp-side {
+    grid-column: auto;
+    align-self: center;
+    padding-bottom: 0;
+    font-size: 0.75rem;
+  }
+
+  .vitals-bp-line label {
+    display: block;
+  }
+
+  .vitals-bp-line select {
+    min-height: 44px;
+    padding: 6px;
+    border-radius: 9px;
   }
 }
